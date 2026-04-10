@@ -6,19 +6,11 @@
 
 ## 文件位置
 
-推荐目录：
-
-- `run/scripts/ponder/...`
-
 示例：
 
-- `run/scripts/ponder/examples/json_tutorial/01_minimal_scene.json`
-- `run/scripts/ponder/examples/json_tutorial/02_redstone_and_nbt.json`
-- `run/scripts/ponder/examples/json_tutorial/03_gui_interaction.json`
-
-加载脚本推荐放在：
-
-- `run/scripts/*.zs`
+- `docs/examples/json_tutorial/01_minimal_scene.json`
+- `docs/examples/json_tutorial/02_redstone_and_nbt.json`
+- `docs/examples/json_tutorial/03_gui_interaction.json`
 
 ## 当前稳定可用操作
 
@@ -67,6 +59,6 @@
 
 ## 示例
 
-- `run/scripts/ponder/examples/json_tutorial/01_minimal_scene.json`
-- `run/scripts/ponder/examples/json_tutorial/02_redstone_and_nbt.json`
-- `run/scripts/ponder/examples/json_tutorial/03_gui_interaction.json`
+- `docs/examples/json_tutorial/01_minimal_scene.json`
+- `docs/examples/json_tutorial/02_redstone_and_nbt.json`
+- `docs/examples/json_tutorial/03_gui_interaction.json`

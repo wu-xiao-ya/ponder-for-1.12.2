@@ -22,7 +22,7 @@
           "guiHeight": 52,
           "duration": 80,
           "color": "BLUE",
-          "text": "这里是熔炉 GUI 的主要加工区域。"
+          "text": "Main furnace processing area."
         }
       ]
     }
@@ -33,7 +33,7 @@
       "componentKey": "tutorial:gui_interaction",
       "schematic": "ponder:debug/runtime_test",
       "sceneId": "json_tutorial_gui_interaction",
-      "title": "示例 03：GUI 交互",
+      "title": "Example 03: GUI Interaction",
       "tags": ["ponder:json_examples"],
       "operations": [
         { "type": "base_plate", "xOffset": 0, "zOffset": 0, "size": 7 },
@@ -46,7 +46,7 @@
           "type": "text",
           "duration": 60,
           "color": "WHITE",
-          "text": "这里调用一个可复用的 GUI 交互定义。",
+          "text": "This scene invokes a reusable GUI interaction definition.",
           "pointAt": [2, 1, 2],
           "pointMode": "center",
           "placeNearTarget": true

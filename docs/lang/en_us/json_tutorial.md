@@ -8,19 +8,11 @@ The goal is to provide a stable JSON DSL that is practical for this branch.
 
 ## File Placement
 
-Recommended directory:
-
-- `run/scripts/ponder/...`
-
 Examples:
 
-- `run/scripts/ponder/examples/json_tutorial/01_minimal_scene.json`
-- `run/scripts/ponder/examples/json_tutorial/02_redstone_and_nbt.json`
-- `run/scripts/ponder/examples/json_tutorial/03_gui_interaction.json`
-
-Loader scripts should live under:
-
-- `run/scripts/*.zs`
+- `docs/examples/json_tutorial/01_minimal_scene.json`
+- `docs/examples/json_tutorial/02_redstone_and_nbt.json`
+- `docs/examples/json_tutorial/03_gui_interaction.json`
 
 ## Stable Operations
 
@@ -69,6 +61,6 @@ Loader scripts should live under:
 
 ## Examples
 
-- `run/scripts/ponder/examples/json_tutorial/01_minimal_scene.json`
-- `run/scripts/ponder/examples/json_tutorial/02_redstone_and_nbt.json`
-- `run/scripts/ponder/examples/json_tutorial/03_gui_interaction.json`
+- `docs/examples/json_tutorial/01_minimal_scene.json`
+- `docs/examples/json_tutorial/02_redstone_and_nbt.json`
+- `docs/examples/json_tutorial/03_gui_interaction.json`

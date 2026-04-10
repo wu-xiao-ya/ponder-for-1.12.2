@@ -3,8 +3,8 @@
   "tagDefinitions": [
     {
       "id": "json_examples",
-      "title": "JSON 教程示例",
-      "description": "用于演示当前 1.12.2 分支的外部 JSON 写法。",
+      "title": "JSON Tutorial Examples",
+      "description": "Examples for the current 1.12.2 JSON DSL.",
       "item": "minecraft:book",
       "addToIndex": true
     }
@@ -15,7 +15,7 @@
       "componentKey": "tutorial:minimal_scene",
       "schematic": "ponder:debug/runtime_test",
       "sceneId": "json_tutorial_minimal_scene",
-      "title": "示例 01：最小场景",
+      "title": "Example 01: Minimal Scene",
       "tags": ["ponder:json_examples"],
       "operations": [
         { "type": "base_plate", "xOffset": 0, "zOffset": 0, "size": 7 },
@@ -28,7 +28,7 @@
           "type": "text",
           "duration": 70,
           "color": "WHITE",
-          "text": "这是最小场景示例：底板、方块、文本提示三件套。",
+          "text": "This is the smallest useful JSON scene example.",
           "pointAt": [2, 1, 2],
           "pointMode": "center",
           "placeNearTarget": true
@@ -39,7 +39,7 @@
           "to": [2, 1, 2],
           "duration": 70,
           "color": "BLUE",
-          "text": "如果你刚开始写教程，建议先从这种结构起步。"
+          "text": "Start from this structure before adding more advanced features."
         },
         { "type": "idle", "ticks": 30 },
         { "type": "mark_finished" }
