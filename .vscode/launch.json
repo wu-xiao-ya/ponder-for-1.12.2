@@ -1,0 +1,19 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Ponder Client",
+            "type": "node-terminal",
+            "request": "launch",
+            "command": "cmd /c scripts\\gradle-jdk25.cmd runClient",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Ponder Server",
+            "type": "node-terminal",
+            "request": "launch",
+            "command": "cmd /c scripts\\gradle-jdk25.cmd runServer",
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}

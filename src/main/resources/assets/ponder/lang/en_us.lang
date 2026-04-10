@@ -1,0 +1,74 @@
+ponder.ui.button.reload=Reload
+ponder.ui.button.clear_tag=Clear Tag
+ponder.ui.button.done=Done
+ponder.ui.button.previous=Previous
+ponder.ui.button.close=Close
+ponder.ui.button.pause=Pause
+ponder.ui.button.play=Play
+ponder.ui.button.next=Next
+ponder.ui.button.restart=Restart
+
+ponder.ui.browser.title=Ponder Browser
+ponder.ui.browser.help=Click a tag to filter, then click an item icon to open the Ponder UI.
+ponder.ui.browser.all_tags=All tags
+ponder.ui.browser.stats=%s tags  |  %s components
+ponder.ui.browser.tags=Tags
+ponder.ui.browser.components=Components
+ponder.ui.browser.no_tags=No indexed tags registered.
+ponder.ui.browser.no_components=No Ponder components registered.
+ponder.ui.browser.no_components_for_tag=No components use this tag yet.
+ponder.ui.browser.hover.tag=%s  |  Left click: filter  |  Right click: open tag page
+ponder.ui.browser.hover.component=%s  |  %s scenes
+ponder.ui.browser.filter.all=Showing every registered component
+ponder.ui.browser.filter.tag=Filtered by tag: %s
+ponder.ui.browser.hint.active_filter=Active filter: %s  |  Click the same tag again to clear it
+ponder.ui.browser.hint.debug=Use /ponderuidebug for the detailed runtime viewer
+
+ponder.ui.tag.title=Ponder Tag
+ponder.ui.tag.component_count=%s components
+ponder.ui.tag.scene_count=%s scenes
+ponder.ui.tag.associated_components=Associated Components
+ponder.ui.tag.no_components=No components are linked to this tag yet.
+ponder.ui.tag.hover.component=%s  |  %s scenes
+ponder.ui.tag.click_to_open=Click an item icon to open its Ponder showcase
+
+ponder.ui.showcase.title=Ponder
+ponder.ui.showcase.empty_title=Ponder
+ponder.ui.showcase.no_scene=No Ponder scene
+ponder.ui.showcase.no_scene_subtitle=No registered showcase scene
+ponder.ui.showcase.no_visible=Scene has no visible content at this tick
+ponder.ui.showcase.no_visible_hint=Play or scrub the timeline
+ponder.ui.showcase.missing_item=Missing display item
+ponder.ui.showcase.eyebrow_component=Ponder  |  %s
+ponder.ui.showcase.none_short=No Scene
+ponder.ui.showcase.scene_short=Scene %s
+ponder.ui.showcase.next_up=Next
+
+ponder.ui.hint.scrub=Scrub timeline
+ponder.ui.hint.scrub_tick=Scrub timeline | T+%s / %s
+ponder.ui.hint.group=Open related components
+ponder.ui.hint.next=Open next scene
+
+ponder.ui.footer.no_scene=No active scene
+ponder.ui.footer.scene=Scene %s / %s
+ponder.ui.footer.tick=T+%s / %s  %s
+ponder.ui.footer.playing=Playing
+ponder.ui.footer.paused=Paused
+ponder.ui.footer.help=Left/Right scene  Up/Down tick  Space or button
+
+ponder.ui.meta.title=Scene Info
+ponder.ui.meta.component=Component: %s
+ponder.ui.meta.component.none=Component: none
+ponder.ui.meta.scene_id=Scene ID: %s
+ponder.ui.meta.scene_id.none=Scene ID: none
+ponder.ui.meta.scale=Scale: %s
+ponder.ui.meta.scale.none=Scale: -
+ponder.ui.meta.finished=Finished: %s
+ponder.ui.meta.finished.none=Finished: -
+ponder.ui.meta.next_up=Next Up: %s
+ponder.ui.meta.next_up.none=Next Up: -
+ponder.ui.meta.tags=Tags: %s
+ponder.ui.meta.yes=yes
+ponder.ui.meta.no=no
+ponder.ui.meta.enabled=enabled
+ponder.ui.meta.disabled=disabled

@@ -1,0 +1,74 @@
+ponder.ui.button.reload=重载
+ponder.ui.button.clear_tag=清除标签
+ponder.ui.button.done=完成
+ponder.ui.button.previous=上一幕
+ponder.ui.button.close=关闭
+ponder.ui.button.pause=暂停
+ponder.ui.button.play=播放
+ponder.ui.button.next=下一幕
+ponder.ui.button.restart=重播
+
+ponder.ui.browser.title=思索浏览器
+ponder.ui.browser.help=点击标签筛选，再点击物品图标打开思索界面。
+ponder.ui.browser.all_tags=全部标签
+ponder.ui.browser.stats=%s 个标签  |  %s 个部件
+ponder.ui.browser.tags=标签
+ponder.ui.browser.components=部件
+ponder.ui.browser.no_tags=当前没有已加入索引的标签。
+ponder.ui.browser.no_components=当前没有已注册的思索部件。
+ponder.ui.browser.no_components_for_tag=当前没有部件使用这个标签。
+ponder.ui.browser.hover.tag=%s  |  左键筛选  |  右键打开标签页
+ponder.ui.browser.hover.component=%s  |  %s 个场景
+ponder.ui.browser.filter.all=当前显示全部已注册部件
+ponder.ui.browser.filter.tag=当前按标签筛选：%s
+ponder.ui.browser.hint.active_filter=当前筛选：%s  |  再次点击相同标签可取消筛选
+ponder.ui.browser.hint.debug=如需详细运行时调试，请使用 /ponderuidebug
+
+ponder.ui.tag.title=思索标签
+ponder.ui.tag.component_count=%s 个部件
+ponder.ui.tag.scene_count=%s 个场景
+ponder.ui.tag.associated_components=关联部件
+ponder.ui.tag.no_components=当前没有部件关联到这个标签。
+ponder.ui.tag.hover.component=%s  |  %s 个场景
+ponder.ui.tag.click_to_open=点击物品图标打开对应思索界面
+
+ponder.ui.showcase.title=思索
+ponder.ui.showcase.empty_title=思索
+ponder.ui.showcase.no_scene=没有可用的思索场景
+ponder.ui.showcase.no_scene_subtitle=没有已注册的展示场景
+ponder.ui.showcase.no_visible=当前时间点没有可见内容
+ponder.ui.showcase.no_visible_hint=请播放或拖动时间轴
+ponder.ui.showcase.missing_item=缺少展示物品
+ponder.ui.showcase.eyebrow_component=思索  |  %s
+ponder.ui.showcase.none_short=无场景
+ponder.ui.showcase.scene_short=第 %s 幕
+ponder.ui.showcase.next_up=下一幕
+
+ponder.ui.hint.scrub=拖动时间轴
+ponder.ui.hint.scrub_tick=拖动时间轴 | T+%s / %s
+ponder.ui.hint.group=打开同组部件
+ponder.ui.hint.next=打开下一幕
+
+ponder.ui.footer.no_scene=当前无场景
+ponder.ui.footer.scene=场景 %s / %s
+ponder.ui.footer.tick=T+%s / %s  %s
+ponder.ui.footer.playing=播放中
+ponder.ui.footer.paused=已暂停
+ponder.ui.footer.help=左右切换场景  上下调整时间  空格或按钮控制播放
+
+ponder.ui.meta.title=场景信息
+ponder.ui.meta.component=部件：%s
+ponder.ui.meta.component.none=部件：无
+ponder.ui.meta.scene_id=场景 ID：%s
+ponder.ui.meta.scene_id.none=场景 ID：无
+ponder.ui.meta.scale=缩放：%s
+ponder.ui.meta.scale.none=缩放：-
+ponder.ui.meta.finished=完成状态：%s
+ponder.ui.meta.finished.none=完成状态：-
+ponder.ui.meta.next_up=下一幕：%s
+ponder.ui.meta.next_up.none=下一幕：-
+ponder.ui.meta.tags=标签：%s
+ponder.ui.meta.yes=已完成
+ponder.ui.meta.no=未完成
+ponder.ui.meta.enabled=启用
+ponder.ui.meta.disabled=禁用
