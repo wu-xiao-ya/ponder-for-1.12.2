@@ -1,0 +1,67 @@
+{
+  "namespace": "ponder",
+  "interactionDefinitions": [
+    {
+      "id": "furnace_live_demo",
+      "defaults": {
+        "offsetY": -10
+      },
+      "steps": [
+        {
+          "type": "gui_snapshot",
+          "snapshot": "ponder:gui_snapshot/minecraft_furnace_live",
+          "id": "main_gui",
+          "duration": 80
+        },
+        {
+          "type": "gui_outline_text",
+          "gui": "main_gui",
+          "guiX": 56,
+          "guiY": 17,
+          "guiWidth": 66,
+          "guiHeight": 52,
+          "duration": 80,
+          "color": "BLUE",
+          "text": "这里是熔炉 GUI 的主要加工区域。"
+        }
+      ]
+    }
+  ],
+  "scenes": [
+    {
+      "component": "minecraft:furnace",
+      "componentKey": "tutorial:gui_interaction",
+      "schematic": "ponder:debug/runtime_test",
+      "sceneId": "json_tutorial_gui_interaction",
+      "title": "示例 03：GUI 交互",
+      "tags": ["ponder:json_examples"],
+      "operations": [
+        { "type": "base_plate", "xOffset": 0, "zOffset": 0, "size": 7 },
+        { "type": "scene_scale", "factor": 0.68 },
+        { "type": "show_base_plate" },
+        { "type": "set_blocks", "from": [0, 0, 0], "to": [4, 0, 4], "state": "minecraft:stonebrick" },
+        { "type": "set_block", "pos": [2, 1, 2], "state": "minecraft:furnace", "meta": 2 },
+        { "type": "idle", "ticks": 14 },
+        {
+          "type": "text",
+          "duration": 60,
+          "color": "WHITE",
+          "text": "这里调用一个可复用的 GUI 交互定义。",
+          "pointAt": [2, 1, 2],
+          "pointMode": "center",
+          "placeNearTarget": true
+        },
+        {
+          "type": "gui_interaction",
+          "interaction": "ponder:furnace_live_demo",
+          "id": "furnace_demo",
+          "pointAt": [2, 1, 2],
+          "pointMode": "center",
+          "placeNearTarget": true
+        },
+        { "type": "idle", "ticks": 30 },
+        { "type": "mark_finished" }
+      ]
+    }
+  ]
+}

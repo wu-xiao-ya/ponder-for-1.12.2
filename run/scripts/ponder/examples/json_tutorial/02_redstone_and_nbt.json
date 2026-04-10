@@ -1,0 +1,72 @@
+{
+  "namespace": "ponder",
+  "scenes": [
+    {
+      "component": "minecraft:lever",
+      "componentKey": "tutorial:redstone_and_nbt",
+      "schematic": "ponder:debug/runtime_test",
+      "sceneId": "json_tutorial_redstone_and_nbt",
+      "title": "示例 02：红石与 NBT",
+      "tags": ["ponder:json_examples"],
+      "operations": [
+        { "type": "base_plate", "xOffset": 0, "zOffset": 0, "size": 7 },
+        { "type": "scene_scale", "factor": 0.72 },
+        { "type": "scene_offset_y", "offsetY": -1.0 },
+        { "type": "show_base_plate" },
+        { "type": "set_blocks", "from": [0, 0, 0], "to": [4, 0, 4], "state": "minecraft:stonebrick" },
+
+        { "type": "set_block", "pos": [2, 1, 2], "state": "minecraft:lever", "meta": 5 },
+        {
+          "type": "set_block",
+          "pos": [3, 1, 2],
+          "state": "minecraft:standing_sign",
+          "meta": 0,
+          "nbt": "{Text1:\"{\\\"text\\\":\\\"初始状态\\\"}\",Text2:\"{\\\"text\\\":\\\"Lever OFF\\\"}\",Text3:\"{\\\"text\\\":\\\"等待切换\\\"}\",Text4:\"{\\\"text\\\":\\\"\\\"}\"}"
+        },
+
+        { "type": "idle", "ticks": 14 },
+        {
+          "type": "text",
+          "duration": 70,
+          "color": "WHITE",
+          "text": "这份示例用来测试红石切换、提示粒子和带 NBT 的方块更新。",
+          "pointAt": [2, 1, 2],
+          "pointMode": "center",
+          "placeNearTarget": true
+        },
+
+        { "type": "toggle_redstone_power", "from": [2, 1, 2], "to": [2, 1, 2] },
+        { "type": "indicate_redstone", "pos": [2, 1, 2] },
+        {
+          "type": "outline_text",
+          "from": [2, 1, 2],
+          "to": [2, 1, 2],
+          "duration": 70,
+          "color": "BLUE",
+          "text": "拉杆应该在这里切换状态。"
+        },
+
+        { "type": "idle", "ticks": 20 },
+        {
+          "type": "set_block",
+          "pos": [3, 1, 2],
+          "state": "minecraft:standing_sign",
+          "meta": 0,
+          "nbt": "{Text1:\"{\\\"text\\\":\\\"NBT 已刷新\\\"}\",Text2:\"{\\\"text\\\":\\\"Lever ON\\\"}\",Text3:\"{\\\"text\\\":\\\"牌子文字已变化\\\"}\",Text4:\"{\\\"text\\\":\\\"Success\\\"}\"}"
+        },
+        { "type": "indicate_success", "pos": [3, 1, 2] },
+        {
+          "type": "outline_text",
+          "from": [3, 1, 2],
+          "to": [3, 1, 2],
+          "duration": 80,
+          "color": "GREEN",
+          "text": "如果牌子文字变了，说明 NBT 更新链路也正常。"
+        },
+
+        { "type": "idle", "ticks": 40 },
+        { "type": "mark_finished" }
+      ]
+    }
+  ]
+}

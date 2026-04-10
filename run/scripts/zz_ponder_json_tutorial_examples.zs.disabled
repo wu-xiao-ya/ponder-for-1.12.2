@@ -1,0 +1,10 @@
+// JSON 教程示例加载器
+// 默认关闭，需要时改名为 .zs 再加载。
+
+import mods.ponder.SceneFiles;
+
+SceneFiles.clearQueuedJson();
+SceneFiles.loadJson("examples/json_tutorial/01_minimal_scene.json");
+SceneFiles.loadJson("examples/json_tutorial/02_redstone_and_nbt.json");
+SceneFiles.loadJson("examples/json_tutorial/03_gui_interaction.json");
+SceneFiles.reloadPonder();

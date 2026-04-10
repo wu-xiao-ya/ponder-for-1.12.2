@@ -1,0 +1,49 @@
+{
+  "namespace": "ponder",
+  "tagDefinitions": [
+    {
+      "id": "json_examples",
+      "title": "JSON 教程示例",
+      "description": "用于演示当前 1.12.2 分支的外部 JSON 写法。",
+      "item": "minecraft:book",
+      "addToIndex": true
+    }
+  ],
+  "scenes": [
+    {
+      "component": "minecraft:crafting_table",
+      "componentKey": "tutorial:minimal_scene",
+      "schematic": "ponder:debug/runtime_test",
+      "sceneId": "json_tutorial_minimal_scene",
+      "title": "示例 01：最小场景",
+      "tags": ["ponder:json_examples"],
+      "operations": [
+        { "type": "base_plate", "xOffset": 0, "zOffset": 0, "size": 7 },
+        { "type": "scene_scale", "factor": 0.72 },
+        { "type": "show_base_plate" },
+        { "type": "set_blocks", "from": [0, 0, 0], "to": [4, 0, 4], "state": "minecraft:stonebrick" },
+        { "type": "idle", "ticks": 10 },
+        { "type": "set_block", "pos": [2, 1, 2], "state": "minecraft:crafting_table" },
+        {
+          "type": "text",
+          "duration": 70,
+          "color": "WHITE",
+          "text": "这是最小场景示例：底板、方块、文本提示三件套。",
+          "pointAt": [2, 1, 2],
+          "pointMode": "center",
+          "placeNearTarget": true
+        },
+        {
+          "type": "outline_text",
+          "from": [2, 1, 2],
+          "to": [2, 1, 2],
+          "duration": 70,
+          "color": "BLUE",
+          "text": "如果你刚开始写教程，建议先从这种结构起步。"
+        },
+        { "type": "idle", "ticks": 30 },
+        { "type": "mark_finished" }
+      ]
+    }
+  ]
+}

@@ -106,3 +106,13 @@ ported.
 4. Reconnect rendering, input, and scene playback timing.
 
 See [PORTING_NOTES.md](PORTING_NOTES.md) for the current migration map.
+
+## JSON Tutorial
+
+A full Chinese tutorial for the current 1.12.2 external JSON scene format lives at:
+
+- [docs/json_tutorial_zh_cn.md](docs/json_tutorial_zh_cn.md)
+
+Complete example files live under:
+
+- `run/scripts/ponder/examples/json_tutorial/`
