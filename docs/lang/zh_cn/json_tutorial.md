@@ -11,6 +11,7 @@
 - [01_minimal_scene.json](../../examples/json_tutorial/01_minimal_scene.json)
 - [02_redstone_and_nbt.json](../../examples/json_tutorial/02_redstone_and_nbt.json)
 - [03_gui_interaction.json](../../examples/json_tutorial/03_gui_interaction.json)
+- [04_supported_features_no_gui.json](../../examples/json_tutorial/04_supported_features_no_gui.json)
 
 ## 当前稳定可用操作
 
@@ -62,3 +63,4 @@
 - [01_minimal_scene.json](../../examples/json_tutorial/01_minimal_scene.json)
 - [02_redstone_and_nbt.json](../../examples/json_tutorial/02_redstone_and_nbt.json)
 - [03_gui_interaction.json](../../examples/json_tutorial/03_gui_interaction.json)
+- [04_supported_features_no_gui.json](../../examples/json_tutorial/04_supported_features_no_gui.json)
