@@ -10,9 +10,9 @@ The goal is to provide a stable JSON DSL that is practical for this branch.
 
 Examples:
 
-- `docs/examples/json_tutorial/01_minimal_scene.json`
-- `docs/examples/json_tutorial/02_redstone_and_nbt.json`
-- `docs/examples/json_tutorial/03_gui_interaction.json`
+- [01_minimal_scene.json](../../examples/json_tutorial/01_minimal_scene.json)
+- [02_redstone_and_nbt.json](../../examples/json_tutorial/02_redstone_and_nbt.json)
+- [03_gui_interaction.json](../../examples/json_tutorial/03_gui_interaction.json)
 
 ## Stable Operations
 
@@ -61,6 +61,6 @@ Examples:
 
 ## Examples
 
-- `docs/examples/json_tutorial/01_minimal_scene.json`
-- `docs/examples/json_tutorial/02_redstone_and_nbt.json`
-- `docs/examples/json_tutorial/03_gui_interaction.json`
+- [01_minimal_scene.json](../../examples/json_tutorial/01_minimal_scene.json)
+- [02_redstone_and_nbt.json](../../examples/json_tutorial/02_redstone_and_nbt.json)
+- [03_gui_interaction.json](../../examples/json_tutorial/03_gui_interaction.json)
