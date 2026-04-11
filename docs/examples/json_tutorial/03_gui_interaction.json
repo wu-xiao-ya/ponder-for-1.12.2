@@ -1,17 +1,23 @@
 {
   "namespace": "ponder",
+  "_comment_en_us": "Example 03 demonstrates reusable GUI interactions. The key idea is to define a reusable interaction block first, then invoke it from a scene.",
+  "_comment_zh_cn": "示例 03 演示可复用 GUI 交互。核心思路是先定义一段可复用交互，再在场景中调用它。",
   "interactionDefinitions": [
     {
       "id": "furnace_live_demo",
       "defaults": {
-        "offsetY": -10
+        "offsetY": -10,
+        "_comment_en_us": "defaults can provide shared values to all steps inside this interaction definition.",
+        "_comment_zh_cn": "defaults 可用于给这段交互定义里的所有步骤提供共享默认值。"
       },
       "steps": [
         {
           "type": "gui_snapshot",
           "snapshot": "ponder:gui_snapshot/minecraft_furnace_live",
           "id": "main_gui",
-          "duration": 80
+          "duration": 80,
+          "_comment_en_us": "Capture and render the furnace GUI as a live snapshot. The id is later used as a parent reference.",
+          "_comment_zh_cn": "把熔炉 GUI 作为 live snapshot 渲染出来。这里的 id 会在后续步骤里作为父级引用。"
         },
         {
           "type": "gui_outline_text",
@@ -22,9 +28,13 @@
           "guiHeight": 52,
           "duration": 80,
           "color": "BLUE",
-          "text": "Main furnace processing area."
+          "text": "Main furnace processing area.",
+          "_comment_en_us": "Highlight a rectangular area inside the GUI snapshot and attach explanatory text to it.",
+          "_comment_zh_cn": "在 GUI 快照内部高亮一个矩形区域，并为它附加说明文字。"
         }
-      ]
+      ],
+      "_comment_en_us": "This reusable interaction can be referenced by multiple scenes. It is the recommended way to avoid repeating complex GUI overlay steps.",
+      "_comment_zh_cn": "这段可复用交互可以被多个场景引用。对于复杂 GUI 演示，推荐用这种方式避免重复书写同样的步骤。"
     }
   ],
   "scenes": [
@@ -35,13 +45,50 @@
       "sceneId": "json_tutorial_gui_interaction",
       "title": "Example 03: GUI Interaction",
       "tags": ["ponder:json_examples"],
+      "_comment_en_us": "This scene uses a vanilla furnace so the GUI behavior is predictable and easy to test.",
+      "_comment_zh_cn": "这里使用原版熔炉作为组件，这样 GUI 行为更稳定，也更容易测试。",
       "operations": [
-        { "type": "base_plate", "xOffset": 0, "zOffset": 0, "size": 7 },
-        { "type": "scene_scale", "factor": 0.68 },
-        { "type": "show_base_plate" },
-        { "type": "set_blocks", "from": [0, 0, 0], "to": [4, 0, 4], "state": "minecraft:stonebrick" },
-        { "type": "set_block", "pos": [2, 1, 2], "state": "minecraft:furnace", "meta": 2 },
-        { "type": "idle", "ticks": 14 },
+        {
+          "type": "base_plate",
+          "xOffset": 0,
+          "zOffset": 0,
+          "size": 7,
+          "_comment_en_us": "Sets up the logical base platform.",
+          "_comment_zh_cn": "设置逻辑底板。"
+        },
+        {
+          "type": "scene_scale",
+          "factor": 0.68,
+          "_comment_en_us": "A slightly smaller scale leaves enough room on screen for the GUI overlay.",
+          "_comment_zh_cn": "把场景缩小一点，给 GUI 叠层留出足够的屏幕空间。"
+        },
+        {
+          "type": "show_base_plate",
+          "_comment_en_us": "Show the base plate.",
+          "_comment_zh_cn": "显示底板。"
+        },
+        {
+          "type": "set_blocks",
+          "from": [0, 0, 0],
+          "to": [4, 0, 4],
+          "state": "minecraft:stonebrick",
+          "_comment_en_us": "Build a simple floor so the furnace is not floating in the preview.",
+          "_comment_zh_cn": "铺一个简单地面，避免熔炉在预览里悬空。"
+        },
+        {
+          "type": "set_block",
+          "pos": [2, 1, 2],
+          "state": "minecraft:furnace",
+          "meta": 2,
+          "_comment_en_us": "Place the furnace block that the text and GUI interaction will point to.",
+          "_comment_zh_cn": "放置熔炉方块，后面的文本和 GUI 交互都会指向它。"
+        },
+        {
+          "type": "idle",
+          "ticks": 14,
+          "_comment_en_us": "Pause before introducing the GUI sequence.",
+          "_comment_zh_cn": "在 GUI 演示开始前先停顿一下。"
+        },
         {
           "type": "text",
           "duration": 60,
@@ -49,7 +96,9 @@
           "text": "This scene invokes a reusable GUI interaction definition.",
           "pointAt": [2, 1, 2],
           "pointMode": "center",
-          "placeNearTarget": true
+          "placeNearTarget": true,
+          "_comment_en_us": "This text explains that the next step is not hardcoded inline, but comes from a reusable interaction definition.",
+          "_comment_zh_cn": "这段文字说明下一步并不是直接内联写死，而是来自一段可复用交互定义。"
         },
         {
           "type": "gui_interaction",
@@ -57,10 +106,21 @@
           "id": "furnace_demo",
           "pointAt": [2, 1, 2],
           "pointMode": "center",
-          "placeNearTarget": true
+          "placeNearTarget": true,
+          "_comment_en_us": "Invoke the reusable interaction. The interaction field points to the previously defined interaction id.",
+          "_comment_zh_cn": "调用可复用交互。interaction 字段指向前面定义好的交互 id。"
         },
-        { "type": "idle", "ticks": 30 },
-        { "type": "mark_finished" }
+        {
+          "type": "idle",
+          "ticks": 30,
+          "_comment_en_us": "Leave the GUI visible long enough for reading and inspection.",
+          "_comment_zh_cn": "让 GUI 多停留一段时间，方便阅读和检查。"
+        },
+        {
+          "type": "mark_finished",
+          "_comment_en_us": "Mark the scene as complete.",
+          "_comment_zh_cn": "将场景标记为结束。"
+        }
       ]
     }
   ]
