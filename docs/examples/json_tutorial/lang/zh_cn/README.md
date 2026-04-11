@@ -5,3 +5,4 @@
 - `01_minimal_scene.json` 最小完整场景
 - `02_redstone_and_nbt.json` 运行时状态、红石与 NBT 示例
 - `03_gui_interaction.json` GUI 快照与交互示例
+- `04_supported_features_no_gui.json` 当前已支持且较成熟的非 GUI 功能总展示
