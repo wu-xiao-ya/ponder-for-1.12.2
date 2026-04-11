@@ -13,10 +13,9 @@ modding environment.
 | Item | Value |
 | --- | --- |
 | Minecraft | `1.12.2` |
-| Runtime target | `Cleanroom / CRL` |
+| Runtime target | `Cleanroom/Forge` |
 | Current release line | `0.1.0-beta` |
 | Current state | usable, still under stabilization |
-| Compatibility target | not stock Forge 1.12.2 |
 
 ## What This Repository Already Has
 
