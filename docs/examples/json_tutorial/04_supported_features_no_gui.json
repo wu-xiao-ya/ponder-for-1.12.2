@@ -1,0 +1,255 @@
+{
+  "namespace": "ponder",
+  "_comment_en_us": "Example 04 is the full non-GUI feature showcase. It covers the currently supported scene control, block state, signal, and section motion operations that are considered stable enough to demonstrate publicly.",
+  "_comment_zh_cn": "示例 04 是当前非 GUI 功能的完整展示。它覆盖了目前已经相对稳定、适合公开展示的场景控制、方块状态、信号提示和分区运动操作。",
+  "scenes": [
+    {
+      "component": "minecraft:repeater",
+      "componentKey": "tutorial:supported_features_no_gui",
+      "schematic": "ponder:debug/runtime_test",
+      "sceneId": "json_tutorial_controls_showcase",
+      "title": "Example 04A: Scene Controls",
+      "tags": ["ponder:json_examples"],
+      "_comment_en_us": "Scene A demonstrates the global scene-level controls: base plate, scale, vertical offset, shadow removal, next-up toggle, camera rotation, keyframes, idle, text, and outline text.",
+      "_comment_zh_cn": "A 幕用于展示场景级控制：底板、缩放、垂直偏移、阴影移除、next-up 开关、相机旋转、关键帧、停顿、文本和轮廓文本。",
+      "operations": [
+        {
+          "type": "base_plate",
+          "xOffset": 0,
+          "zOffset": 0,
+          "size": 7,
+          "_comment_en_us": "Define the logical base plate used by the preview and the platform.",
+          "_comment_zh_cn": "定义预览和底部平台使用的逻辑底板。"
+        },
+        {
+          "type": "scene_scale",
+          "factor": 0.74,
+          "_comment_en_us": "Scale the whole scene view.",
+          "_comment_zh_cn": "缩放整个场景视图。"
+        },
+        {
+          "type": "scene_offset_y",
+          "offsetY": -1.0,
+          "_comment_en_us": "Lower the initial framing so the subject sits nearer the center.",
+          "_comment_zh_cn": "下移初始取景，让主体更接近屏幕中央。"
+        },
+        {
+          "type": "remove_shadow",
+          "_comment_en_us": "Disable the platform shadow layer for a cleaner demonstration.",
+          "_comment_zh_cn": "关闭底板阴影层，让演示画面更干净。"
+        },
+        {
+          "type": "next_up",
+          "enabled": false,
+          "_comment_en_us": "Disable the next-scene card. This is useful for self-contained test scenes.",
+          "_comment_zh_cn": "关闭 next-up 场景卡片。这对自包含测试场景很有用。"
+        },
+        { "type": "show_base_plate" },
+        { "type": "set_blocks", "from": [0, 0, 0], "to": [4, 0, 4], "state": "minecraft:stonebrick" },
+        { "type": "set_block", "pos": [2, 1, 2], "state": "minecraft:repeater", "meta": 0 },
+        { "type": "idle", "ticks": 10 },
+        {
+          "type": "text",
+          "duration": 65,
+          "color": "WHITE",
+          "text": "This scene focuses on scene-level controls rather than world mutations.",
+          "pointAt": [2, 1, 2],
+          "pointMode": "center",
+          "placeNearTarget": true
+        },
+        { "type": "keyframe" },
+        {
+          "type": "rotate_camera_y",
+          "degrees": 25,
+          "_comment_en_us": "Rotate the camera to show that camera events are also data-driven.",
+          "_comment_zh_cn": "旋转相机，用来说明镜头事件同样是数据驱动的。"
+        },
+        { "type": "idle", "ticks": 15 },
+        { "type": "lazy_keyframe" },
+        {
+          "type": "outline_text",
+          "from": [2, 1, 2],
+          "to": [2, 1, 2],
+          "duration": 75,
+          "color": "BLUE",
+          "text": "base_plate, scale, offset, shadow, next_up, keyframe, lazy_keyframe, and rotate_camera_y are all active here."
+        },
+        { "type": "idle", "ticks": 30 },
+        { "type": "mark_finished" }
+      ]
+    },
+    {
+      "component": "minecraft:repeater",
+      "componentKey": "tutorial:supported_features_no_gui",
+      "schematic": "ponder:debug/runtime_test",
+      "sceneId": "json_tutorial_world_state_showcase",
+      "title": "Example 04B: World State and Signals",
+      "tags": ["ponder:json_examples"],
+      "_comment_en_us": "Scene B demonstrates the currently supported stable world-mutation and signal operations, excluding GUI.",
+      "_comment_zh_cn": "B 幕展示当前已支持且相对稳定的世界状态与信号类操作，不包含 GUI。",      
+      "operations": [
+        { "type": "base_plate", "xOffset": 0, "zOffset": 0, "size": 7 },
+        { "type": "scene_scale", "factor": 0.72 },
+        { "type": "show_base_plate" },
+        { "type": "set_blocks", "from": [0, 0, 0], "to": [4, 0, 4], "state": "minecraft:stonebrick" },
+        {
+          "type": "set_blocks",
+          "from": [1, 1, 3],
+          "to": [3, 1, 3],
+          "state": "minecraft:wool",
+          "meta": 14,
+          "_comment_en_us": "Initial block row used to demonstrate replace_blocks and restore behavior.",
+          "_comment_zh_cn": "初始方块行，用来演示 replace_blocks 和 restore 的行为。"
+        },
+        { "type": "set_block", "pos": [2, 1, 2], "state": "minecraft:lever", "meta": 5 },
+        {
+          "type": "set_block",
+          "pos": [3, 1, 2],
+          "state": "minecraft:standing_sign",
+          "meta": 0,
+          "nbt": "{Text1:\"{\\\"text\\\":\\\"Initial\\\"}\",Text2:\"{\\\"text\\\":\\\"Ready\\\"}\",Text3:\"{\\\"text\\\":\\\"Replace / Restore\\\"}\",Text4:\"{\\\"text\\\":\\\"\\\"}\"}"
+        },
+        { "type": "idle", "ticks": 10 },
+        { "type": "replace_blocks", "from": [1, 1, 3], "to": [3, 1, 3], "state": "minecraft:wool", "meta": 5 },
+        {
+          "type": "outline_text",
+          "from": [1, 1, 3],
+          "to": [3, 1, 3],
+          "duration": 60,
+          "color": "BLUE",
+          "text": "replace_blocks swaps the state of an existing area."
+        },
+        { "type": "idle", "ticks": 12 },
+        { "type": "restore_blocks", "from": [1, 1, 3], "to": [3, 1, 3] },
+        {
+          "type": "text",
+          "duration": 60,
+          "color": "WHITE",
+          "text": "restore_blocks returns a selection to its tracked original state.",
+          "pointAt": [2, 1, 3],
+          "pointMode": "center",
+          "placeNearTarget": true
+        },
+        { "type": "idle", "ticks": 12 },
+        { "type": "toggle_redstone_power", "from": [2, 1, 2], "to": [2, 1, 2] },
+        { "type": "indicate_redstone", "pos": [2, 1, 2] },
+        { "type": "idle", "ticks": 10 },
+        {
+          "type": "set_block",
+          "pos": [3, 1, 2],
+          "state": "minecraft:standing_sign",
+          "meta": 0,
+          "nbt": "{Text1:\"{\\\"text\\\":\\\"NBT Updated\\\"}\",Text2:\"{\\\"text\\\":\\\"Lever Toggled\\\"}\",Text3:\"{\\\"text\\\":\\\"Signals OK\\\"}\",Text4:\"{\\\"text\\\":\\\"Success\\\"}\"}"
+        },
+        { "type": "indicate_success", "pos": [3, 1, 2] },
+        { "type": "idle", "ticks": 10 },
+        { "type": "set_block", "pos": [1, 1, 1], "state": "minecraft:stone" },
+        { "type": "break_progress", "pos": [1, 1, 1], "times": 4 },
+        {
+          "type": "outline_text",
+          "from": [1, 1, 1],
+          "to": [1, 1, 1],
+          "duration": 60,
+          "color": "WHITE",
+          "text": "break_progress records staged breaking progress on a target block."
+        },
+        { "type": "idle", "ticks": 10 },
+        { "type": "destroy_block", "pos": [1, 1, 1] },
+        {
+          "type": "text",
+          "duration": 60,
+          "color": "GREEN",
+          "text": "destroy_block removes a block immediately from the runtime state.",
+          "pointAt": [1, 1, 1],
+          "pointMode": "center",
+          "placeNearTarget": true
+        },
+        { "type": "idle", "ticks": 35 },
+        { "type": "mark_finished" }
+      ]
+    },
+    {
+      "component": "minecraft:repeater",
+      "componentKey": "tutorial:supported_features_no_gui",
+      "schematic": "ponder:debug/runtime_test",
+      "sceneId": "json_tutorial_section_motion_showcase",
+      "title": "Example 04C: Section Motion",
+      "tags": ["ponder:json_examples"],
+      "_comment_en_us": "Scene C demonstrates the selection-based section operations that currently work in the external JSON runtime.",
+      "_comment_zh_cn": "C 幕展示当前外部 JSON runtime 中可用的、基于选区的分区操作。",
+      "operations": [
+        { "type": "base_plate", "xOffset": 0, "zOffset": 0, "size": 9 },
+        { "type": "scene_scale", "factor": 0.68 },
+        { "type": "show_base_plate" },
+        { "type": "set_blocks", "from": [0, 0, 0], "to": [5, 0, 5], "state": "minecraft:stonebrick" },
+        {
+          "type": "set_blocks",
+          "from": [2, 1, 2],
+          "to": [3, 2, 3],
+          "state": "minecraft:gold_block",
+          "_comment_en_us": "This 2x2x2 block is the section we will hide, show, move, and rotate.",
+          "_comment_zh_cn": "这个 2x2x2 的方块组就是接下来要隐藏、显示、移动和旋转的分区。"
+        },
+        { "type": "idle", "ticks": 10 },
+        {
+          "type": "hide_section",
+          "from": [2, 1, 2],
+          "to": [3, 2, 3],
+          "direction": "UP"
+        },
+        {
+          "type": "text",
+          "duration": 55,
+          "color": "WHITE",
+          "text": "hide_section fades an existing selection out of view.",
+          "pointAt": [2.5, 1.5, 2.5],
+          "pointMode": "center",
+          "placeNearTarget": true
+        },
+        { "type": "idle", "ticks": 16 },
+        {
+          "type": "show_section",
+          "from": [2, 1, 2],
+          "to": [3, 2, 3],
+          "direction": "DOWN"
+        },
+        { "type": "idle", "ticks": 16 },
+        {
+          "type": "move_section",
+          "from": [2, 1, 2],
+          "to": [3, 2, 3],
+          "offset": [1.0, 1.0, 0.0],
+          "duration": 35
+        },
+        {
+          "type": "outline_text",
+          "from": [2, 1, 2],
+          "to": [3, 2, 3],
+          "duration": 65,
+          "color": "BLUE",
+          "text": "move_section applies an animated offset to every block in the selection."
+        },
+        { "type": "idle", "ticks": 16 },
+        {
+          "type": "rotate_section",
+          "from": [2, 1, 2],
+          "to": [3, 2, 3],
+          "rotation": [0.0, 90.0, 0.0],
+          "pivot": [3.0, 1.5, 2.5],
+          "duration": 35
+        },
+        {
+          "type": "text",
+          "duration": 70,
+          "color": "GREEN",
+          "text": "rotate_section uses a pivot point plus xyz rotation values.",
+          "pointAt": [3.0, 1.5, 2.5],
+          "pointMode": "center",
+          "placeNearTarget": true
+        },
+        { "type": "idle", "ticks": 35 },
+        { "type": "mark_finished" }
+      ]
+    }
+  ]
+}
