@@ -1,12 +1,16 @@
 {
   "namespace": "ponder",
+  "_comment_en_us": "Example 01 is the smallest complete scene file. It demonstrates the minimum structure required for an external JSON scene: one tag definition, one scene definition, and a short operation timeline.",
+  "_comment_zh_cn": "示例 01 是最小完整场景文件。它演示了外部 JSON 场景所需的最小结构：一个标签定义、一个场景定义，以及一段很短的操作时间线。",
   "tagDefinitions": [
     {
       "id": "json_examples",
       "title": "JSON Tutorial Examples",
       "description": "Examples for the current 1.12.2 JSON DSL.",
       "item": "minecraft:book",
-      "addToIndex": true
+      "addToIndex": true,
+      "_comment_en_us": "This tag is used to group tutorial scenes into one visible category in the browser.",
+      "_comment_zh_cn": "这个标签用于把教程场景归到浏览器里的同一个可见分组中。"
     }
   ],
   "scenes": [
@@ -17,13 +21,49 @@
       "sceneId": "json_tutorial_minimal_scene",
       "title": "Example 01: Minimal Scene",
       "tags": ["ponder:json_examples"],
+      "_comment_en_us": "The component controls which item opens this scene. componentKey is optional but useful when you want to distinguish multiple tutorials that share the same item.",
+      "_comment_zh_cn": "component 决定了哪个物品会打开这个场景。componentKey 不是必需的，但当同一个物品需要拆成多个教程入口时很有用。",
       "operations": [
-        { "type": "base_plate", "xOffset": 0, "zOffset": 0, "size": 7 },
-        { "type": "scene_scale", "factor": 0.72 },
-        { "type": "show_base_plate" },
-        { "type": "set_blocks", "from": [0, 0, 0], "to": [4, 0, 4], "state": "minecraft:stonebrick" },
-        { "type": "idle", "ticks": 10 },
-        { "type": "set_block", "pos": [2, 1, 2], "state": "minecraft:crafting_table" },
+        {
+          "type": "base_plate",
+          "xOffset": 0,
+          "zOffset": 0,
+          "size": 7,
+          "_comment_en_us": "Defines the logical base plate used by the preview. This affects framing and base platform size.",
+          "_comment_zh_cn": "定义预览中使用的逻辑底板。它会影响镜头取景和底部平台大小。"
+        },
+        {
+          "type": "scene_scale",
+          "factor": 0.72,
+          "_comment_en_us": "Scales the whole scene view. Increase it when the scene looks too small; decrease it when the scene is clipped.",
+          "_comment_zh_cn": "缩放整个场景视图。场景太小就增大，场景被裁切就减小。"
+        },
+        {
+          "type": "show_base_plate",
+          "_comment_en_us": "Makes the base plate visible in the timeline.",
+          "_comment_zh_cn": "让底板在时间线上显示出来。"
+        },
+        {
+          "type": "set_blocks",
+          "from": [0, 0, 0],
+          "to": [4, 0, 4],
+          "state": "minecraft:stonebrick",
+          "_comment_en_us": "Fills a cuboid area with one block state. This is the standard way to lay down a floor or shell quickly.",
+          "_comment_zh_cn": "用同一种方块状态填充一个长方体区域。这是快速铺地面或搭外壳的标准写法。"
+        },
+        {
+          "type": "idle",
+          "ticks": 10,
+          "_comment_en_us": "Waits 10 ticks before the next operation. Use idle frequently so players can actually read and see transitions.",
+          "_comment_zh_cn": "在下一步操作前等待 10 tick。教程里应经常插入 idle，让玩家有时间阅读和观察变化。"
+        },
+        {
+          "type": "set_block",
+          "pos": [2, 1, 2],
+          "state": "minecraft:crafting_table",
+          "_comment_en_us": "Places a single block at an exact position. This is the simplest way to highlight one target block.",
+          "_comment_zh_cn": "在精确坐标放置一个方块。这是突出单个目标方块最直接的方式。"
+        },
         {
           "type": "text",
           "duration": 70,
@@ -31,7 +71,9 @@
           "text": "This is the smallest useful JSON scene example.",
           "pointAt": [2, 1, 2],
           "pointMode": "center",
-          "placeNearTarget": true
+          "placeNearTarget": true,
+          "_comment_en_us": "Shows a speech-box style overlay. pointAt defines the anchor, pointMode controls where the arrow points, and placeNearTarget asks the UI to keep the text close to the target.",
+          "_comment_zh_cn": "显示一个气泡式文本说明。pointAt 定义锚点，pointMode 控制箭头落点，placeNearTarget 表示让文本尽量贴近目标。"
         },
         {
           "type": "outline_text",
@@ -39,10 +81,21 @@
           "to": [2, 1, 2],
           "duration": 70,
           "color": "BLUE",
-          "text": "Start from this structure before adding more advanced features."
+          "text": "Start from this structure before adding more advanced features.",
+          "_comment_en_us": "Draws a highlighted box around a world selection and attaches text to it. For a single block, from and to can point to the same position.",
+          "_comment_zh_cn": "在世界中的一个选区上绘制高亮框，并附加文字说明。若只高亮一个方块，from 和 to 可以写成同一个坐标。"
         },
-        { "type": "idle", "ticks": 30 },
-        { "type": "mark_finished" }
+        {
+          "type": "idle",
+          "ticks": 30,
+          "_comment_en_us": "A longer pause at the end keeps the last explanation on screen long enough for inspection.",
+          "_comment_zh_cn": "结尾处延长停顿，可以让最后的说明停留更久，方便观察。"
+        },
+        {
+          "type": "mark_finished",
+          "_comment_en_us": "Marks the scene as finished so the player and browser can treat it as a completed timeline.",
+          "_comment_zh_cn": "把场景标记为结束，方便播放器和浏览器把它视作已完成的时间线。"
+        }
       ]
     }
   ]
