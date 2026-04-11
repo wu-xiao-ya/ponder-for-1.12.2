@@ -8,9 +8,9 @@
 
 示例：
 
-- `docs/examples/json_tutorial/01_minimal_scene.json`
-- `docs/examples/json_tutorial/02_redstone_and_nbt.json`
-- `docs/examples/json_tutorial/03_gui_interaction.json`
+- [01_minimal_scene.json](../../examples/json_tutorial/01_minimal_scene.json)
+- [02_redstone_and_nbt.json](../../examples/json_tutorial/02_redstone_and_nbt.json)
+- [03_gui_interaction.json](../../examples/json_tutorial/03_gui_interaction.json)
 
 ## 当前稳定可用操作
 
@@ -59,6 +59,6 @@
 
 ## 示例
 
-- `docs/examples/json_tutorial/01_minimal_scene.json`
-- `docs/examples/json_tutorial/02_redstone_and_nbt.json`
-- `docs/examples/json_tutorial/03_gui_interaction.json`
+- [01_minimal_scene.json](../../examples/json_tutorial/01_minimal_scene.json)
+- [02_redstone_and_nbt.json](../../examples/json_tutorial/02_redstone_and_nbt.json)
+- [03_gui_interaction.json](../../examples/json_tutorial/03_gui_interaction.json)
