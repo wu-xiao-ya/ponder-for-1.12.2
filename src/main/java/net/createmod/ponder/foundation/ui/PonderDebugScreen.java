@@ -15,6 +15,7 @@ import java.util.Set;
 import javax.annotation.Nullable;
 
 import net.createmod.catnip.math.Pointing;
+import net.createmod.ponder.Ponder;
 import net.createmod.ponder.foundation.PonderIndex;
 import net.createmod.ponder.foundation.PonderScene;
 import net.createmod.ponder.foundation.Vec3iAccessor;
@@ -63,9 +64,9 @@ import org.lwjgl.opengl.GL11;
 public class PonderDebugScreen extends CompatGuiScreen {
 
     private static final ResourceLocation SHOWCASE_WIDGETS_TEXTURE =
-        new ResourceLocation("ponder", "textures/gui/widgets.png");
+        Ponder.asResource("textures/gui/widgets.png");
     private static final ResourceLocation SHOWCASE_LOGO_TEXTURE =
-        new ResourceLocation("ponder", "textures/gui/logo.png");
+        Ponder.asResource("textures/gui/logo.png");
     private static final int OUTER_MARGIN = 12;
     private static final int LINE_HEIGHT = 12;
     private static final int LEFT_PANEL_WIDTH = 170;
@@ -2600,7 +2601,7 @@ public class PonderDebugScreen extends CompatGuiScreen {
         }
         ResourceLocation id = tag.getId();
         return !PonderTag.Highlight.ALL.equals(id)
-            && !("ponder".equals(id.getNamespace()) && "not_registered".equals(id.getPath()));
+            && !(Ponder.MOD_ID.equals(id.getNamespace()) && "not_registered".equals(id.getPath()));
     }
 
     protected ItemStack createComponentStack(ResourceLocation componentId) {

@@ -69,6 +69,7 @@
   "id": "machine_gui",
   "blockGui": "thermalexpansion:machine",
   "meta": 0,
+  "nbt": { "Energy": 12000 },
   "guiWidth": 198,
   "guiHeight": 166,
   "duration": 100,
@@ -79,6 +80,7 @@
 
 `machine_gui` 是 `block_gui` 的别名。
 后续 `gui_outline_text` 可以通过 `id` 字段引用这个 GUI。
+`nbt` 会在打开 GUI 前写入沙盒 TileEntity，用来配置机器状态。
 
 ## 示例
 

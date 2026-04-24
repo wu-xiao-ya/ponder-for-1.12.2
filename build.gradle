@@ -148,7 +148,15 @@ if (!(project.ext.has('hasCraftTweakerIntegration') && project.ext.hasCraftTweak
 apply from: 'gradle/scripts/dependencies.gradle'
 
 processResources {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     rename '(.+_at.cfg)', 'META-INF/$1'
+    doLast {
+        copy {
+            from layout.buildDirectory.dir('generated/resources/blossom/main/resource')
+            into destinationDir
+            include 'mcmod.info', 'pack.mcmeta'
+        }
+    }
 }
 
 sourceSets {
@@ -158,7 +166,7 @@ sourceSets {
                 property('mod_id', propertyString('mod_id'))
                 property('mod_name', propertyString('mod_name'))
                 property('mod_version', propertyString('mod_version'))
-                property('package', "${propertyString('root_package')}.${propertyString('mod_id')}")
+                property('package', "${propertyString('root_package')}.ponder")
             }
             resources {
                 property('mod_id', propertyString('mod_id'))

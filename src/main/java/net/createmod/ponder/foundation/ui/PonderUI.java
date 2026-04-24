@@ -4,6 +4,7 @@ import java.util.List;
 
 import javax.annotation.Nullable;
 
+import net.createmod.ponder.Ponder;
 import net.createmod.ponder.foundation.PonderScene;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
@@ -183,7 +184,7 @@ public class PonderUI extends PonderDebugScreen {
 
     @Override
     protected void drawShowcaseLogo(int x, int y, float fade) {
-        mc.getTextureManager().bindTexture(new ResourceLocation("ponder", "textures/gui/logo.png"));
+        mc.getTextureManager().bindTexture(Ponder.asResource("textures/gui/logo.png"));
         net.minecraft.client.renderer.GlStateManager.enableBlend();
         net.minecraft.client.renderer.GlStateManager.color(1.0F, 1.0F, 1.0F, Math.min(1.0F, fade * 0.78F));
         drawTexturedModalRect(x, y, 0, 0, 32, 32);

@@ -48,6 +48,7 @@ Opens a real block GUI through a hidden sandbox block, captures the resulting sc
   "id": "machine_gui",
   "blockGui": "thermalexpansion:machine",
   "meta": 0,
+  "nbt": { "Energy": 12000 },
   "guiWidth": 198,
   "guiHeight": 166,
   "duration": 100,
@@ -64,6 +65,7 @@ Required fields:
 Optional fields:
 
 - `meta`: block metadata, defaults to `0`
+- `nbt`: tile entity NBT merged into the sandbox tile before opening the GUI
 - `id`: overlay id for `gui_outline_text`
 - `pointAt`, `placeNearTarget`, `independentY`, `offsetX`, `offsetY`
 

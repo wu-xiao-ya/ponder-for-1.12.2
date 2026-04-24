@@ -2,6 +2,7 @@ package net.createmod.ponder.foundation;
 
 import java.util.Objects;
 
+import net.createmod.ponder.Ponder;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
@@ -9,7 +10,7 @@ import net.minecraft.util.ResourceLocation;
 public class PonderTag {
 
     public static final class Highlight {
-        public static final ResourceLocation ALL = new ResourceLocation("ponder", "_all");
+        public static final ResourceLocation ALL = Ponder.asResource("_all");
 
         private Highlight() {
         }

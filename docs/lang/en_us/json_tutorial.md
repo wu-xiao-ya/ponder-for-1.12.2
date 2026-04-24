@@ -71,6 +71,7 @@ Use it for machine GUIs that need the mod's actual container/client screen code.
   "id": "machine_gui",
   "blockGui": "thermalexpansion:machine",
   "meta": 0,
+  "nbt": { "Energy": 12000 },
   "guiWidth": 198,
   "guiHeight": 166,
   "duration": 100,
@@ -81,6 +82,7 @@ Use it for machine GUIs that need the mod's actual container/client screen code.
 
 `machine_gui` is an alias for `block_gui`.
 The GUI can be referenced by later `gui_outline_text` operations through the `id` field.
+Use `nbt` to seed the sandbox tile entity before the GUI is opened.
 
 ## Examples
 

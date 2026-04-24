@@ -15,6 +15,7 @@
   "id": "machine_gui",
   "blockGui": "thermalexpansion:machine",
   "meta": 0,
+  "nbt": { "Energy": 12000 },
   "guiWidth": 198,
   "guiHeight": 166,
   "duration": 100

@@ -1,6 +1,7 @@
 package net.createmod.ponder.foundation.content;
 
 import net.createmod.catnip.math.Pointing;
+import net.createmod.ponder.Ponder;
 import net.createmod.ponder.api.ParticleEmitter;
 import net.createmod.ponder.api.PonderPalette;
 import net.createmod.ponder.api.element.ElementLink;
@@ -464,7 +465,7 @@ public final class DebugScenes {
     }
 
     private static ResourceLocation snapshot(String path) {
-        return new ResourceLocation("ponder", "gui_snapshot/" + path);
+        return Ponder.asResource("gui_snapshot/" + path);
     }
 
     private static AxisAlignedBB boxAround(Vec3d center, double xRadius, double yRadius, double zRadius) {

@@ -4,6 +4,7 @@ import net.createmod.catnip.math.Pointing;
 import net.createmod.ponder.api.PonderPalette;
 import net.createmod.ponder.api.element.InputElementBuilder;
 import net.createmod.ponder.api.element.TextElementBuilder;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
@@ -23,6 +24,9 @@ public interface OverlayInstructions {
 
     GuiSnapshotBuilder showBlockGui(net.minecraft.util.ResourceLocation blockId, int meta, int width, int height,
         int duration);
+
+    GuiSnapshotBuilder showBlockGui(net.minecraft.util.ResourceLocation blockId, int meta, NBTTagCompound tileNbt,
+        int width, int height, int duration);
 
     default GuiSnapshotBuilder showBlockGui(net.minecraft.util.ResourceLocation blockId, int width, int height,
         int duration) {

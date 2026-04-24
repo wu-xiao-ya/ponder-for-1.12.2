@@ -441,8 +441,9 @@ public final class ExternalPonderScenes {
 
         ResourceLocation blockId = parseLocation(operation.blockGui, "minecraft");
         int meta = Math.max(0, operation.blockMeta);
+        NBTTagCompound tileNbt = parseMatcherNbt(operation.blockNbt);
         ResourceLocation snapshotId = PonderGuiSnapshotRegistry.registerBlockGuiSnapshot(blockId, meta,
-            operation.guiWidth, operation.guiHeight);
+            tileNbt, operation.guiWidth, operation.guiHeight);
         Vec3d anchor = resolveOverlayAnchor(util, operation);
         PonderScene.OverlayEvent overlayEvent = scene.getScene().createOverlayEvent(operation.duration)
             .palette(parsePalette(operation.color))
@@ -458,7 +459,8 @@ public final class ExternalPonderScenes {
             overlayEvent.independent(operation.independentY);
         }
         scene.getScene().recordOperation("overlay.showBlockGui(" + blockId + ", meta=" + meta + ", "
-            + operation.guiWidth + "x" + operation.guiHeight + ", " + operation.duration + ")");
+            + operation.guiWidth + "x" + operation.guiHeight + (tileNbt == null ? "" : ", nbt") + ", "
+            + operation.duration + ")");
     }
 
     private static void enqueueGuiHighlightOverlay(SceneBuilder scene, SceneBuildingUtil util, SceneOperation operation) {

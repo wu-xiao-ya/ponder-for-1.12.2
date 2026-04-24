@@ -551,10 +551,17 @@ public class PonderSceneBuilder implements SceneBuilder {
 
         @Override
         public GuiSnapshotBuilder showBlockGui(ResourceLocation blockId, int meta, int width, int height, int duration) {
+            return showBlockGui(blockId, meta, null, width, height, duration);
+        }
+
+        @Override
+        public GuiSnapshotBuilder showBlockGui(ResourceLocation blockId, int meta, NBTTagCompound tileNbt, int width,
+            int height, int duration) {
             String builderId = "overlay.blockGui#" + (++overlayBuilderSequence);
-            ResourceLocation snapshotId = PonderGuiSnapshotRegistry.registerBlockGuiSnapshot(blockId, meta, width, height);
+            ResourceLocation snapshotId = PonderGuiSnapshotRegistry.registerBlockGuiSnapshot(blockId, meta, tileNbt,
+                width, height);
             scene.recordOperation("overlay.showBlockGui(" + blockId + ", meta=" + meta + ", " + width + "x"
-                + height + ", " + duration + ") -> " + builderId);
+                + height + (tileNbt == null ? "" : ", nbt") + ", " + duration + ") -> " + builderId);
             PonderScene.OverlayEvent overlayEvent = scene.createOverlayEvent(duration).guiSnapshot(snapshotId);
             return new LoggedGuiSnapshotBuilder(builderId, overlayEvent);
         }

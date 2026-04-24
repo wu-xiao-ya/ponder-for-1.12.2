@@ -44,6 +44,8 @@ public final class SandboxTriggeredBlockGuiSnapshot implements PonderGuiSnapshot
 
     private final ResourceLocation blockId;
     private final int meta;
+    @Nullable
+    private final NBTTagCompound configuredTileNbt;
 
     @Nullable
     private GuiScreen capturedGui;
@@ -58,18 +60,29 @@ public final class SandboxTriggeredBlockGuiSnapshot implements PonderGuiSnapshot
     private NBTTagCompound sandboxTileNbt;
 
     public SandboxTriggeredBlockGuiSnapshot(ResourceLocation blockId, int meta) {
+        this(blockId, meta, null);
+    }
+
+    public SandboxTriggeredBlockGuiSnapshot(ResourceLocation blockId, int meta, @Nullable NBTTagCompound configuredTileNbt) {
         this.blockId = blockId;
         this.meta = meta;
+        this.configuredTileNbt = configuredTileNbt == null ? null : configuredTileNbt.copy();
         INSTANCES.add(this);
     }
 
     public static synchronized SandboxTriggeredBlockGuiSnapshot getOrCreate(ResourceLocation blockId, int meta) {
-        String key = blockId + "#" + meta;
+        return getOrCreate(blockId, meta, null);
+    }
+
+    public static synchronized SandboxTriggeredBlockGuiSnapshot getOrCreate(ResourceLocation blockId, int meta,
+        @Nullable NBTTagCompound configuredTileNbt) {
+        String key = blockId + "#" + meta + "#" + (configuredTileNbt == null ? "" : configuredTileNbt.toString());
         SandboxTriggeredBlockGuiSnapshot existing = BY_BLOCK.get(key);
         if (existing != null) {
             return existing;
         }
-        SandboxTriggeredBlockGuiSnapshot snapshot = new SandboxTriggeredBlockGuiSnapshot(blockId, meta);
+        SandboxTriggeredBlockGuiSnapshot snapshot = new SandboxTriggeredBlockGuiSnapshot(blockId, meta,
+            configuredTileNbt);
         BY_BLOCK.put(key, snapshot);
         return snapshot;
     }
@@ -251,6 +264,31 @@ public final class SandboxTriggeredBlockGuiSnapshot implements PonderGuiSnapshot
         clearInventorySlots(tile, 16);
         if (tile.getClass().getName().startsWith("cofh.thermalexpansion.block.machine.")) {
             seedFields(tile, 0.0F);
+        }
+        applyConfiguredTileNbt(tile);
+    }
+
+    private void applyConfiguredTileNbt(TileEntity tile) {
+        if (configuredTileNbt == null) {
+            return;
+        }
+        try {
+            NBTTagCompound merged = tile.writeToNBT(new NBTTagCompound());
+            for (String key : configuredTileNbt.getKeySet()) {
+                merged.setTag(key, configuredTileNbt.getTag(key).copy());
+            }
+            merged.setString("id", TileEntity.getKey(tile.getClass()).toString());
+            merged.setInteger("x", SANDBOX_POS.getX());
+            merged.setInteger("y", SANDBOX_POS.getY());
+            merged.setInteger("z", SANDBOX_POS.getZ());
+            tile.readFromNBT(merged);
+            tile.setPos(SANDBOX_POS);
+            if (Minecraft.getMinecraft() != null && Minecraft.getMinecraft().world != null) {
+                tile.setWorld(Minecraft.getMinecraft().world);
+            }
+            tile.markDirty();
+        } catch (Throwable throwable) {
+            Ponder.LOGGER.warn("Failed to apply configured sandbox tile NBT for {}", blockId, throwable);
         }
     }
 

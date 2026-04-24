@@ -5,6 +5,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import net.createmod.ponder.Ponder;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
 
 public final class PonderGuiSnapshotRegistry {
@@ -47,11 +48,17 @@ public final class PonderGuiSnapshotRegistry {
     }
 
     public static ResourceLocation registerBlockGuiSnapshot(ResourceLocation blockId, int meta, int width, int height) {
+        return registerBlockGuiSnapshot(blockId, meta, null, width, height);
+    }
+
+    public static ResourceLocation registerBlockGuiSnapshot(ResourceLocation blockId, int meta,
+        NBTTagCompound tileNbt, int width, int height) {
+        String nbtSuffix = tileNbt == null ? "" : "/nbt_" + Integer.toHexString(tileNbt.toString().hashCode());
         ResourceLocation snapshotId = Ponder.asResource("gui_snapshot/block/" + sanitizePath(blockId.getNamespace())
             + "/" + sanitizePath(blockId.getPath()) + "/" + Math.max(0, meta) + "/"
-            + Math.max(1, width) + "x" + Math.max(1, height));
+            + Math.max(1, width) + "x" + Math.max(1, height) + nbtSuffix);
         register(snapshotId, Snapshot.liveRenderer(Math.max(1, width), Math.max(1, height), true,
-            SandboxTriggeredBlockGuiSnapshot.getOrCreate(blockId, Math.max(0, meta))));
+            SandboxTriggeredBlockGuiSnapshot.getOrCreate(blockId, Math.max(0, meta), tileNbt)));
         return snapshotId;
     }
 

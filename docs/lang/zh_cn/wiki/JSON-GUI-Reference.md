@@ -48,6 +48,7 @@
   "id": "machine_gui",
   "blockGui": "thermalexpansion:machine",
   "meta": 0,
+  "nbt": { "Energy": 12000 },
   "guiWidth": 198,
   "guiHeight": 166,
   "duration": 100,
@@ -64,6 +65,7 @@
 可选字段：
 
 - `meta`：方块 metadata，默认 `0`
+- `nbt`：打开 GUI 前合并到沙盒 TileEntity 的 NBT
 - `id`：叠层 id，供 `gui_outline_text` 引用
 - `pointAt`、`placeNearTarget`、`independentY`、`offsetX`、`offsetY`
 
