@@ -550,6 +550,16 @@ public class PonderSceneBuilder implements SceneBuilder {
         }
 
         @Override
+        public GuiSnapshotBuilder showBlockGui(ResourceLocation blockId, int meta, int width, int height, int duration) {
+            String builderId = "overlay.blockGui#" + (++overlayBuilderSequence);
+            ResourceLocation snapshotId = PonderGuiSnapshotRegistry.registerBlockGuiSnapshot(blockId, meta, width, height);
+            scene.recordOperation("overlay.showBlockGui(" + blockId + ", meta=" + meta + ", " + width + "x"
+                + height + ", " + duration + ") -> " + builderId);
+            PonderScene.OverlayEvent overlayEvent = scene.createOverlayEvent(duration).guiSnapshot(snapshotId);
+            return new LoggedGuiSnapshotBuilder(builderId, overlayEvent);
+        }
+
+        @Override
         public InputElementBuilder showControls(Vec3d sceneSpace, Pointing direction, int duration) {
             String builderId = "overlay.controls#" + (++overlayBuilderSequence);
             scene.recordOperation("overlay.showControls(" + sceneSpace + ", " + direction + ", " + duration + ") -> "

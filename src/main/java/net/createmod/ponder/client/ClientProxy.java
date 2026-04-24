@@ -22,6 +22,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.client.ClientCommandHandler;
+import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.client.settings.KeyConflictContext;
 import net.minecraftforge.common.MinecraftForge;
@@ -134,6 +135,7 @@ public class ClientProxy extends CommonProxy {
         JeiScreenCompat.tryInstall();
         Minecraft minecraft = Minecraft.getMinecraft();
         JeiScreenCompat.syncOverlaySuppression(minecraft == null ? null : minecraft.currentScreen);
+        net.createmod.ponder.foundation.ui.SandboxTriggeredBlockGuiSnapshot.onClientTickAll();
 
         if (minecraft.player == null) {
             handleTooltipClientTick(null);
@@ -161,6 +163,11 @@ public class ClientProxy extends CommonProxy {
         minecraft.displayGuiScreen(pendingDebugScreen
             ? new PonderDebugScreen(pendingComponentId, pendingSceneIndex)
             : PonderUI.showcase(pendingComponentId, pendingSceneIndex));
+    }
+
+    @SubscribeEvent
+    public void onGuiOpen(GuiOpenEvent event) {
+        net.createmod.ponder.foundation.ui.SandboxTriggeredBlockGuiSnapshot.onGuiOpenAll(event);
     }
 
     @SubscribeEvent

@@ -1,5 +1,6 @@
 ponder.ui.button.reload=重载
 ponder.ui.button.clear_tag=清除标签
+ponder.ui.button.clear_filter=清除筛选
 ponder.ui.button.done=完成
 ponder.ui.button.previous=上一幕
 ponder.ui.button.close=关闭
@@ -17,11 +18,16 @@ ponder.ui.browser.components=部件
 ponder.ui.browser.no_tags=当前没有已加入索引的标签。
 ponder.ui.browser.no_components=当前没有已注册的思索部件。
 ponder.ui.browser.no_components_for_tag=当前没有部件使用这个标签。
+ponder.ui.browser.no_components_for_search=没有部件匹配“%s”。
 ponder.ui.browser.hover.tag=%s  |  左键筛选  |  右键打开标签页
 ponder.ui.browser.hover.component=%s  |  %s 个场景
 ponder.ui.browser.filter.all=当前显示全部已注册部件
 ponder.ui.browser.filter.tag=当前按标签筛选：%s
+ponder.ui.browser.filter.search=搜索：%s
+ponder.ui.browser.search=搜索
+ponder.ui.browser.search.placeholder=输入文字筛选部件
 ponder.ui.browser.hint.active_filter=当前筛选：%s  |  再次点击相同标签可取消筛选
+ponder.ui.browser.hint.search=直接输入搜索  |  退格编辑  |  Delete 清除搜索
 ponder.ui.browser.hint.debug=如需详细运行时调试，请使用 /ponderuidebug
 
 ponder.ui.tag.title=思索标签

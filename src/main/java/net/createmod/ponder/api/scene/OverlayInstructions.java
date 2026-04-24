@@ -21,6 +21,14 @@ public interface OverlayInstructions {
 
     GuiSnapshotBuilder showGuiSnapshot(net.minecraft.util.ResourceLocation texture, int width, int height, int duration);
 
+    GuiSnapshotBuilder showBlockGui(net.minecraft.util.ResourceLocation blockId, int meta, int width, int height,
+        int duration);
+
+    default GuiSnapshotBuilder showBlockGui(net.minecraft.util.ResourceLocation blockId, int width, int height,
+        int duration) {
+        return showBlockGui(blockId, 0, width, height, duration);
+    }
+
     InputElementBuilder showControls(Vec3d sceneSpace, Pointing direction, int duration);
 
     void chaseBoundingBoxOutline(PonderPalette color, Object slot, AxisAlignedBB boundingBox, int duration);

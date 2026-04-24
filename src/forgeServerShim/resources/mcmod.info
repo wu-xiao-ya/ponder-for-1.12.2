@@ -1,0 +1,12 @@
+[{
+    "modid": "ponder",
+    "name": "ponder Forge Server Shim",
+    "version": "${mod_version}",
+    "mcversion": "1.12.2",
+    "description": "Dedicated-server compatibility shim for the Ponder 1.12.2 backport. Install this on Forge servers and the full Ponder jar on clients.",
+    "authorList": ["${mod_authors}"],
+    "credits": "Ponder 1.12.2 Forge server compatibility shim",
+    "url": "${mod_url}",
+    "updateJSON": "",
+    "logoFile": ""
+}]

@@ -54,9 +54,31 @@
 
 - `gui_texture`
 - `gui_snapshot`
+- `block_gui`
+- `machine_gui`
 - `gui_outline_text`
 - `gui_interaction`
 - `sequence`
+
+`block_gui` 会通过隐藏沙盒方块打开真实方块 GUI，并把捕获到的界面渲染到思索场景里。
+它适合展示需要机器自身 container/client screen 代码的 GUI。
+
+```json
+{
+  "type": "block_gui",
+  "id": "machine_gui",
+  "blockGui": "thermalexpansion:machine",
+  "meta": 0,
+  "guiWidth": 198,
+  "guiHeight": 166,
+  "duration": 100,
+  "pointAt": [1.5, 1.0, 1.5],
+  "placeNearTarget": true
+}
+```
+
+`machine_gui` 是 `block_gui` 的别名。
+后续 `gui_outline_text` 可以通过 `id` 字段引用这个 GUI。
 
 ## 示例
 

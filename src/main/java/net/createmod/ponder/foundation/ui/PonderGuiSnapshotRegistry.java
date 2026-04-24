@@ -1,6 +1,7 @@
 package net.createmod.ponder.foundation.ui;
 
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import net.createmod.ponder.Ponder;
@@ -45,6 +46,29 @@ public final class PonderGuiSnapshotRegistry {
         return provider == null ? null : provider.provide(currentTick);
     }
 
+    public static ResourceLocation registerBlockGuiSnapshot(ResourceLocation blockId, int meta, int width, int height) {
+        ResourceLocation snapshotId = Ponder.asResource("gui_snapshot/block/" + sanitizePath(blockId.getNamespace())
+            + "/" + sanitizePath(blockId.getPath()) + "/" + Math.max(0, meta) + "/"
+            + Math.max(1, width) + "x" + Math.max(1, height));
+        register(snapshotId, Snapshot.liveRenderer(Math.max(1, width), Math.max(1, height), true,
+            SandboxTriggeredBlockGuiSnapshot.getOrCreate(blockId, Math.max(0, meta))));
+        return snapshotId;
+    }
+
+    private static String sanitizePath(String value) {
+        String lower = value == null ? "unknown" : value.toLowerCase(Locale.ROOT);
+        StringBuilder builder = new StringBuilder(lower.length());
+        for (int i = 0; i < lower.length(); i++) {
+            char c = lower.charAt(i);
+            if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_' || c == '-' || c == '.' || c == '/') {
+                builder.append(c);
+            } else {
+                builder.append('_');
+            }
+        }
+        return builder.length() == 0 ? "unknown" : builder.toString();
+    }
+
     private static void registerDefaults() {
         registerMinecraftSnapshots();
         registerThermalPanelAliases();
@@ -71,6 +95,8 @@ public final class PonderGuiSnapshotRegistry {
             Snapshot.fullTexture(new ResourceLocation("minecraft", "textures/gui/container/furnace.png"), 176, 166));
         register(Ponder.asResource("gui_snapshot/minecraft_furnace_live"),
             Snapshot.liveRenderer(176, 166, true, EmbeddedGuiFurnaceSnapshot.INSTANCE));
+        register(Ponder.asResource("gui_snapshot/minecraft_furnace_sandbox_live"),
+            Snapshot.liveRenderer(176, 166, true, SandboxTriggeredBlockGuiSnapshot.MINECRAFT_FURNACE));
     }
 
     private static void registerThermalPanelAliases() {
@@ -131,6 +157,11 @@ public final class PonderGuiSnapshotRegistry {
         register(Ponder.asResource("gui_snapshot/te_" + machineName + "_live"),
             Snapshot.liveRenderer(TE_BASE_WIDTH, TE_BASE_HEIGHT, true,
                 new EmbeddedReflectiveGuiSnapshot(guiClass, tileClass)));
+        if ("furnace".equals(machineName)) {
+            register(Ponder.asResource("gui_snapshot/te_furnace_sandbox_live"),
+                Snapshot.liveRenderer(TE_BASE_WIDTH, TE_BASE_HEIGHT, true,
+                    SandboxTriggeredBlockGuiSnapshot.THERMAL_FURNACE));
+        }
         registerThermalPanelLive(machineName, guiClass, tileClass, "augmentTab", "augment", TE_PANEL_WIDTH,
             TE_PANEL_HEIGHT);
         registerThermalPanelLive(machineName, guiClass, tileClass, "configTab", "config", TE_PANEL_WIDTH,

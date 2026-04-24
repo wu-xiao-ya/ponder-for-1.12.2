@@ -3,6 +3,7 @@ package net.createmod.ponder.foundation.ui;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 import javax.annotation.Nullable;
@@ -13,6 +14,7 @@ import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
+import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 
 public class PonderIndexScreen extends AbstractPonderBrowserScreen {
@@ -39,6 +41,7 @@ public class PonderIndexScreen extends AbstractPonderBrowserScreen {
     private int componentScroll;
     private GuiButton clearFilterButton;
     private String hoverHint = "";
+    private String searchQuery = "";
 
     public PonderIndexScreen() {
         this(null);
@@ -55,7 +58,7 @@ public class PonderIndexScreen extends AbstractPonderBrowserScreen {
 
         clearCompatButtons();
         addFooterButton(BUTTON_RELOAD, OUTER_MARGIN, 60, tr("button.reload"));
-        clearFilterButton = addFooterButton(BUTTON_CLEAR_FILTER, OUTER_MARGIN + 64, 84, tr("button.clear_tag"));
+        clearFilterButton = addFooterButton(BUTTON_CLEAR_FILTER, OUTER_MARGIN + 64, 92, tr("button.clear_filter"));
         addFooterButton(BUTTON_DONE, width - OUTER_MARGIN - 70, 70, tr("button.done"));
         updateButtonState();
     }
@@ -80,10 +83,37 @@ public class PonderIndexScreen extends AbstractPonderBrowserScreen {
     private void rebuildFilteredComponents() {
         filteredComponents.clear();
         for (PonderComponentEntry entry : allComponents) {
-            if (selectedTagId == null || containsTag(entry.tags, selectedTagId)) {
+            if ((selectedTagId == null || containsTag(entry.tags, selectedTagId)) && matchesSearch(entry)) {
                 filteredComponents.add(entry);
             }
         }
+    }
+
+    private boolean matchesSearch(PonderComponentEntry entry) {
+        String query = normalizeSearch(searchQuery);
+        if (query.isEmpty()) {
+            return true;
+        }
+        if (normalizeSearch(entry.label).contains(query)) {
+            return true;
+        }
+        if (normalizeSearch(entry.componentId.toString()).contains(query)) {
+            return true;
+        }
+        for (PonderTag tag : entry.tags) {
+            if (normalizeSearch(tag.getTitle()).contains(query) || normalizeSearch(tag.getId().toString()).contains(query)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static String normalizeSearch(String text) {
+        return text == null ? "" : text.toLowerCase(Locale.ROOT).trim();
+    }
+
+    private static boolean isSearchCharacter(char typedChar) {
+        return typedChar >= 32 && typedChar != 127;
     }
 
     private boolean containsTag(Set<PonderTag> tags, ResourceLocation tagId) {
@@ -102,12 +132,42 @@ public class PonderIndexScreen extends AbstractPonderBrowserScreen {
             reloadRegistryView();
         } else if (button.id == BUTTON_CLEAR_FILTER) {
             selectedTagId = null;
+            searchQuery = "";
             rebuildFilteredComponents();
             componentScroll = 0;
             updateButtonState();
         } else if (button.id == BUTTON_DONE) {
             closeToParent();
         }
+    }
+
+    @Override
+    protected void keyTyped(char typedChar, int keyCode) throws IOException {
+        if (keyCode == Keyboard.KEY_BACK && !searchQuery.isEmpty()) {
+            searchQuery = searchQuery.substring(0, searchQuery.length() - 1);
+            rebuildFilteredComponents();
+            componentScroll = 0;
+            updateButtonState();
+            return;
+        }
+
+        if (keyCode == Keyboard.KEY_DELETE && !searchQuery.isEmpty()) {
+            searchQuery = "";
+            rebuildFilteredComponents();
+            componentScroll = 0;
+            updateButtonState();
+            return;
+        }
+
+        if (isSearchCharacter(typedChar) && searchQuery.length() < 64) {
+            searchQuery += typedChar;
+            rebuildFilteredComponents();
+            componentScroll = 0;
+            updateButtonState();
+            return;
+        }
+
+        super.keyTyped(typedChar, keyCode);
     }
 
     @Override
@@ -189,9 +249,25 @@ public class PonderIndexScreen extends AbstractPonderBrowserScreen {
 
         String registryStats = tr("browser.stats", Integer.valueOf(listedTags.size()),
             Integer.valueOf(filteredComponents.size()));
+        drawSearchBox(rightX + 10, topY + 22, rightWidth - 20);
         drawString(fontRenderer, registryStats, rightX + 10, topY + 44, COLOR_TEXT_MUTED);
         drawSectionLabel(tr("browser.tags"), leftX + 10, topY + 56);
         drawSectionLabel(tr("browser.components"), rightX + 10, topY + 56);
+    }
+
+    private void drawSearchBox(int x, int y, int width) {
+        drawRect(x, y, x + width, y + 16, COLOR_SLOT_BORDER);
+        drawRect(x + 1, y + 1, x + width - 1, y + 15, COLOR_SLOT_FILL);
+        String label = searchQuery.isEmpty() ? tr("browser.search.placeholder") : searchQuery;
+        int color = searchQuery.isEmpty() ? COLOR_TEXT_DIM : COLOR_TEXT;
+        drawString(fontRenderer, tr("browser.search"), x + 5, y + 4, COLOR_TEXT_MUTED);
+        int textX = x + 56;
+        int textWidth = width - 64;
+        drawString(fontRenderer, fontRenderer.trimStringToWidth(label, textWidth), textX, y + 4, color);
+        if (!searchQuery.isEmpty() && (System.currentTimeMillis() / 500L) % 2L == 0L) {
+            int cursorX = textX + fontRenderer.getStringWidth(fontRenderer.trimStringToWidth(searchQuery, textWidth));
+            drawRect(cursorX, y + 3, cursorX + 1, y + 13, COLOR_ACCENT);
+        }
     }
 
     private void drawTagsPanel(int mouseX, int mouseY, int x, int y, int panelWidth, int panelHeight) {
@@ -242,7 +318,9 @@ public class PonderIndexScreen extends AbstractPonderBrowserScreen {
         int endIndex = Math.min(filteredComponents.size(), startIndex + maxRows * columns);
 
         if (filteredComponents.isEmpty()) {
-            String label = selectedTagId == null ? tr("browser.no_components") : tr("browser.no_components_for_tag");
+            String label = searchQuery.isEmpty()
+                ? (selectedTagId == null ? tr("browser.no_components") : tr("browser.no_components_for_tag"))
+                : tr("browser.no_components_for_search", searchQuery);
             drawString(fontRenderer, label, innerX, innerY, COLOR_TEXT_DIM);
             return;
         }
@@ -267,6 +345,9 @@ public class PonderIndexScreen extends AbstractPonderBrowserScreen {
         int textY = y + panelHeight - 16;
         String filterLabel = selectedTagId == null ? tr("browser.filter.all")
             : tr("browser.filter.tag", getSelectedTag().getTitle());
+        if (!searchQuery.isEmpty()) {
+            filterLabel += "  |  " + tr("browser.filter.search", searchQuery);
+        }
         drawString(fontRenderer, fontRenderer.trimStringToWidth(filterLabel, panelWidth - 24), x + 12, textY,
             COLOR_TEXT_MUTED);
     }
@@ -278,7 +359,7 @@ public class PonderIndexScreen extends AbstractPonderBrowserScreen {
         if (selectedTagId != null) {
             return tr("browser.hint.active_filter", getSelectedTag().getTitle());
         }
-        return tr("browser.hint.debug");
+        return searchQuery.isEmpty() ? tr("browser.hint.debug") : tr("browser.hint.search");
     }
 
     private int getMaxTagScroll() {
@@ -332,7 +413,7 @@ public class PonderIndexScreen extends AbstractPonderBrowserScreen {
 
     private void updateButtonState() {
         if (clearFilterButton != null) {
-            clearFilterButton.enabled = selectedTagId != null;
+            clearFilterButton.enabled = selectedTagId != null || !searchQuery.isEmpty();
         }
     }
 

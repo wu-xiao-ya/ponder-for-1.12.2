@@ -38,6 +38,7 @@ import net.createmod.ponder.api.scene.SceneBuildingUtil;
 import net.createmod.ponder.api.scene.Selection;
 import net.createmod.ponder.foundation.PonderScene;
 import net.createmod.ponder.foundation.registration.PonderComponentMatcher;
+import net.createmod.ponder.foundation.ui.PonderGuiSnapshotRegistry;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.item.Item;
@@ -307,6 +308,10 @@ public final class ExternalPonderScenes {
             enqueueGuiSnapshotOverlay(scene, util, operation);
             return;
         }
+        if ("block_gui".equals(type) || "machine_gui".equals(type)) {
+            enqueueBlockGuiOverlay(scene, util, operation);
+            return;
+        }
         if ("gui_outline_text".equals(type)) {
             enqueueGuiHighlightOverlay(scene, util, operation);
             return;
@@ -424,6 +429,36 @@ public final class ExternalPonderScenes {
         }
         scene.getScene().recordOperation("overlay.showGuiSnapshot(" + textureLocation + ", " + width + "x" + height
             + ", " + operation.duration + ")");
+    }
+
+    private static void enqueueBlockGuiOverlay(SceneBuilder scene, SceneBuildingUtil util, SceneOperation operation) {
+        if (operation.blockGui == null || operation.blockGui.trim().isEmpty()) {
+            throw new IllegalArgumentException("block_gui operation requires blockGui");
+        }
+        if (operation.guiWidth <= 0 || operation.guiHeight <= 0) {
+            throw new IllegalArgumentException("block_gui operation requires guiWidth and guiHeight");
+        }
+
+        ResourceLocation blockId = parseLocation(operation.blockGui, "minecraft");
+        int meta = Math.max(0, operation.blockMeta);
+        ResourceLocation snapshotId = PonderGuiSnapshotRegistry.registerBlockGuiSnapshot(blockId, meta,
+            operation.guiWidth, operation.guiHeight);
+        Vec3d anchor = resolveOverlayAnchor(util, operation);
+        PonderScene.OverlayEvent overlayEvent = scene.getScene().createOverlayEvent(operation.duration)
+            .palette(parsePalette(operation.color))
+            .connectorVisible(operation.connectorVisible)
+            .overlayId(operation.overlayId)
+            .placeNearTarget(operation.placeNearTarget)
+            .offset(operation.offsetX, Math.round(operation.offsetY))
+            .guiSnapshot(snapshotId);
+        if (anchor != null) {
+            overlayEvent.pointAt(anchor);
+        }
+        if (operation.independentY != Integer.MIN_VALUE) {
+            overlayEvent.independent(operation.independentY);
+        }
+        scene.getScene().recordOperation("overlay.showBlockGui(" + blockId + ", meta=" + meta + ", "
+            + operation.guiWidth + "x" + operation.guiHeight + ", " + operation.duration + ")");
     }
 
     private static void enqueueGuiHighlightOverlay(SceneBuilder scene, SceneBuildingUtil util, SceneOperation operation) {
@@ -803,6 +838,7 @@ public final class ExternalPonderScenes {
         operation.overlayId = readOptionalString(object, "id");
         operation.parentOverlayId = readOptionalString(object, "gui");
         operation.parentGuiId = readOptionalString(object, "parentGui");
+        operation.blockGui = readOptionalString(object, "blockGui");
         operation.blockState = readOptionalString(object, "state");
         operation.blockMeta = object.has("meta") ? readInt(object, "meta", 0) : -1;
         operation.blockNbt = readNbtPayload(object.get("nbt"));
@@ -1505,6 +1541,7 @@ public final class ExternalPonderScenes {
         private String overlayId;
         private String parentOverlayId;
         private String parentGuiId;
+        private String blockGui;
         private String blockState;
         private int blockMeta = -1;
         private String blockNbt;

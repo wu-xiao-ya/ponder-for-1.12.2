@@ -1,5 +1,6 @@
 ponder.ui.button.reload=Reload
 ponder.ui.button.clear_tag=Clear Tag
+ponder.ui.button.clear_filter=Clear Filter
 ponder.ui.button.done=Done
 ponder.ui.button.previous=Previous
 ponder.ui.button.close=Close
@@ -17,11 +18,16 @@ ponder.ui.browser.components=Components
 ponder.ui.browser.no_tags=No indexed tags registered.
 ponder.ui.browser.no_components=No Ponder components registered.
 ponder.ui.browser.no_components_for_tag=No components use this tag yet.
+ponder.ui.browser.no_components_for_search=No components match "%s".
 ponder.ui.browser.hover.tag=%s  |  Left click: filter  |  Right click: open tag page
 ponder.ui.browser.hover.component=%s  |  %s scenes
 ponder.ui.browser.filter.all=Showing every registered component
 ponder.ui.browser.filter.tag=Filtered by tag: %s
+ponder.ui.browser.filter.search=Search: %s
+ponder.ui.browser.search=Search
+ponder.ui.browser.search.placeholder=type to filter components
 ponder.ui.browser.hint.active_filter=Active filter: %s  |  Click the same tag again to clear it
+ponder.ui.browser.hint.search=Type to search  |  Backspace edits  |  Delete clears search
 ponder.ui.browser.hint.debug=Use /ponderuidebug for the detailed runtime viewer
 
 ponder.ui.tag.title=Ponder Tag

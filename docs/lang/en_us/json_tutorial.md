@@ -56,9 +56,31 @@ Examples:
 
 - `gui_texture`
 - `gui_snapshot`
+- `block_gui`
+- `machine_gui`
 - `gui_outline_text`
 - `gui_interaction`
 - `sequence`
+
+`block_gui` opens a real block GUI through a hidden sandbox block and renders the captured screen inside Ponder.
+Use it for machine GUIs that need the mod's actual container/client screen code.
+
+```json
+{
+  "type": "block_gui",
+  "id": "machine_gui",
+  "blockGui": "thermalexpansion:machine",
+  "meta": 0,
+  "guiWidth": 198,
+  "guiHeight": 166,
+  "duration": 100,
+  "pointAt": [1.5, 1.0, 1.5],
+  "placeNearTarget": true
+}
+```
+
+`machine_gui` is an alias for `block_gui`.
+The GUI can be referenced by later `gui_outline_text` operations through the `id` field.
 
 ## Examples
 

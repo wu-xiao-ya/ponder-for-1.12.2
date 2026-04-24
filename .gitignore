@@ -21,3 +21,9 @@ build
 # other
 eclipse
 run
+crl_ponder/
+temp_*/
+temp_*.log
+hs_err_pid*.log
+*.log
+AGENTS.md

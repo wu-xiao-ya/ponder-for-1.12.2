@@ -13,9 +13,10 @@ modding environment.
 | Item | Value |
 | --- | --- |
 | Minecraft | `1.12.2` |
-| Runtime target | `Cleanroom/Forge` |
+| Runtime target | `Cleanroom / CRL` |
 | Current release line | `0.1.0-beta` |
 | Current state | usable, still under stabilization |
+| Compatibility target | not stock Forge 1.12.2 |
 
 ## What This Repository Already Has
 
@@ -58,9 +59,7 @@ progress rather than feature parity with current upstream.
 
 ### Wiki
 
-- [GitHub Wiki Home](https://github.com/wu-xiao-ya/ponder-for-1.12.2/wiki)
-- [English Wiki](https://github.com/wu-xiao-ya/ponder-for-1.12.2/wiki/en_us-Home)
-- [中文 Wiki](https://github.com/wu-xiao-ya/ponder-for-1.12.2/wiki/zh_cn-Home)
+- [GitHub Wiki / Tutorials](https://github.com/wu-xiao-ya/ponder-for-1.12.2/wiki)
 
 ## Build
 
@@ -71,7 +70,11 @@ Typical commands:
 ```bat
 gradlew.bat compileJava
 gradlew.bat reobfJar
+gradlew.bat forgeServerShimJar
 ```
+
+`forgeServerShimJar` builds a stock Forge 1.12.2 dedicated-server compatibility jar.
+See [Forge server shim](docs/forge_server_shim.md).
 
 Detailed setup notes:
 
