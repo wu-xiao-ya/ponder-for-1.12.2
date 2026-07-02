@@ -593,6 +593,8 @@ CI 整改候选：
 - 缓存路径覆盖 Unimined Minecraft 1.12.2 与 Gradle modules-2
 - 缓存键包含 `minecraft-1.12.2`、`Cleanroom-FG3`、`0.5.6-alpha`
 - 保留 JDK 25、Gradle cache、三次 Gradle retry
+- `gradle/scripts/dependencies.gradle` 在 CI 中优先使用 `mavenLocal()`
+- 远程 Gradle 首轮失败后会尝试从 Unimined cache 生成 `net.minecraft:minecraft:1.12.2` 的本地 Maven 条目，再进入下一轮 retry
 
 优先整改：
 

@@ -3,6 +3,9 @@ apply from: 'gradle/scripts/helpers.gradle'
 repositories {
     // Other repositories described by default:
     // CleanroomMC: https://maven.cleanroommc.com
+    if ('true'.equalsIgnoreCase(System.getenv('CI'))) {
+        mavenLocal()
+    }
     maven {
         name = 'CurseMaven'
         url = 'https://cursemaven.com'

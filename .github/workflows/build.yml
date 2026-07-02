@@ -41,12 +41,39 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
+          function Repair-MinecraftMavenLocal {
+            $uniminedRoot = Join-Path $env:USERPROFILE ".gradle\caches\unimined\net\minecraft\minecraft\1.12.2\Cleanroom-FG3\0.5.6-alpha"
+            if (-not (Test-Path $uniminedRoot)) {
+              Write-Host "Unimined Cleanroom cache is not present yet."
+              return
+            }
+            $sourceJar = Get-ChildItem -LiteralPath $uniminedRoot -Recurse -File -Filter "minecraft-1.12.2-official.jar" |
+              Select-Object -First 1
+            if ($null -eq $sourceJar) {
+              Write-Host "minecraft-1.12.2-official.jar is not present in Unimined cache yet."
+              return
+            }
+            $targetDir = Join-Path $env:USERPROFILE ".m2\repository\net\minecraft\minecraft\1.12.2"
+            New-Item -ItemType Directory -Force -Path $targetDir | Out-Null
+            Copy-Item -LiteralPath $sourceJar.FullName -Destination (Join-Path $targetDir "minecraft-1.12.2.jar") -Force
+            @(
+              '<project>',
+              '  <modelVersion>4.0.0</modelVersion>',
+              '  <groupId>net.minecraft</groupId>',
+              '  <artifactId>minecraft</artifactId>',
+              '  <version>1.12.2</version>',
+              '</project>'
+            ) | Set-Content -Path (Join-Path $targetDir "minecraft-1.12.2.pom") -Encoding UTF8
+            Write-Host "Seeded mavenLocal with $($sourceJar.FullName)"
+          }
+          Repair-MinecraftMavenLocal
           for ($attempt = 1; $attempt -le 3; $attempt++) {
             Write-Host "Gradle attempt $attempt/3"
             & .\gradlew.bat compileJava forgeServerShimJar --stacktrace
             if ($LASTEXITCODE -eq 0) {
               exit 0
             }
+            Repair-MinecraftMavenLocal
             if ($attempt -lt 3) {
               Start-Sleep -Seconds (30 * $attempt)
             }
