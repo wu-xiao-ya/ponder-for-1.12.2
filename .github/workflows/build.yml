@@ -27,7 +27,20 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Compile and build server shim
-        run: ./gradlew.bat compileJava forgeServerShimJar --stacktrace
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          for ($attempt = 1; $attempt -le 3; $attempt++) {
+            Write-Host "Gradle attempt $attempt/3"
+            & .\gradlew.bat compileJava forgeServerShimJar --stacktrace
+            if ($LASTEXITCODE -eq 0) {
+              exit 0
+            }
+            if ($attempt -lt 3) {
+              Start-Sleep -Seconds (30 * $attempt)
+            }
+          }
+          exit $LASTEXITCODE
 
       - name: Upload Forge server shim
         uses: actions/upload-artifact@v4
