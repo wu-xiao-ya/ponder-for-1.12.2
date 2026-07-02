@@ -9,76 +9,11 @@ import java.util.Map;
 import javax.annotation.Nullable;
 
 import net.createmod.ponder.foundation.PonderScene;
-import net.createmod.ponder.foundation.ui.PonderScenePreview.PreviewBounds;
+import net.createmod.ponder.foundation.ui.projection.CaptionPlacement;
+import net.createmod.ponder.foundation.ui.projection.GuiHighlightPlacement;
+import net.createmod.ponder.foundation.ui.projection.GuiOverlayPlacement;
+import net.createmod.ponder.foundation.ui.projection.SceneProjectionContext;
 import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
-
-final class CaptionPlacement {
-    final int x;
-    final int y;
-    final SpeechRenderer.SpeechPointing pointing;
-
-    CaptionPlacement(int x, int y, SpeechRenderer.SpeechPointing pointing) {
-        this.x = x;
-        this.y = y;
-        this.pointing = pointing;
-    }
-}
-
-final class GuiOverlayPlacement {
-    final PonderScene.OverlayEvent overlayEvent;
-    final SpeechRenderer.Point targetPoint;
-    final boolean aboveTarget;
-    final int panelX;
-    final int panelY;
-    final int panelWidth;
-    final int panelHeight;
-    final int drawX;
-    final int drawY;
-    final int drawWidth;
-    final int drawHeight;
-
-    GuiOverlayPlacement(PonderScene.OverlayEvent overlayEvent, SpeechRenderer.Point targetPoint, boolean aboveTarget,
-        int panelX, int panelY, int panelWidth, int panelHeight, int drawX, int drawY, int drawWidth,
-        int drawHeight) {
-        this.overlayEvent = overlayEvent;
-        this.targetPoint = targetPoint;
-        this.aboveTarget = aboveTarget;
-        this.panelX = panelX;
-        this.panelY = panelY;
-        this.panelWidth = panelWidth;
-        this.panelHeight = panelHeight;
-        this.drawX = drawX;
-        this.drawY = drawY;
-        this.drawWidth = drawWidth;
-        this.drawHeight = drawHeight;
-    }
-}
-
-final class GuiHighlightPlacement {
-    final PonderScene.OverlayEvent overlayEvent;
-    final int rectX;
-    final int rectY;
-    final int rectWidth;
-    final int rectHeight;
-    final SpeechRenderer.Point targetPoint;
-
-    GuiHighlightPlacement(PonderScene.OverlayEvent overlayEvent, int rectX, int rectY, int rectWidth,
-        int rectHeight, SpeechRenderer.Point targetPoint) {
-        this.overlayEvent = overlayEvent;
-        this.rectX = rectX;
-        this.rectY = rectY;
-        this.rectWidth = rectWidth;
-        this.rectHeight = rectHeight;
-        this.targetPoint = targetPoint;
-    }
-}
-
-@FunctionalInterface
-interface ScenePointProjector {
-    @Nullable
-    SpeechRenderer.Point project(PonderScene scene, PreviewBounds bounds, PreviewLayout layout, float renderTick, Vec3d point);
-}
 
 public final class PonderOverlayHelper {
 
@@ -105,27 +40,26 @@ public final class PonderOverlayHelper {
         return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
     }
 
-    public static SpeechRenderer.Point resolveCaptionTargetPoint(PonderScene scene, PreviewLayout layout, float currentTick,
-        PonderScene.OverlayEvent overlayEvent, List<GuiHighlightPlacement> guiHighlightPlacements,
-        ScenePointProjector projector) {
-        if (scene == null || overlayEvent == null || layout == null) {
+    @Nullable
+    public static SpeechRenderer.Point resolveCaptionTargetPoint(SceneProjectionContext context,
+        PonderScene.OverlayEvent overlayEvent, List<GuiHighlightPlacement> guiHighlightPlacements) {
+        if (context == null || overlayEvent == null) {
             return null;
         }
 
-        if (overlayEvent.getType() == PonderScene.OverlayEventType.GUI_HIGHLIGHT) {
+        if (overlayEvent.getType() == PonderScene.OverlayEventType.GUI_HIGHLIGHT && guiHighlightPlacements != null) {
             for (GuiHighlightPlacement placement : guiHighlightPlacements) {
-                if (placement.overlayEvent == overlayEvent) {
-                    return placement.targetPoint;
+                if (placement.overlayEvent() == overlayEvent) {
+                    return placement.targetPoint();
                 }
             }
         }
 
-        return overlayEvent.getPointAt() == null ? null
-            : projector.project(scene, PonderScenePreview.computeBounds(scene), layout, currentTick,
-                overlayEvent.getPointAt());
+        return context.project(overlayEvent.getPointAt());
     }
 
-    public static SpeechRenderer.SpeechPointing choosePointing(int boxX, int boxY, int boxWidth, int boxHeight, SpeechRenderer.Point targetPoint) {
+    public static SpeechRenderer.SpeechPointing choosePointing(int boxX, int boxY, int boxWidth, int boxHeight,
+        SpeechRenderer.Point targetPoint) {
         if (targetPoint == null) {
             return SpeechRenderer.SpeechPointing.NONE;
         }
@@ -154,12 +88,12 @@ public final class PonderOverlayHelper {
         int bottom = Integer.MIN_VALUE;
         boolean intersects = false;
         for (GuiOverlayPlacement placement : placements) {
-            left = Math.min(left, placement.panelX);
-            top = Math.min(top, placement.panelY);
-            right = Math.max(right, placement.panelX + placement.panelWidth);
-            bottom = Math.max(bottom, placement.panelY + placement.panelHeight);
-            if (rectsIntersect(boxX, boxY, boxWidth, boxHeight, placement.panelX, placement.panelY, placement.panelWidth,
-                placement.panelHeight)) {
+            left = Math.min(left, placement.panelX());
+            top = Math.min(top, placement.panelY());
+            right = Math.max(right, placement.panelX() + placement.panelWidth());
+            bottom = Math.max(bottom, placement.panelY() + placement.panelHeight());
+            if (rectsIntersect(boxX, boxY, boxWidth, boxHeight, placement.panelX(), placement.panelY(),
+                placement.panelWidth(), placement.panelHeight())) {
                 intersects = true;
             }
         }
@@ -185,13 +119,14 @@ public final class PonderOverlayHelper {
 
     // -- overlay placement computation -- //
 
-    public static List<GuiOverlayPlacement> computeActiveGuiOverlayPlacements(PonderScene scene, PreviewLayout layout,
-        float currentTick, ScenePointProjector projector) {
-        if (scene == null || layout == null) {
+    public static List<GuiOverlayPlacement> computeActiveGuiOverlayPlacements(SceneProjectionContext context) {
+        if (context == null || context.scene() == null || context.layout() == null) {
             return Collections.emptyList();
         }
 
-        PreviewBounds bounds = PonderScenePreview.computeBounds(scene);
+        PonderScene scene = context.scene();
+        PreviewLayout layout = context.layout();
+        float currentTick = context.renderTick();
         List<GuiOverlayPlacement> placements = new ArrayList<GuiOverlayPlacement>();
         Map<String, GuiOverlayPlacement> placementsById = new LinkedHashMap<String, GuiOverlayPlacement>();
         for (PonderScene.OverlayEvent overlayEvent : scene.getOverlayEvents()) {
@@ -213,11 +148,10 @@ public final class PonderOverlayHelper {
                 continue;
             }
 
-            GuiOverlayPlacement placement =
-                computeGuiOverlayPlacement(scene, bounds, layout, currentTick, overlayEvent, placementsById, projector);
+            GuiOverlayPlacement placement = computeGuiOverlayPlacement(context, overlayEvent, placementsById);
             if (placement != null) {
                 placements.add(placement);
-                String overlayId = placement.overlayEvent.getOverlayId();
+                String overlayId = placement.overlayEvent().getOverlayId();
                 if (overlayId != null && !overlayId.trim().isEmpty()) {
                     placementsById.put(overlayId, placement);
                 }
@@ -226,9 +160,9 @@ public final class PonderOverlayHelper {
         return placements;
     }
 
-    private static GuiOverlayPlacement computeGuiOverlayPlacement(PonderScene scene, PreviewBounds bounds, PreviewLayout layout,
-        float currentTick, PonderScene.OverlayEvent overlayEvent, Map<String, GuiOverlayPlacement> placementsById,
-        ScenePointProjector projector) {
+    private static GuiOverlayPlacement computeGuiOverlayPlacement(SceneProjectionContext context,
+        PonderScene.OverlayEvent overlayEvent, Map<String, GuiOverlayPlacement> placementsById) {
+        PreviewLayout layout = context.layout();
         int logicalWidth = Math.max(1, overlayEvent.getRegionWidth());
         int logicalHeight = Math.max(1, overlayEvent.getRegionHeight());
         int drawWidth = Math.max(1, overlayEvent.getDisplayWidth());
@@ -236,8 +170,7 @@ public final class PonderOverlayHelper {
         int padding = overlayEvent.isFramed() ? 4 : 0;
         int panelWidth = drawWidth + padding * 2;
         int panelHeight = drawHeight + padding * 2;
-        SpeechRenderer.Point targetPoint = overlayEvent.getPointAt() == null ? null
-            : projector.project(scene, bounds, layout, currentTick, overlayEvent.getPointAt());
+        SpeechRenderer.Point targetPoint = context.project(overlayEvent.getPointAt());
         boolean aboveTarget = true;
 
         String parentOverlayId = overlayEvent.getParentOverlayId();
@@ -248,9 +181,9 @@ public final class PonderOverlayHelper {
             }
 
             float parentScaleX =
-                parentPlacement.drawWidth / (float) Math.max(1, parentPlacement.overlayEvent.getRegionWidth());
+                parentPlacement.drawWidth() / (float) Math.max(1, parentPlacement.overlayEvent().getRegionWidth());
             float parentScaleY =
-                parentPlacement.drawHeight / (float) Math.max(1, parentPlacement.overlayEvent.getRegionHeight());
+                parentPlacement.drawHeight() / (float) Math.max(1, parentPlacement.overlayEvent().getRegionHeight());
             if (overlayEvent.isScaleToParent()) {
                 drawWidth = Math.max(1, Math.round(logicalWidth * parentScaleX));
                 drawHeight = Math.max(1, Math.round(logicalHeight * parentScaleY));
@@ -258,9 +191,9 @@ public final class PonderOverlayHelper {
             panelWidth = drawWidth + padding * 2;
             panelHeight = drawHeight + padding * 2;
 
-            int drawX = parentPlacement.drawX + Math.round(overlayEvent.getGuiX() * parentScaleX)
+            int drawX = parentPlacement.drawX() + Math.round(overlayEvent.getGuiX() * parentScaleX)
                 + overlayEvent.getOffsetX();
-            int drawY = parentPlacement.drawY + Math.round(overlayEvent.getGuiY() * parentScaleY)
+            int drawY = parentPlacement.drawY() + Math.round(overlayEvent.getGuiY() * parentScaleY)
                 + overlayEvent.getOffsetY();
             int panelX = MathHelper.clamp(drawX - padding, layout.originX + 2,
                 layout.originX + layout.width - panelWidth - 2);
@@ -268,7 +201,8 @@ public final class PonderOverlayHelper {
                 layout.originY + layout.height - panelHeight - 2);
             int finalDrawX = panelX + padding;
             int finalDrawY = panelY + padding;
-            SpeechRenderer.Point finalTargetPoint = new SpeechRenderer.Point(finalDrawX + drawWidth / 2, finalDrawY + drawHeight / 2);
+            SpeechRenderer.Point finalTargetPoint = new SpeechRenderer.Point(finalDrawX + drawWidth / 2,
+                finalDrawY + drawHeight / 2);
             return new GuiOverlayPlacement(overlayEvent, finalTargetPoint, false, panelX, panelY, panelWidth,
                 panelHeight, finalDrawX, finalDrawY, drawWidth, drawHeight);
         }
@@ -307,15 +241,17 @@ public final class PonderOverlayHelper {
 
     // -- highlight placement computation -- //
 
-    public static List<GuiHighlightPlacement> computeActiveGuiHighlightPlacements(PonderScene scene, PreviewLayout layout,
-        float currentTick, List<GuiOverlayPlacement> guiPlacements) {
-        if (scene == null || layout == null || guiPlacements == null || guiPlacements.isEmpty()) {
+    public static List<GuiHighlightPlacement> computeActiveGuiHighlightPlacements(SceneProjectionContext context,
+        List<GuiOverlayPlacement> guiPlacements) {
+        if (context == null || context.scene() == null || guiPlacements == null || guiPlacements.isEmpty()) {
             return Collections.emptyList();
         }
 
+        PonderScene scene = context.scene();
+        float currentTick = context.renderTick();
         Map<String, GuiOverlayPlacement> guiPlacementById = new LinkedHashMap<String, GuiOverlayPlacement>();
         for (GuiOverlayPlacement placement : guiPlacements) {
-            String overlayId = placement.overlayEvent.getOverlayId();
+            String overlayId = placement.overlayEvent().getOverlayId();
             if (overlayId != null && !overlayId.trim().isEmpty()) {
                 guiPlacementById.put(overlayId, placement);
             }
@@ -349,14 +285,14 @@ public final class PonderOverlayHelper {
 
     private static GuiHighlightPlacement computeGuiHighlightPlacement(GuiOverlayPlacement parentPlacement,
         PonderScene.OverlayEvent overlayEvent) {
-        float scaleX = parentPlacement.drawWidth / (float) Math.max(1, parentPlacement.overlayEvent.getRegionWidth());
-        float scaleY = parentPlacement.drawHeight / (float) Math.max(1, parentPlacement.overlayEvent.getRegionHeight());
-        int rectX = parentPlacement.drawX + Math.round(overlayEvent.getGuiX() * scaleX);
-        int rectY = parentPlacement.drawY + Math.round(overlayEvent.getGuiY() * scaleY);
+        float scaleX = parentPlacement.drawWidth() / (float) Math.max(1, parentPlacement.overlayEvent().getRegionWidth());
+        float scaleY = parentPlacement.drawHeight() / (float) Math.max(1, parentPlacement.overlayEvent().getRegionHeight());
+        int rectX = parentPlacement.drawX() + Math.round(overlayEvent.getGuiX() * scaleX);
+        int rectY = parentPlacement.drawY() + Math.round(overlayEvent.getGuiY() * scaleY);
         int rectWidth = Math.max(2, Math.round(overlayEvent.getGuiWidth() * scaleX));
         int rectHeight = Math.max(2, Math.round(overlayEvent.getGuiHeight() * scaleY));
-        int maxX = parentPlacement.drawX + parentPlacement.drawWidth;
-        int maxY = parentPlacement.drawY + parentPlacement.drawHeight;
+        int maxX = parentPlacement.drawX() + parentPlacement.drawWidth();
+        int maxY = parentPlacement.drawY() + parentPlacement.drawHeight();
         rectWidth = Math.min(rectWidth, maxX - rectX);
         rectHeight = Math.min(rectHeight, maxY - rectY);
         if (rectWidth < 2 || rectHeight < 2) {

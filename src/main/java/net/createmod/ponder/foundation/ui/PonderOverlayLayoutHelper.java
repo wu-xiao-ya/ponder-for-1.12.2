@@ -4,6 +4,8 @@ import javax.annotation.Nullable;
 
 import net.createmod.ponder.foundation.PonderScene;
 import net.createmod.ponder.foundation.ui.PonderScenePreview.PreviewBounds;
+import net.createmod.ponder.foundation.ui.projection.SceneBounds;
+import net.createmod.ponder.foundation.ui.projection.SceneProjectionContext;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
@@ -71,7 +73,18 @@ public final class PonderOverlayLayoutHelper {
         return baseScale * previewCameraState.getPreviewZoom() * Math.max(0.35F, scene.getScaleFactor());
     }
 
-   @Nullable
+    @Nullable
+    public SpeechRenderer.Point projectScenePoint(SceneProjectionContext context, Vec3d point) {
+        if (context == null) {
+            return null;
+        }
+        SceneBounds sceneBounds = context.sceneBounds();
+        PreviewBounds bounds = new PreviewBounds(sceneBounds.minX(), sceneBounds.maxX(), sceneBounds.minZ(),
+            sceneBounds.maxZ(), sceneBounds.maxY(), sceneBounds.minY());
+        return projectScenePoint(context.scene(), bounds, context.layout(), context.renderTick(), point);
+    }
+
+    @Nullable
     public SpeechRenderer.Point projectScenePoint(PonderScene scene, PreviewBounds bounds, PreviewLayout layout,
         float renderTick, Vec3d point) {
         if (point == null) {

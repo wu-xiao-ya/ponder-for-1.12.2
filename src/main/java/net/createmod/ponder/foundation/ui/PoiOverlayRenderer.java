@@ -28,9 +28,7 @@ final class PoiOverlayRenderer {
 
         int accent = draw.withAlpha(PonderPalette.RED.getColor(), fade * 235.0F);
         int fill = draw.withAlpha(PonderPalette.RED.getColor(), fade * 72.0F);
-        draw.fillRect(target.x - 5, target.y - 1, target.x + 6, target.y + 1, accent);
-        draw.fillRect(target.x - 1, target.y - 5, target.x + 1, target.y + 6, accent);
-        draw.fillRect(target.x - 2, target.y - 2, target.x + 3, target.y + 3, fill);
+        draw.drawCrossMarker(target.x, target.y, 5, 2, accent, fill);
         draw.drawString("POI", target.x + 8, target.y - 4, 0xF2F5F8);
     }
 

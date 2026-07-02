@@ -95,10 +95,8 @@ class DebugPanelRenderer {
             boolean selected = index == selectionState.getSelectedComponentIndex();
             boolean hovered = isWithin(mouseX, mouseY, x + 4, y - 1, x + leftPanelWidth - 4, y + lineHeight - 1);
             int background = selected ? 0xCC304060 : hovered ? 0x66303030 : 0x33202020;
-            ctx.fillRect(x + 4, y - 1, x + leftPanelWidth - 4, y + lineHeight - 1, background);
-
-            String label = fontRenderer.trimStringToWidth(componentIds.get(index).toString(), leftPanelWidth - 12);
-            ctx.drawString(label, x + 8, y + 1, selected ? 0xFFFFFF : 0xD0D0D0);
+            drawEntry(ctx, x, y, leftPanelWidth, lineHeight, background,
+                componentIds.get(index).toString(), selected ? 0xFFFFFF : 0xD0D0D0);
         }
     }
 
@@ -169,11 +167,8 @@ class DebugPanelRenderer {
             boolean active = index == activeIndex;
             boolean reached = operation.getTick() <= playbackTick;
             int background = active ? 0xCC6F5A1E : reached ? 0x663A4A28 : hovered ? 0x55303030 : 0x33202020;
-            ctx.fillRect(x + 4, y - 1, x + width - 4, y + lineHeight - 1, background);
-
-            String label = "T+" + operation.getTick() + " " + operation.getDescription();
-            ctx.drawString(fontRenderer.trimStringToWidth(label, width - 12), x + 8, y + 1,
-                active ? 0xFFFFFF : reached ? 0xE5F0D0 : 0xD0D0D0);
+            drawEntry(ctx, x, y, width, lineHeight, background, "T+" + operation.getTick() + " "
+                + operation.getDescription(), active ? 0xFFFFFF : reached ? 0xE5F0D0 : 0xD0D0D0);
         }
     }
 
@@ -311,5 +306,11 @@ class DebugPanelRenderer {
 
     private static boolean isWithin(int mouseX, int mouseY, int minX, int minY, int maxX, int maxY) {
         return mouseX >= minX && mouseX <= maxX && mouseY >= minY && mouseY <= maxY;
+    }
+
+    private void drawEntry(DebugDrawContext ctx, int x, int y, int width, int lineHeight, int background,
+        String label, int color) {
+        ctx.fillRect(x + 4, y - 1, x + width - 4, y + lineHeight - 1, background);
+        ctx.drawString(fontRenderer.trimStringToWidth(label, width - 12), x + 8, y + 1, color);
     }
 }

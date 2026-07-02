@@ -3,6 +3,11 @@ package net.createmod.ponder.foundation.ui;
 import java.util.List;
 
 import net.createmod.ponder.foundation.PonderScene;
+import net.createmod.ponder.foundation.ui.projection.SceneBounds;
+import net.createmod.ponder.foundation.ui.projection.GuiHighlightPlacement;
+import net.createmod.ponder.foundation.ui.projection.GuiOverlayPlacement;
+import net.createmod.ponder.foundation.ui.projection.ScenePointProjector;
+import net.createmod.ponder.foundation.ui.projection.SceneProjectionContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
@@ -21,14 +26,18 @@ public final class GuiOverlayRenderer {
 
     public void drawGuiTextureOverlays(PonderScene scene, PreviewLayout layout, float currentTick, float fade,
         ScenePointProjector projector) {
-        if (scene == null || layout == null || fade <= 0.0F) {
+        if (scene == null || layout == null || projector == null || fade <= 0.0F) {
             return;
         }
 
-        List<GuiOverlayPlacement> guiPlacements =
-            PonderOverlayHelper.computeActiveGuiOverlayPlacements(scene, layout, currentTick, projector);
+        PonderScenePreview.PreviewBounds previewBounds = PonderScenePreview.computeBounds(scene);
+        SceneBounds sceneBounds = new SceneBounds(previewBounds.minX, previewBounds.minY, previewBounds.minZ,
+            previewBounds.maxX, previewBounds.maxY, previewBounds.maxZ);
+        SceneProjectionContext context =
+            SceneProjectionContext.of(scene, sceneBounds, layout, currentTick, projector);
+        List<GuiOverlayPlacement> guiPlacements = PonderOverlayHelper.computeActiveGuiOverlayPlacements(context);
         for (GuiOverlayPlacement placement : guiPlacements) {
-            PonderScene.OverlayEvent overlayEvent = placement.overlayEvent;
+            PonderScene.OverlayEvent overlayEvent = placement.overlayEvent();
             float overlayFade = PonderOverlayHelper.computeOverlayFade(
                 overlayEvent.getTick(), overlayEvent.getDuration(), currentTick) * fade;
             if (overlayFade <= 0.0F) {
@@ -36,14 +45,14 @@ public final class GuiOverlayRenderer {
             }
 
             if (overlayEvent.isFramed()) {
-                drawGuiTexturePanel(placement.panelX, placement.panelY, placement.panelWidth, placement.panelHeight,
+                drawGuiTexturePanel(placement.panelX(), placement.panelY(), placement.panelWidth(), placement.panelHeight(),
                     overlayEvent.getColor(), overlayFade);
             }
 
-            if (overlayEvent.isFramed() && overlayEvent.isConnectorVisible() && placement.targetPoint != null) {
-                int startX = placement.panelX + placement.panelWidth / 2;
-                int startY = placement.aboveTarget ? placement.panelY + placement.panelHeight : placement.panelY;
-                drawCaptionConnector(startX, startY, placement.targetPoint.x, placement.targetPoint.y,
+            if (overlayEvent.isFramed() && overlayEvent.isConnectorVisible() && placement.targetPoint() != null) {
+                int startX = placement.panelX() + placement.panelWidth() / 2;
+                int startY = placement.aboveTarget() ? placement.panelY() + placement.panelHeight() : placement.panelY();
+                drawCaptionConnector(startX, startY, placement.targetPoint().x, placement.targetPoint().y,
                     overlayEvent.getColor(), overlayFade * 0.85F);
             }
 
@@ -54,7 +63,7 @@ public final class GuiOverlayRenderer {
                 GlStateManager.enableBlend();
                 GlStateManager.enableAlpha();
                 GlStateManager.color(1.0F, 1.0F, 1.0F, overlayFade);
-                snapshot.renderer.render(placement.drawX, placement.drawY, placement.drawWidth, placement.drawHeight,
+                snapshot.renderer.render(placement.drawX(), placement.drawY(), placement.drawWidth(), placement.drawHeight(),
                     currentTick, overlayFade);
                 GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
             } else {
@@ -65,10 +74,10 @@ public final class GuiOverlayRenderer {
                 if (overlayEvent.isStretchTexture()) {
                     drawStretchGuiTexture(placement, overlayEvent);
                 } else {
-                    CompatGuiScreen.drawScaledCustomSizeModalRect(placement.drawX, placement.drawY,
+                    CompatGuiScreen.drawScaledCustomSizeModalRect(placement.drawX(), placement.drawY(),
                         overlayEvent.getTextureU(), overlayEvent.getTextureV(),
                         overlayEvent.getRegionWidth(), overlayEvent.getRegionHeight(),
-                        placement.drawWidth, placement.drawHeight,
+                        placement.drawWidth(), placement.drawHeight(),
                         overlayEvent.getTextureWidth(), overlayEvent.getTextureHeight());
                 }
                 GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
@@ -76,15 +85,15 @@ public final class GuiOverlayRenderer {
         }
 
         List<GuiHighlightPlacement> highlightPlacements =
-            PonderOverlayHelper.computeActiveGuiHighlightPlacements(scene, layout, currentTick, guiPlacements);
+            PonderOverlayHelper.computeActiveGuiHighlightPlacements(context, guiPlacements);
         for (GuiHighlightPlacement placement : highlightPlacements) {
-            PonderScene.OverlayEvent overlayEvent = placement.overlayEvent;
+            PonderScene.OverlayEvent overlayEvent = placement.overlayEvent();
             float overlayFade = PonderOverlayHelper.computeOverlayFade(
                 overlayEvent.getTick(), overlayEvent.getDuration(), currentTick) * fade;
             if (overlayFade <= 0.0F) {
                 continue;
             }
-            drawGuiHighlight(placement.rectX, placement.rectY, placement.rectWidth, placement.rectHeight,
+            drawGuiHighlight(placement.rectX(), placement.rectY(), placement.rectWidth(), placement.rectHeight(),
                 overlayEvent.getColor(), overlayFade);
         }
     }
@@ -99,52 +108,52 @@ public final class GuiOverlayRenderer {
         int border = Math.min(overlayEvent.getStretchBorder(), Math.min(textureWidth / 2, textureHeight / 2));
         border = Math.max(1, border);
 
-        int drawBorderX = Math.max(1, Math.round(border * (placement.drawWidth / (float) logicalWidth)));
-        int drawBorderY = Math.max(1, Math.round(border * (placement.drawHeight / (float) logicalHeight)));
-        drawBorderX = Math.min(drawBorderX, Math.max(1, placement.drawWidth / 2));
-        drawBorderY = Math.min(drawBorderY, Math.max(1, placement.drawHeight / 2));
+        int drawBorderX = Math.max(1, Math.round(border * (placement.drawWidth() / (float) logicalWidth)));
+        int drawBorderY = Math.max(1, Math.round(border * (placement.drawHeight() / (float) logicalHeight)));
+        drawBorderX = Math.min(drawBorderX, Math.max(1, placement.drawWidth() / 2));
+        drawBorderY = Math.min(drawBorderY, Math.max(1, placement.drawHeight() / 2));
 
         int centerSourceWidth = Math.max(1, textureWidth - border * 2);
         int centerSourceHeight = Math.max(1, textureHeight - border * 2);
-        int centerDrawWidth = Math.max(0, placement.drawWidth - drawBorderX * 2);
-        int centerDrawHeight = Math.max(0, placement.drawHeight - drawBorderY * 2);
+        int centerDrawWidth = Math.max(0, placement.drawWidth() - drawBorderX * 2);
+        int centerDrawHeight = Math.max(0, placement.drawHeight() - drawBorderY * 2);
         int sourceRightU = overlayEvent.getTextureU() + textureWidth - border;
         int sourceBottomV = overlayEvent.getTextureV() + textureHeight - border;
 
-        CompatGuiScreen.drawScaledCustomSizeModalRect(placement.drawX, placement.drawY,
+        CompatGuiScreen.drawScaledCustomSizeModalRect(placement.drawX(), placement.drawY(),
             overlayEvent.getTextureU(), overlayEvent.getTextureV(), border, border,
             drawBorderX, drawBorderY, textureWidth, textureHeight);
-        CompatGuiScreen.drawScaledCustomSizeModalRect(placement.drawX + placement.drawWidth - drawBorderX, placement.drawY,
+        CompatGuiScreen.drawScaledCustomSizeModalRect(placement.drawX() + placement.drawWidth() - drawBorderX, placement.drawY(),
             sourceRightU, overlayEvent.getTextureV(), border, border,
             drawBorderX, drawBorderY, textureWidth, textureHeight);
-        CompatGuiScreen.drawScaledCustomSizeModalRect(placement.drawX, placement.drawY + placement.drawHeight - drawBorderY,
+        CompatGuiScreen.drawScaledCustomSizeModalRect(placement.drawX(), placement.drawY() + placement.drawHeight() - drawBorderY,
             overlayEvent.getTextureU(), sourceBottomV, border, border,
             drawBorderX, drawBorderY, textureWidth, textureHeight);
-        CompatGuiScreen.drawScaledCustomSizeModalRect(placement.drawX + placement.drawWidth - drawBorderX,
-            placement.drawY + placement.drawHeight - drawBorderY,
+        CompatGuiScreen.drawScaledCustomSizeModalRect(placement.drawX() + placement.drawWidth() - drawBorderX,
+            placement.drawY() + placement.drawHeight() - drawBorderY,
             sourceRightU, sourceBottomV, border, border,
             drawBorderX, drawBorderY, textureWidth, textureHeight);
 
         if (centerDrawWidth > 0) {
-            CompatGuiScreen.drawScaledCustomSizeModalRect(placement.drawX + drawBorderX, placement.drawY,
+            CompatGuiScreen.drawScaledCustomSizeModalRect(placement.drawX() + drawBorderX, placement.drawY(),
                 overlayEvent.getTextureU() + border, overlayEvent.getTextureV(),
                 centerSourceWidth, border, centerDrawWidth, drawBorderY, textureWidth, textureHeight);
-            CompatGuiScreen.drawScaledCustomSizeModalRect(placement.drawX + drawBorderX,
-                placement.drawY + placement.drawHeight - drawBorderY,
+            CompatGuiScreen.drawScaledCustomSizeModalRect(placement.drawX() + drawBorderX,
+                placement.drawY() + placement.drawHeight() - drawBorderY,
                 overlayEvent.getTextureU() + border, sourceBottomV,
                 centerSourceWidth, border, centerDrawWidth, drawBorderY, textureWidth, textureHeight);
         }
         if (centerDrawHeight > 0) {
-            CompatGuiScreen.drawScaledCustomSizeModalRect(placement.drawX, placement.drawY + drawBorderY,
+            CompatGuiScreen.drawScaledCustomSizeModalRect(placement.drawX(), placement.drawY() + drawBorderY,
                 overlayEvent.getTextureU(), overlayEvent.getTextureV() + border,
                 border, centerSourceHeight, drawBorderX, centerDrawHeight, textureWidth, textureHeight);
-            CompatGuiScreen.drawScaledCustomSizeModalRect(placement.drawX + placement.drawWidth - drawBorderX,
-                placement.drawY + drawBorderY,
+            CompatGuiScreen.drawScaledCustomSizeModalRect(placement.drawX() + placement.drawWidth() - drawBorderX,
+                placement.drawY() + drawBorderY,
                 sourceRightU, overlayEvent.getTextureV() + border,
                 border, centerSourceHeight, drawBorderX, centerDrawHeight, textureWidth, textureHeight);
         }
         if (centerDrawWidth > 0 && centerDrawHeight > 0) {
-            CompatGuiScreen.drawScaledCustomSizeModalRect(placement.drawX + drawBorderX, placement.drawY + drawBorderY,
+            CompatGuiScreen.drawScaledCustomSizeModalRect(placement.drawX() + drawBorderX, placement.drawY() + drawBorderY,
                 overlayEvent.getTextureU() + border, overlayEvent.getTextureV() + border,
                 centerSourceWidth, centerSourceHeight, centerDrawWidth, centerDrawHeight, textureWidth, textureHeight);
         }

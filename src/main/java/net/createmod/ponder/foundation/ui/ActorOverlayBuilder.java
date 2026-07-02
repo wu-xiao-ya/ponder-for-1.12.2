@@ -5,6 +5,9 @@ import java.util.List;
 
 import net.createmod.ponder.foundation.PonderScene;
 import net.createmod.ponder.foundation.ui.PonderScenePreview.PreviewBounds;
+import net.createmod.ponder.foundation.ui.projection.SceneBounds;
+import net.createmod.ponder.foundation.ui.projection.ScenePointProjector;
+import net.createmod.ponder.foundation.ui.projection.SceneProjectionContext;
 
 public final class ActorOverlayBuilder {
 
@@ -19,13 +22,20 @@ public final class ActorOverlayBuilder {
         List<PonderSceneRuntime.ActorRuntimeState> actors,
         ScenePointProjector projector
     ) {
+        if (scene == null || bounds == null || layout == null || actors == null || projector == null) {
+            return new ArrayList<ActorOverlayItem>(0);
+        }
+
+        SceneBounds sceneBounds = new SceneBounds(bounds.minX, bounds.minY, bounds.minZ, bounds.maxX, bounds.maxY,
+            bounds.maxZ);
+        SceneProjectionContext context = SceneProjectionContext.of(scene, sceneBounds, layout, currentTick, projector);
         List<ActorOverlayItem> items = new ArrayList<ActorOverlayItem>(actors.size());
         for (PonderSceneRuntime.ActorRuntimeState actor : actors) {
             if (!actor.visible || actor.fade <= 0.0F) {
                 continue;
             }
 
-            SpeechRenderer.Point target = projector.project(scene, bounds, layout, currentTick, actor.position);
+            SpeechRenderer.Point target = context.project(actor.position);
             if (target == null) {
                 continue;
             }

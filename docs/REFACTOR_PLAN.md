@@ -723,7 +723,7 @@ CI 整改候选：
 - `PonderDebugScreen` 暴露最小包可见桥接：`getDebugPanelRenderer()`、`clearPreviewCaches()`、`centerOperationsOnActiveLine()`、`resetPreviewCamera()`
 - `DebugKeyboardHostAdapter` 已落地，debug 键盘命令经 `PonderDebugScreenHostSupport` 转发
 - `ShowcaseKeyboardHostAdapter` 已落地，showcase 键盘命令经 `PonderDebugScreenHostSupport` 转发
-- mouse、showcase render adapter 留在下一轮
+- `DebugMouseHostAdapter`、`ShowcaseMouseHostAdapter` 已落地，鼠标命令经 `PonderDebugScreenHostSupport` 转发
 
 #### P0-4：把残留 GL 直接操作迁出 `PonderDebugScreen`
 
@@ -791,7 +791,8 @@ CI 整改候选：
 - `foundation/ui/projection/SceneBounds.java` 已落地
 - `foundation/ui/projection/ProjectedBounds.java` 已落地
 - `CaptionPlacement`、`GuiOverlayPlacement`、`GuiHighlightPlacement` 已在 projection 包预铺
-- 下一轮把 `PonderOverlayLayoutHelper` 与 `PonderOverlayHelper` 迁入 projection 管线
+- `PonderOverlayHelper` 已接入 projection record，caption / overlay / highlight 共用同一上下文
+- `PonderOverlayLayoutHelper` 继续保留 legacy `ProjectedBounds` 给 `SceneOverlayRenderer`
 - screen 侧 layout 汇总职责继续缩小
 
 #### P1-3：把 snapshot 体系升级为 sealed provider/source 模型

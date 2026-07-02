@@ -25,16 +25,8 @@ public final class ActorOverlayRenderer {
             int boxSize = actor.kind == PonderScene.ActorKind.BIRB ? 8 : 10;
 
             if (actor.kind != PonderScene.ActorKind.ITEM) {
-                draw.fillRect(actor.targetX - boxSize / 2, actor.targetY - boxSize / 2,
-                    actor.targetX + boxSize / 2 + 1, actor.targetY + boxSize / 2 + 1, fill);
-                draw.fillRect(actor.targetX - boxSize / 2, actor.targetY - boxSize / 2,
-                    actor.targetX + boxSize / 2 + 1, actor.targetY - boxSize / 2 + 1, border);
-                draw.fillRect(actor.targetX - boxSize / 2, actor.targetY + boxSize / 2,
-                    actor.targetX + boxSize / 2 + 1, actor.targetY + boxSize / 2 + 1, border);
-                draw.fillRect(actor.targetX - boxSize / 2, actor.targetY - boxSize / 2,
-                    actor.targetX - boxSize / 2 + 1, actor.targetY + boxSize / 2 + 1, border);
-                draw.fillRect(actor.targetX + boxSize / 2, actor.targetY - boxSize / 2,
-                    actor.targetX + boxSize / 2 + 1, actor.targetY + boxSize / 2 + 1, border);
+                draw.drawBorderedRect(actor.targetX - boxSize / 2, actor.targetY - boxSize / 2,
+                    actor.targetX + boxSize / 2 + 1, actor.targetY + boxSize / 2 + 1, fill, border);
             }
 
             double yawRadians = Math.toRadians(actor.yawDegrees);

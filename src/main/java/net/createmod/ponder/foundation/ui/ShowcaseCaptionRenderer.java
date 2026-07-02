@@ -5,10 +5,14 @@ import java.util.List;
 import javax.annotation.Nullable;
 
 import net.createmod.ponder.foundation.PonderScene;
-import net.createmod.ponder.foundation.ui.PonderScenePreview.PreviewBounds;
+import net.createmod.ponder.foundation.ui.projection.SceneBounds;
+import net.createmod.ponder.foundation.ui.projection.CaptionPlacement;
+import net.createmod.ponder.foundation.ui.projection.GuiHighlightPlacement;
+import net.createmod.ponder.foundation.ui.projection.GuiOverlayPlacement;
+import net.createmod.ponder.foundation.ui.projection.ScenePointProjector;
+import net.createmod.ponder.foundation.ui.projection.SceneProjectionContext;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
 
 final class ShowcaseCaptionRenderer {
 
@@ -44,7 +48,7 @@ final class ShowcaseCaptionRenderer {
 
     void drawCaption(@Nullable PonderScene scene, int previewX, int previewY, int previewWidth, int previewHeight,
         float currentTick, float fade) {
-        if (scene == null) {
+        if (scene == null || projector == null) {
             return;
         }
 
@@ -72,13 +76,16 @@ final class ShowcaseCaptionRenderer {
 
         int boxWidth = Math.max(106, longestLine + 22);
         int boxHeight = 12 + lines.size() * 10;
-        PreviewBounds bounds = PonderScenePreview.computeBounds(scene);
-        List<GuiOverlayPlacement> guiPlacements =
-            PonderOverlayHelper.computeActiveGuiOverlayPlacements(scene, layout, currentTick, projector);
+        PonderScenePreview.PreviewBounds previewBounds = PonderScenePreview.computeBounds(scene);
+        SceneBounds sceneBounds = new SceneBounds(previewBounds.minX, previewBounds.minY, previewBounds.minZ,
+            previewBounds.maxX, previewBounds.maxY, previewBounds.maxZ);
+        SceneProjectionContext context =
+            SceneProjectionContext.of(scene, sceneBounds, layout, currentTick, projector);
+        List<GuiOverlayPlacement> guiPlacements = PonderOverlayHelper.computeActiveGuiOverlayPlacements(context);
         List<GuiHighlightPlacement> guiHighlightPlacements =
-            PonderOverlayHelper.computeActiveGuiHighlightPlacements(scene, layout, currentTick, guiPlacements);
-        SpeechRenderer.Point targetPoint = PonderOverlayHelper.resolveCaptionTargetPoint(scene, layout, currentTick, overlayEvent,
-            guiHighlightPlacements, projector);
+            PonderOverlayHelper.computeActiveGuiHighlightPlacements(context, guiPlacements);
+        SpeechRenderer.Point targetPoint =
+            PonderOverlayHelper.resolveCaptionTargetPoint(context, overlayEvent, guiHighlightPlacements);
 
         int boxX;
         int boxY;
@@ -133,9 +140,9 @@ final class ShowcaseCaptionRenderer {
             boxY = MathHelper.clamp(boxY + slide, minBoxY, maxBoxY);
             CaptionPlacement adjustedPlacement =
                 PonderOverlayHelper.avoidOverlayOverlap(boxX, boxY, boxWidth, boxHeight, pointing, previewY, maxBoxY, guiPlacements);
-            boxX = adjustedPlacement.x;
-            boxY = adjustedPlacement.y;
-            pointing = adjustedPlacement.pointing;
+            boxX = adjustedPlacement.x();
+            boxY = adjustedPlacement.y();
+            pointing = adjustedPlacement.pointing();
         }
 
         if (!overlayEvent.isConnectorVisible() || targetPoint == null) {

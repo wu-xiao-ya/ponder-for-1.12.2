@@ -23,8 +23,17 @@ public record SceneProjectionContext(
         Objects.requireNonNull(projector);
     }
 
+    public static SceneProjectionContext of(PonderScene scene, SceneBounds sceneBounds, PreviewLayout layout,
+        float renderTick, ScenePointProjector projector) {
+        Objects.requireNonNull(sceneBounds);
+        return new SceneProjectionContext(scene, sceneBounds, layout, renderTick, projector);
+    }
+
     @Nullable
-    public SpeechRenderer.Point project(Vec3d point) {
+    public SpeechRenderer.Point project(@Nullable Vec3d point) {
+        if (point == null) {
+            return null;
+        }
         return projector.project(this, point);
     }
 }

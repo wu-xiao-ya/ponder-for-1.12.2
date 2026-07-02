@@ -350,257 +350,16 @@ public class PonderDebugScreen extends CompatGuiScreen {
         PonderDebugScreen.super.keyTyped(typedChar, keyCode);
     }
 
+    void setPlaybackTickFromHost(int tick) {
+        sceneController.setPlaybackTick(tick);
+    }
+
     protected DebugMouseController.Host createDebugMouseHost() {
-        return new DebugMouseController.Host() {
-            @Override
-            public boolean isMouseOverPlaybackBar(int mouseX, int mouseY) {
-                return PonderDebugScreen.this.isMouseOverPlaybackBar(mouseX, mouseY);
-            }
-
-            @Override
-            public void startPlaybackBarDragging() {
-                interactionHitCache.setPlaybackBarDragging(true);
-            }
-
-            @Override
-            public void seekPlaybackToMouse(int mouseX) {
-                PonderDebugScreen.this.seekPlaybackToMouse(mouseX);
-            }
-
-            @Override
-            public void pausePlayback() {
-                playbackState.stop();
-            }
-
-            @Override
-            public void updateButtonState() {
-                PonderDebugScreen.this.updateButtonState();
-            }
-
-            @Override
-            public int getComponentIndexAt(int mouseX, int mouseY) {
-                return PonderDebugScreen.this.getComponentIndexAt(mouseX, mouseY);
-            }
-
-            @Override
-            public void selectComponent(int componentIndex) {
-                sceneController.selectComponent(componentIndex, 0);
-            }
-
-            @Override
-            public int getOperationIndexAt(int mouseX, int mouseY) {
-                return getDebugPanelRenderer().getOperationIndexAt(mouseX, mouseY, height);
-            }
-
-            @Override
-            public List<PonderScene.RecordedOperation> getSelectedRecordedOperations() {
-                return PonderDebugScreen.this.getSelectedRecordedOperations();
-            }
-
-            @Override
-            public void setPlaybackTick(int tick) {
-                sceneController.setPlaybackTick(tick);
-            }
-
-            @Override
-            public boolean isMouseOverPreview(int mouseX, int mouseY) {
-                return PonderDebugScreen.this.isMouseOverPreview(mouseX, mouseY);
-            }
-
-            @Override
-            public void startPreviewDragging(int mouseX, int mouseY) {
-                previewCameraState.startDragging(mouseX, mouseY);
-            }
-
-            @Override
-            public boolean isPreviewDragging() {
-                return previewCameraState.isPreviewDragging();
-            }
-
-            @Override
-            public void dragPreview(int mouseX, int mouseY) {
-                previewCameraState.dragTo(mouseX, mouseY);
-            }
-
-            @Override
-            public boolean isPlaybackBarDragging() {
-                return interactionHitCache.isPlaybackBarDragging();
-            }
-
-            @Override
-            public void stopPlaybackBarDragging() {
-                interactionHitCache.setPlaybackBarDragging(false);
-            }
-
-            @Override
-            public void stopPreviewDragging() {
-                previewCameraState.stopDragging();
-            }
-
-            @Override
-            public boolean isShiftKeyDown() {
-                return PonderDebugScreen.this.isShiftKeyDown();
-            }
-
-            @Override
-            public void stepPlaybackTick(int delta) {
-                sceneController.stepPlaybackTick(delta);
-            }
-
-            @Override
-            public void adjustPreviewZoom(float delta) {
-                previewCameraState.adjustPreviewZoom(delta);
-            }
-
-            @Override
-            public boolean isMouseOverComponentList(int mouseX, int mouseY) {
-                return PonderDebugScreen.this.isMouseOverComponentList(mouseX, mouseY);
-            }
-
-            @Override
-            public void scrollComponents(int delta) {
-                getDebugPanelRenderer().scrollComponents(delta, selectionState.getComponentIds(), height);
-            }
-
-            @Override
-            public boolean isMouseOverOperations(int mouseX, int mouseY) {
-                return PonderDebugScreen.this.isMouseOverOperations(mouseX, mouseY);
-            }
-
-            @Override
-            public void scrollOperations(int delta) {
-                getDebugPanelRenderer().scrollOperations(delta, height);
-            }
-        };
+        return new DebugMouseHostAdapter(hostSupport);
     }
 
     protected ShowcaseMouseController.Host createShowcaseMouseHost() {
-        return new ShowcaseMouseController.Host() {
-            @Override
-            public boolean isMouseOverPreview(int mouseX, int mouseY) {
-                return PonderDebugScreen.this.isMouseOverPreview(mouseX, mouseY);
-            }
-
-            @Override
-            public boolean isShiftKeyDown() {
-                return PonderDebugScreen.this.isShiftKeyDown();
-            }
-
-            @Override
-            public void stepPlaybackTick(int delta) {
-                sceneController.stepPlaybackTick(delta);
-            }
-
-            @Override
-            public void adjustPreviewZoom(float delta) {
-                previewCameraState.adjustPreviewZoom(delta);
-            }
-
-            @Override
-            public boolean isMouseOverPlaybackBar(int mouseX, int mouseY) {
-                return PonderDebugScreen.this.isMouseOverPlaybackBar(mouseX, mouseY);
-            }
-
-            @Override
-            public void startPlaybackBarDragging() {
-                interactionHitCache.setPlaybackBarDragging(true);
-            }
-
-            @Override
-            public void seekPlaybackToMouse(int mouseX) {
-                PonderDebugScreen.this.seekPlaybackToMouse(mouseX);
-            }
-
-            @Override
-            public void pausePlayback() {
-                playbackState.stop();
-            }
-
-            @Override
-            public void updateButtonState() {
-                PonderDebugScreen.this.updateButtonState();
-            }
-
-            @Override
-            public ShowcaseGroupIconHitBox getShowcaseGroupIconAt(int mouseX, int mouseY) {
-                return interactionHitCache.getShowcaseGroupIconAt(mouseX, mouseY);
-            }
-
-            @Override
-            public void closeShowcaseGroupSelector() {
-                interactionHitCache.setShowcaseGroupSelectorOpen(false);
-            }
-
-            @Override
-            public void selectComponent(ShowcaseGroupIconHitBox icon) {
-                PonderDebugScreen.this.selectComponent(icon.componentId, 0);
-            }
-
-            @Override
-            public boolean isMouseOverNextUpCard(int mouseX, int mouseY) {
-                return PonderDebugScreen.this.isMouseOverNextUpCard(mouseX, mouseY);
-            }
-
-            @Override
-            public void selectNextScene() {
-                sceneController.selectScene(selectionState.getSelectedSceneIndex() + 1);
-            }
-
-            @Override
-            public boolean isMouseOverShowcaseHeaderIcon(int mouseX, int mouseY) {
-                return PonderDebugScreen.this.isMouseOverShowcaseHeaderIcon(mouseX, mouseY);
-            }
-
-            @Override
-            public boolean hasShowcaseGroupChoices() {
-                return PonderDebugScreen.this.hasShowcaseGroupChoices();
-            }
-
-            @Override
-            public void toggleShowcaseGroupSelector() {
-                interactionHitCache.setShowcaseGroupSelectorOpen(!interactionHitCache.isShowcaseGroupSelectorOpen());
-            }
-
-            @Override
-            public boolean isShowcaseGroupSelectorOpen() {
-                return interactionHitCache.isShowcaseGroupSelectorOpen();
-            }
-
-            @Override
-            public boolean isMouseInsideShowcaseGroupPopup(int mouseX, int mouseY) {
-                return interactionHitCache.isMouseInsideShowcaseGroupPopup(mouseX, mouseY);
-            }
-
-            @Override
-            public void startPreviewDragging(int mouseX, int mouseY) {
-                previewCameraState.startDragging(mouseX, mouseY);
-            }
-
-            @Override
-            public boolean isPlaybackBarDragging() {
-                return interactionHitCache.isPlaybackBarDragging();
-            }
-
-            @Override
-            public void stopPlaybackBarDragging() {
-                interactionHitCache.setPlaybackBarDragging(false);
-            }
-
-            @Override
-            public boolean isPreviewDragging() {
-                return previewCameraState.isPreviewDragging();
-            }
-
-            @Override
-            public void dragPreview(int mouseX, int mouseY) {
-                previewCameraState.dragTo(mouseX, mouseY);
-            }
-
-            @Override
-            public void stopPreviewDragging() {
-                previewCameraState.stopDragging();
-            }
-        };
+        return new ShowcaseMouseHostAdapter(hostSupport);
     }
 
 
@@ -1718,7 +1477,7 @@ private void drawComponentList(int mouseX, int mouseY, int x, int startY, int bo
 
         return 0;
     }
-    private void selectComponent(ResourceLocation componentId, int preferredSceneIndex) {
+    void selectComponent(ResourceLocation componentId, int preferredSceneIndex) {
         if (componentId == null) {
             return;
         }
@@ -1728,6 +1487,10 @@ private void drawComponentList(int mouseX, int mouseY, int x, int startY, int bo
                 return;
             }
         }
+    }
+
+    void selectComponent(int componentIndex, int preferredSceneIndex) {
+        sceneController.selectComponent(componentIndex, preferredSceneIndex);
     }
 
     protected void updateButtonState() {

@@ -1,8 +1,11 @@
 package net.createmod.ponder.foundation.ui;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 
 import net.createmod.ponder.foundation.PonderScene;
+import net.createmod.ponder.foundation.PonderScene.RecordedOperation;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.util.math.MathHelper;
 
@@ -37,6 +40,79 @@ final class PonderDebugScreenHostSupport {
 
     void clearPreviewCaches() {
         screen.clearPreviewCaches();
+    }
+
+    boolean isMouseOverPlaybackBar(int mouseX, int mouseY) {
+        return screen.isMouseOverPlaybackBar(mouseX, mouseY);
+    }
+
+    void startPlaybackBarDragging() {
+        interactionHitCache.setPlaybackBarDragging(true);
+    }
+
+    void seekPlaybackToMouse(int mouseX) {
+        setPlaybackTick(screen.estimatePlaybackTickForMouse(mouseX));
+    }
+
+    void pausePlayback() {
+        playbackState.stop();
+    }
+
+    void setPlaybackTick(int tick) {
+        screen.setPlaybackTickFromHost(tick);
+    }
+
+    void updateButtonState() {
+        screen.updateButtonState();
+    }
+
+    int getComponentIndexAt(int mouseX, int mouseY) {
+        return screen.getDebugPanelRenderer().getComponentIndexAt(mouseX, mouseY, screen.height);
+    }
+
+    void selectComponent(int componentIndex) {
+        screen.selectComponent(componentIndex, 0);
+    }
+
+    int getOperationIndexAt(int mouseX, int mouseY) {
+        return screen.getDebugPanelRenderer().getOperationIndexAt(mouseX, mouseY, screen.height);
+    }
+
+    List<RecordedOperation> getSelectedRecordedOperations() {
+        PonderScene scene = screen.getSelectedScene();
+        return scene == null ? Collections.<RecordedOperation>emptyList() : scene.getRecordedOperations();
+    }
+
+    boolean isMouseOverPreview(int mouseX, int mouseY) {
+        return interactionHitCache.isMouseOverPreview(mouseX, mouseY);
+    }
+
+    void startPreviewDragging(int mouseX, int mouseY) {
+        screen.previewCameraState().startDragging(mouseX, mouseY);
+    }
+
+    boolean isPreviewDragging() {
+        return screen.previewCameraState().isPreviewDragging();
+    }
+
+    void dragPreview(int mouseX, int mouseY) {
+        screen.previewCameraState().dragTo(mouseX, mouseY);
+    }
+
+    boolean isPlaybackBarDragging() {
+        return interactionHitCache.isPlaybackBarDragging();
+    }
+
+    void stopPlaybackBarDragging() {
+        interactionHitCache.setPlaybackBarDragging(false);
+    }
+
+    void stopPreviewDragging() {
+        screen.previewCameraState().stopDragging();
+    }
+
+    boolean isShiftKeyDown() {
+        return screen.isShiftKeyDown();
     }
 
     void reloadRegisteredComponents() {
@@ -81,10 +157,6 @@ final class PonderDebugScreenHostSupport {
         screen.centerOperationsOnActiveLine();
     }
 
-    void updateButtonState() {
-        screen.updateButtonState();
-    }
-
     boolean allowDebugShortcutFromShowcase() {
         return screen.allowDebugShortcutFromShowcase();
     }
@@ -99,6 +171,66 @@ final class PonderDebugScreenHostSupport {
 
     void delegateKeyTyped(char typedChar, int keyCode) throws IOException {
         screen.delegateKeyTypedFromHost(typedChar, keyCode);
+    }
+
+    void adjustPreviewZoom(float delta) {
+        screen.previewCameraState().adjustPreviewZoom(delta);
+    }
+
+    boolean isMouseOverComponentList(int mouseX, int mouseY) {
+        return screen.getDebugPanelRenderer().isMouseOverComponentList(mouseX, mouseY, screen.height);
+    }
+
+    void scrollComponents(int delta) {
+        screen.getDebugPanelRenderer().scrollComponents(delta, selectionState.getComponentIds(), screen.height);
+    }
+
+    boolean isMouseOverOperations(int mouseX, int mouseY) {
+        return screen.getDebugPanelRenderer().isMouseOverOperations(mouseX, mouseY, screen.height);
+    }
+
+    void scrollOperations(int delta) {
+        screen.getDebugPanelRenderer().scrollOperations(delta, screen.height);
+    }
+
+    ShowcaseGroupIconHitBox getShowcaseGroupIconAt(int mouseX, int mouseY) {
+        return interactionHitCache.getShowcaseGroupIconAt(mouseX, mouseY);
+    }
+
+    void closeShowcaseGroupSelector() {
+        interactionHitCache.setShowcaseGroupSelectorOpen(false);
+    }
+
+    void selectComponent(ShowcaseGroupIconHitBox icon) {
+        screen.selectComponent(icon.componentId, 0);
+    }
+
+    boolean isMouseOverNextUpCard(int mouseX, int mouseY) {
+        return screen.isMouseOverNextUpCard(mouseX, mouseY);
+    }
+
+    void selectNextScene() {
+        screen.selectSceneFromHost(selectionState.getSelectedSceneIndex() + 1);
+    }
+
+    boolean isMouseOverShowcaseHeaderIcon(int mouseX, int mouseY) {
+        return screen.isMouseOverShowcaseHeaderIcon(mouseX, mouseY);
+    }
+
+    boolean hasShowcaseGroupChoices() {
+        return screen.hasShowcaseGroupChoices();
+    }
+
+    void toggleShowcaseGroupSelector() {
+        interactionHitCache.setShowcaseGroupSelectorOpen(!interactionHitCache.isShowcaseGroupSelectorOpen());
+    }
+
+    boolean isShowcaseGroupSelectorOpen() {
+        return interactionHitCache.isShowcaseGroupSelectorOpen();
+    }
+
+    boolean isMouseInsideShowcaseGroupPopup(int mouseX, int mouseY) {
+        return interactionHitCache.isMouseInsideShowcaseGroupPopup(mouseX, mouseY);
     }
 
     int getMaxComponentScroll() {

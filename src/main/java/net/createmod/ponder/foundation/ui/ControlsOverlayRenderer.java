@@ -108,11 +108,7 @@ final class ControlsOverlayRenderer {
                 fade * (emphasized ? 126.0F : 96.0F));
             int edge = draw.withAlpha(draw.blendColors(0xEDE4D4, accentColor, emphasized ? 0.85F : 0.45F),
                 fade * (emphasized ? 220.0F : 164.0F));
-            draw.fillRect(cursor, y, cursor + chipWidth, y + 10, fill);
-            draw.fillRect(cursor, y, cursor + chipWidth, y + 1, edge);
-            draw.fillRect(cursor, y + 9, cursor + chipWidth, y + 10, edge);
-            draw.fillRect(cursor, y, cursor + 1, y + 10, edge);
-            draw.fillRect(cursor + chipWidth - 1, y, cursor + chipWidth, y + 10, edge);
+            draw.drawBorderedRect(cursor, y, cursor + chipWidth, y + 10, fill, edge);
             draw.drawCenteredString(token, cursor + chipWidth / 2, y + 1, 0xF2F5F8);
             cursor += chipWidth + 4;
         }

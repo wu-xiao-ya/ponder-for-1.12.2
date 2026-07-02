@@ -25,11 +25,7 @@ final class SceneOverlayRenderer {
 
         int fillColor = draw.withAlpha(overlayEvent.getColor(), fade * 42.0F);
         int edgeColor = draw.withAlpha(draw.blendColors(0xEDE4D4, overlayEvent.getColor(), 0.82F), fade * 232.0F);
-        draw.fillRect(projected.minX, projected.minY, projected.maxX, projected.maxY, fillColor);
-        draw.fillRect(projected.minX, projected.minY, projected.maxX, projected.minY + 1, edgeColor);
-        draw.fillRect(projected.minX, projected.maxY - 1, projected.maxX, projected.maxY, edgeColor);
-        draw.fillRect(projected.minX, projected.minY, projected.minX + 1, projected.maxY, edgeColor);
-        draw.fillRect(projected.maxX - 1, projected.minY, projected.maxX, projected.maxY, edgeColor);
+        draw.drawBorderedRect(projected.minX, projected.minY, projected.maxX, projected.maxY, fillColor, edgeColor);
     }
 
     void drawLine(PonderScene scene, PreviewBounds bounds, PreviewLayout layout, float currentTick,
@@ -64,10 +60,6 @@ final class SceneOverlayRenderer {
 
         int fillColor = draw.withAlpha(overlayEvent.getColor(), fade * 56.0F);
         int edgeColor = draw.withAlpha(draw.blendColors(0xEDE4D4, overlayEvent.getColor(), 0.85F), fade * 228.0F);
-        draw.fillRect(projected.minX, projected.minY, projected.maxX, projected.maxY, fillColor);
-        draw.fillRect(projected.minX, projected.minY, projected.maxX, projected.minY + 1, edgeColor);
-        draw.fillRect(projected.minX, projected.maxY - 1, projected.maxX, projected.maxY, edgeColor);
-        draw.fillRect(projected.minX, projected.minY, projected.minX + 1, projected.maxY, edgeColor);
-        draw.fillRect(projected.maxX - 1, projected.minY, projected.maxX, projected.maxY, edgeColor);
+        draw.drawBorderedRect(projected.minX, projected.minY, projected.maxX, projected.maxY, fillColor, edgeColor);
     }
 }

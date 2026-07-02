@@ -24,6 +24,22 @@ public interface DrawContext extends DebugDrawContext, RenderContext {
     int getStringWidth(String text);
     void drawCenteredString(String text, int centerX, int y, int color);
 
+    default void drawBorderedRect(int left, int top, int right, int bottom, int fillColor, int borderColor) {
+        fillRect(left, top, right, bottom, fillColor);
+        fillRect(left, top, right, top + 1, borderColor);
+        fillRect(left, bottom - 1, right, bottom, borderColor);
+        fillRect(left, top, left + 1, bottom, borderColor);
+        fillRect(right - 1, top, right, bottom, borderColor);
+    }
+
+    default void drawCrossMarker(int centerX, int centerY, int armRadius, int centerRadius, int accentColor,
+        int fillColor) {
+        fillRect(centerX - armRadius, centerY - 1, centerX + armRadius + 1, centerY + 1, accentColor);
+        fillRect(centerX - 1, centerY - armRadius, centerX + 1, centerY + armRadius + 1, accentColor);
+        fillRect(centerX - centerRadius, centerY - centerRadius, centerX + centerRadius + 1,
+            centerY + centerRadius + 1, fillColor);
+    }
+
     @Override
     default AutoCloseable push() {
         return GLStateGuard.matrix();
