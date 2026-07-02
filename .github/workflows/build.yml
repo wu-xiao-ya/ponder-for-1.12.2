@@ -22,6 +22,17 @@ jobs:
           java-version: '25'
           cache: gradle
 
+      - name: Cache Unimined Minecraft 1.12.2 data
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches/unimined/net/minecraft/minecraft/1.12.2
+            ~/.gradle/caches/modules-2
+          key: ${{ runner.os }}-unimined-minecraft-1.12.2-cleanroom-fg3-0.5.6-alpha-${{ hashFiles('gradle/scripts/dependencies.gradle', 'gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-unimined-minecraft-1.12.2-cleanroom-fg3-0.5.6-alpha-
+            ${{ runner.os }}-unimined-minecraft-1.12.2-
+
       - name: Make Gradle wrapper executable
         shell: bash
         run: chmod +x ./gradlew

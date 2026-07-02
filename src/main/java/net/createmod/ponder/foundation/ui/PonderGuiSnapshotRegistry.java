@@ -18,7 +18,7 @@ public final class PonderGuiSnapshotRegistry {
     private static final int TE_COMPOSITE_WIDTH   = 276;
     private static final int TE_REDSTONE_COMPOSITE_WIDTH = 288;
 
-    private static final Map<ResourceLocation, SnapshotProvider> SNAPSHOTS = new LinkedHashMap<>();
+    private static final Map<ResourceLocation, SnapshotSource> SNAPSHOTS = new LinkedHashMap<>();
 
     static {
         registerDefaults();
@@ -31,19 +31,19 @@ public final class PonderGuiSnapshotRegistry {
         if (id == null || snapshot == null) {
             return;
         }
-        registerProvider(id, SnapshotProvider.constant(snapshot));
+        SNAPSHOTS.put(id, SnapshotSource.constant(snapshot));
     }
 
     public static void registerProvider(ResourceLocation id, SnapshotProvider provider) {
         if (id == null || provider == null) {
             return;
         }
-        SNAPSHOTS.put(id, provider);
+        SNAPSHOTS.put(id, provider.asSource());
     }
 
     public static Snapshot get(ResourceLocation id, float currentTick) {
-        SnapshotProvider provider = id == null ? null : SNAPSHOTS.get(id);
-        return provider == null ? null : provider.provide(currentTick);
+        SnapshotSource source = id == null ? null : SNAPSHOTS.get(id);
+        return source == null ? null : source.resolve(SnapshotContext.of(currentTick));
     }
 
     public static ResourceLocation registerBlockGuiSnapshot(ResourceLocation blockId, int meta, int width, int height) {

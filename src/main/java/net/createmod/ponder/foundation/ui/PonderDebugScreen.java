@@ -98,6 +98,7 @@ public class PonderDebugScreen extends CompatGuiScreen {
     private final int requestedSceneIndex;
     private final boolean showcaseMode;
     private final PonderSceneSelectionState selectionState;
+    private final PonderDebugScreenHostSupport hostSupport;
 
     private final PonderPreviewCameraState previewCameraState = new PonderPreviewCameraState();
     private final PonderPlaybackState playbackState = new PonderPlaybackState();
@@ -167,11 +168,13 @@ public class PonderDebugScreen extends CompatGuiScreen {
         this.showcaseMode = showcaseMode;
         this.selectionState = new PonderSceneSelectionState(componentId, sceneIndex, showcaseMode);
         this.overlayLayoutHelper = new PonderOverlayLayoutHelper(showcaseMode, previewCameraState);
+        this.hostSupport = new PonderDebugScreenHostSupport(this, selectionState, playbackState,
+            interactionHitCache, this.requestedSceneIndex);
+        this.sceneController = new PonderSceneController(createSceneControllerHost());
         this.debugKeyboardController = new DebugKeyboardController(createDebugKeyboardHost());
         this.showcaseKeyboardController = new ShowcaseKeyboardController(createShowcaseKeyboardHost());
         this.debugMouseController = new DebugMouseController(createDebugMouseHost());
         this.showcaseMouseController = new ShowcaseMouseController(createShowcaseMouseHost());
-        this.sceneController = new PonderSceneController(createSceneControllerHost());
     }
 
     public static PonderDebugScreen showcase(ResourceLocation componentId, int sceneIndex) {
@@ -683,69 +686,7 @@ public class PonderDebugScreen extends CompatGuiScreen {
 
 
     protected PonderSceneController.Host createSceneControllerHost() {
-        return new PonderSceneController.Host() {
-            @Override
-            public PonderSceneSelectionState getSelectionState() {
-                return selectionState;
-            }
-
-            @Override
-            public PonderPlaybackState getPlaybackState() {
-                return playbackState;
-            }
-
-            @Override
-            public int getRequestedSceneIndex() {
-                return requestedSceneIndex;
-            }
-
-            @Override
-            public void clearPreviewCaches() {
-                if (scenePreviewRenderer != null) {
-                    scenePreviewRenderer.clearTileEntityPreviewCache();
-                }
-            }
-
-            @Override
-            public void setShowcaseGroupSelectorOpen(boolean open) {
-                interactionHitCache.setShowcaseGroupSelectorOpen(open);
-            }
-
-            @Override
-            public void resetPreviewCamera() {
-                PonderDebugScreen.this.resetPreviewCamera();
-            }
-
-            @Override
-            public void resetOperationScroll() {
-                getDebugPanelRenderer().resetOperationScroll();
-            }
-
-            @Override
-            public void centerOperationsOnActiveLine() {
-                PonderDebugScreen.this.centerOperationsOnActiveLine();
-            }
-
-            @Override
-            public void updateButtonState() {
-                PonderDebugScreen.this.updateButtonState();
-            }
-
-            @Override
-            public int getMaxComponentScroll() {
-                return getDebugPanelRenderer().getMaxComponentScroll(selectionState.getComponentIds(), height);
-            }
-
-            @Override
-            public void setComponentScroll(int componentScroll) {
-                getDebugPanelRenderer().setComponentScroll(componentScroll);
-            }
-
-            @Override
-            public int getSceneEndTick(PonderScene scene) {
-                return PonderDebugScreen.this.getSceneEndTick(scene);
-            }
-        };
+        return new PonderSceneControllerHostAdapter(hostSupport);
     }
 
     @Override
@@ -1302,11 +1243,17 @@ private void drawComponentList(int mouseX, int mouseY, int x, int startY, int bo
         return fallbackShowcaseChromeRenderer;
     }
 
-    private DebugPanelRenderer getDebugPanelRenderer() {
+    DebugPanelRenderer getDebugPanelRenderer() {
         if (debugPanelRenderer == null) {
             debugPanelRenderer = new DebugPanelRenderer(fontRenderer, selectionState, this::formatWorldEvent);
         }
         return debugPanelRenderer;
+    }
+
+    void clearPreviewCaches() {
+        if (scenePreviewRenderer != null) {
+            scenePreviewRenderer.clearTileEntityPreviewCache();
+        }
     }
 
     private GuiOverlayRenderer getGuiOverlayRenderer() {
@@ -1960,7 +1907,7 @@ private void drawComponentList(int mouseX, int mouseY, int x, int startY, int bo
         return builder.toString();
     }
 
-    private void centerOperationsOnActiveLine() {
+    void centerOperationsOnActiveLine() {
         if (getSelectedRecordedOperations().isEmpty()) {
             getDebugPanelRenderer().resetOperationScroll();
             return;
@@ -2050,7 +1997,7 @@ private void drawComponentList(int mouseX, int mouseY, int x, int startY, int bo
         return builder.toString();
     }
 
-    private void resetPreviewCamera() {
+    void resetPreviewCamera() {
         previewCameraState.reset(showcaseMode);
     }
 

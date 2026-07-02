@@ -1,8 +1,29 @@
 # Ponder 1.12.2 重构执行规划
 
-日期：`2026-06-28`
+日期：`2026-07-02`
 分支：`codex/ponder-refactor-plan-20260624`
 工作树：`E:\mc_modding\Ponder_refactor_plan`
+
+## 0. 当前执行约束
+
+当前重构继续以独立工作树为准：
+
+- 施工工作树：`E:\mc_modding\Ponder_refactor_plan`
+- 保护工作树：`E:\mc_modding\Ponder`
+- 当前分支：`codex/ponder-refactor-plan-20260624`
+- 远程仓库：`wu-xiao-ya/ponder-for-1.12.2`
+- 当前远程验证：GitHub Actions
+- 本地验证范围：`git diff --check`、`rg`、文件审查
+- 本地资源约束：Gradle 编译、测试、打包统一交给远程 CI
+- 子代理路由：新派发子代理统一使用 `gpt-5.4-mini-pixel`
+- 参考项目：`RuiXuqi/GuideNova`、`CleanroomMC/CleanroomModTemplate`
+
+当前已知状态：
+
+- `937a362 Refactor ponder foundation architecture` 已推送
+- `d661bbc Retry remote CI Gradle build` 已推送
+- `patch1.patch` 是未跟踪文件，暂存前需要确认用途
+- GitHub Actions 当前卡在 Cleanroom 依赖解析阶段，尚未进入 Java 编译诊断
 
 ## 1. 目标
 
@@ -64,11 +85,15 @@ Unimined
 
 关键结论：
 
-- `PonderDebugScreen` 已降到约 `1795` 行，主职责继续向页面协调器收口
+- `PonderDebugScreen` 当前约 `2065` 行，主职责继续向页面协调器收口
 - `PonderSceneController`、`DebugMouseController`、`ShowcaseMouseController` 已承担输入和编排的一部分
 - `LayoutCache`、`InteractionState`、`Snapshot.RenderCapability`、`PonderSceneRuntimeTypes.TransformStep` 已开始吃到 `record` 与 `sealed interface`
 - `ScenePreviewRenderer`、`ShowcaseRenderer`、`ShowcaseHudRenderer`、`DebugPanelRenderer`、`SceneOverlayRenderer`、`GuiOverlayRenderer` 已形成 renderer 分层
 - `componentScroll` 与 `operationScroll` 已由 `DebugPanelRenderer` 持有，`DebugPanelViewState` 已退场
+- speech box、connector、line segment 绘制已集中到 `SpeechRenderer`
+- section fade、camera rotate、actor progress 已接入 `AnimationSpec`
+- external 注册已通过 `CompiledSceneBundle` 进入显式 compile 阶段
+- registration 内部写入已通过 `RegistrationCommands` 与 `RegistrationCommandService` 收口
 - external 管线已拆成 `definition / parse / scan / register / execute / validate / compat`，执行端继续拆为 scene / world / overlay 分派器
 
 对应参考：
@@ -85,10 +110,11 @@ Unimined
 
 当前残留热点：
 
-- 仍有少量直接 GL 状态操作，集中在语音框三角形和绘制桥接
-- 匿名 Host 接线仍占据较多 screen 篇幅
-- 仍保留部分 `isMouseOver*` 与 bounds 估算桥接
-- 语音框几何仍留在 screen 尾部，可继续迁入 `SpeechRenderer`
+- 直接 `GlStateManager` 调用仍集中在 preview 绘制桥接和 scene shadow 周边
+- 匿名 Host 接线占据较多 screen 篇幅
+- `isMouseOver*` 与 hover label host 仍保留在 screen 侧
+- showcase theme 构造仍散在 `PonderDebugScreen`、`PonderUI`、renderer 内嵌类型之间
+- line count 当前反映 adapter 与 renderer 过渡期成本，下一步目标是拆出 Host adapter 与 RenderContext
 
 #### B. Snapshot 体系过薄
 
@@ -280,11 +306,13 @@ plugin input
 - `scale()`
 - `rotate()`
 - `fillRect()`
+- `fillGradientRect()`
 - `fillTexturedRect()`
 - `fillTriangle()`
 - `drawLine()`
 - `renderItem()`
 - `renderText()`
+- `drawHoveringText()`
 
 第一批实现：
 
@@ -294,8 +322,43 @@ plugin input
 
 目标：
 
-- renderer 不再直接散落 `GlStateManager`
+- renderer 直接依赖 `RenderContext`
 - 预览渲染、overlay 渲染、snapshot 渲染共享同一上下文风格
+
+接口建议：
+
+```java
+interface RenderContext {
+    MatrixScope push();
+    ScissorScope scissor(int x, int y, int width, int height);
+    void translate(float x, float y, float z);
+    void scale(float x, float y, float z);
+    void rotate(float angle, float x, float y, float z);
+    void fillRect(int x, int y, int width, int height, int color);
+    void fillTriangle(Point a, Point b, Point c, int color);
+    void drawLine(Point from, Point to, int color, float width);
+}
+```
+
+`MatrixScope`、`ScissorScope`、`GLStateGuard` 统一采用 `AutoCloseable`，调用侧使用 try-with-resources 表达矩阵栈、裁剪栈和 GL 状态生命周期。
+
+当前调用点按风险分层：
+
+- 低风险 2D 底座：`CompatGuiScreen`、`DrawContext`、`DebugPanelRenderer`、`ActorOverlayRenderer`
+- 中风险 2D chrome：`AbstractPonderBrowserScreen`、`PonderIndexScreen`、`OverlayRenderer`、`PonderUI`
+- 中风险 overlay：`GuiOverlayRenderer`、`ShowcaseChromeRenderer`、`ShowcaseRenderer`、`SpeechRenderer`
+- 高风险 3D preview：`ScenePreviewRenderer`、`PonderSceneRuntime.applyRenderTransforms`
+- 高风险 snapshot：`EmbeddedReflectiveGuiSnapshot`、`EmbeddedReflectiveTabGuiSnapshot`、`EmbeddedGuiFurnaceSnapshot`、`SandboxTriggeredBlockGuiSnapshot`
+
+迁移顺序：
+
+1. `CompatGuiScreen` 与 `DrawContext` 先提供 `RenderContext` 适配层
+2. `DebugPanelRenderer`、`ActorOverlayRenderer` 迁入纯 2D context
+3. `OverlayRenderer`、`SpeechRenderer`、`GuiOverlayRenderer` 迁入 line / gradient / triangle 能力
+4. `PonderUI` 与 showcase renderer 迁入 theme-aware context
+5. `ScenePreviewRenderer` 和 snapshot renderer 接入 scoped scissor / matrix / depth guard
+
+这条顺序先稳住 2D 绘制和状态恢复，再处理 3D preview 与外部 GUI 嵌入。
 
 ### 6.2 Projection 与 Overlay 路线
 
@@ -316,9 +379,41 @@ plugin input
 - `SpeechRenderer.Point`、`SpeechRenderer.SpeechPointing`、`ProjectedBounds` 统一语言
 - caption、GUI overlay、highlight 共用同一投影语义
 
+接口建议：
+
+```java
+record ProjectedBounds(float minX, float minY, float maxX, float maxY, float depth) {}
+record CaptionPlacement(ProjectedBounds anchor, int boxX, int boxY, int boxWidth, int boxHeight) {}
+
+interface SceneProjectionContext {
+    Optional<Point> projectScenePoint(Vec3d point);
+    Optional<ProjectedBounds> projectSceneBounds(AxisAlignedBB bounds);
+}
+```
+
+`OverlayPlacementEngine` 输入 scene-space 数据，输出 screen-space placement。renderer 接收 placement 后只负责绘制。
+
+当前入口按职责分为六组：
+
+- `PonderOverlayLayoutHelper`：`projectScenePoint()`、`projectSceneBounds()`
+- `PonderOverlayHelper`：GUI overlay placement、highlight placement、caption target、overlap avoidance
+- `GuiOverlayRenderer` 与 `ShowcaseCaptionRenderer`：placement 消费
+- `PonderDebugScreen`：preview layout 汇总和 renderer 分发
+- `PonderSceneBuilder` 与 `PonderScene.OverlayEvent`：作者态 overlay 事件
+- `SceneOperationDefinitionFactory` 与 `ExternalOverlayEnqueuer`：JSON overlay 入口
+
+迁移顺序：
+
+1. 新建 `SceneProjectionContext` 与 `ProjectedBounds`
+2. 让 `PonderOverlayLayoutHelper` 成为 context 薄适配层
+3. 把 `PonderOverlayHelper` placement 计算迁入 `OverlayPlacementEngine`
+4. 把 `CaptionPlacement`、`GuiOverlayPlacement`、`GuiHighlightPlacement` 变成独立 record
+5. 让 renderer 只消费 placement record
+6. 把 JSON / Java builder overlay spec 对齐到同一 placement 输入模型
+
 ### 6.3 动画路线
 
-当前线性插值和硬编码 tick 常量，后续收口到：
+当前已引入 `AnimationSpec` 与 `EasingFunction`。后续把调度层继续收口到：
 
 - `AnimationSpec`
 - `AnimationController`
@@ -346,11 +441,25 @@ plugin input
 - 删除重复 `isMouseOver*` 逻辑
 - 新热区只需注册进统一命中树
 
+接口建议：
+
+```java
+sealed interface HitRegion permits RectHitRegion, CompositeHitRegion {
+    boolean contains(int mouseX, int mouseY);
+    HitAction action();
+}
+
+record RectHitRegion(String id, int x, int y, int width, int height, HitAction action) implements HitRegion {}
+record CompositeHitRegion(String id, List<HitRegion> children, HitAction action) implements HitRegion {}
+```
+
+`DebugMouseController`、`ShowcaseMouseController` 通过 `HitRegionTree.resolve(mouseX, mouseY)` 获取语义动作，再进入 controller handler。
+
 ### 6.5 Theme 路线
 
 颜色系统从硬编码 `int` 收口为：
 
-- `Theme`
+- `PonderTheme`
 - `SymbolicColor`
 - `ThemeResolver`
 - `ponder_themes.json`
@@ -366,9 +475,124 @@ plugin input
 - `showcase.header`
 - `showcase.popup`
 
+实现顺序：
+
+1. 先把 `ShowcaseRenderer.Theme`、`ShowcaseHudRenderer.Theme`、`ShowcaseChromeRenderer.Theme` 合并为 `PonderTheme`
+2. 再用 `SymbolicColor` 替代裸 `int` 颜色参数
+3. 最后把默认主题迁入资源配置，保留 Java 默认值兜底
+
+当前 theme 分布：
+
+- `ShowcaseChromeRenderer.Theme`：chrome glow、logo alpha、边框与标题色
+- `ShowcaseRenderer.Theme`：header box、fallback panel、popup 与文本色
+- `ShowcaseHudRenderer.Theme`：playback bar、next-up card、hover label
+- `PonderUI` 与 `PonderDebugScreen` 各自构造一套 showcase/debug preset
+
+目标结构：
+
+```java
+record PonderTheme(String id, Map<SymbolicColor, Integer> colors, Map<ThemeMetric, Float> metrics) {}
+
+enum SymbolicColor {
+    PANEL_BACKGROUND,
+    PANEL_BORDER,
+    TIMELINE_ACTIVE,
+    TIMELINE_INACTIVE,
+    OVERLAY_CAPTION,
+    OVERLAY_WARNING,
+    SHOWCASE_HEADER,
+    SHOWCASE_POPUP
+}
+```
+
+先提供 `PonderThemes.showcase()` 与 `PonderThemes.debug()` 两个 Java preset，再把资源配置接入 `ThemeResolver`。
+
+### 6.6 SnapshotSource 路线
+
+snapshot 体系拆成三层：
+
+```text
+SnapshotSource
+  -> SnapshotProvider compatibility adapter
+  -> Snapshot renderer / texture result
+```
+
+当前来源：
+
+- 静态贴图：`minecraft_furnace`、Thermal 面板和机器贴图
+- 反射实时 GUI：`EmbeddedReflectiveGuiSnapshot`
+- 反射 tab GUI：`EmbeddedReflectiveTabGuiSnapshot`
+- 沙盒捕获 GUI：`SandboxTriggeredBlockGuiSnapshot`
+- tick 动态 provider：`te_*_cycle`
+
+目标类型：
+
+```java
+sealed interface SnapshotSource permits StaticTextureSnapshotSource, LiveGuiSnapshotSource,
+    CyclingSnapshotSource, SandboxBlockGuiSnapshotSource {
+    Snapshot resolve(SnapshotContext context);
+    SnapshotInvalidationPolicy invalidationPolicy();
+}
+
+record SnapshotContext(float currentTick, EntityPlayerSP player, World world) {}
+record SnapshotCacheKey(ResourceLocation id, int tickBucket, int dimension, String sourceKey) {}
+```
+
+迁移顺序：
+
+1. `SnapshotProvider` 作为 compatibility adapter 接入 `SnapshotSource`
+2. registry 从 `Map<ResourceLocation, SnapshotProvider>` 迁到 `Map<ResourceLocation, SnapshotSource>`
+3. 静态贴图使用永久缓存，`te_*_cycle` 使用 `currentTick / 20` bucket
+4. live GUI 缓存键加入 player inventory、dimension、gui class、tile class
+5. sandbox capture 拆成不可变 source 与独立 capture session
+6. registry 增加 `clear()` / rebuild 入口，接资源重载与数据刷新
+
 ## 7. 构建与兼容层整改方案
 
 ### 7.1 构建层
+
+当前 CI 关键阻塞：
+
+```text
+Could not GET 'https://curse.cleanroommc.com/net/minecraft/minecraft/1.12.2/minecraft-1.12.2.pom'
+Received status code 502 from server: Bad Gateway
+```
+
+当前相关文件：
+
+- `E:\mc_modding\Ponder_refactor_plan\gradle\scripts\dependencies.gradle:1`
+- `E:\mc_modding\Ponder_refactor_plan\.github\workflows\build.yml:1`
+
+整改原则：
+
+1. 保持 Unimined + Cleanroom 主链
+2. 先解决 `net.minecraft:minecraft:1.12.2` 元数据解析源
+3. GitHub Actions 保持三次重试和 Gradle cache
+4. 依赖解析通过后再处理 Java 编译诊断
+
+当前网络探测结果：
+
+- `https://curse.cleanroommc.com/net/minecraft/minecraft/1.12.2/minecraft-1.12.2.pom` 返回 `502`
+- `https://curse.cleanroommc.com/net/minecraft/minecraft/1.12.2/minecraft-1.12.2.jar` 返回 `502`
+- `https://maven.cleanroommc.com/net/minecraft/minecraft/1.12.2/minecraft-1.12.2.pom` 返回 `404`
+- `https://repo.cleanroommc.com/releases/net/minecraft/minecraft/1.12.2/minecraft-1.12.2.pom` 返回 `404`
+- `https://repo.cleanroommc.com/snapshots/net/minecraft/minecraft/1.12.2/minecraft-1.12.2.pom` 返回 `404`
+- `https://libraries.minecraft.net/net/minecraft/minecraft/1.12.2/minecraft-1.12.2.jar` 返回 `404`
+
+CI 整改候选：
+
+1. GitHub Actions 显式缓存 `~/.gradle/caches/unimined/net/minecraft/minecraft/1.12.2`
+2. 缓存键绑定 `minecraft-1.12.2`、`Cleanroom-FG3`、`0.5.6-alpha`
+3. 同步缓存 `~/.gradle/caches/modules-2`，提升 Cleanroom 依赖复用率
+4. 若缓存命中仍失败，再考虑把 Unimined 产物整理成 `mavenLocal()` 可读结构
+5. 远程 CI 进入 Java 编译阶段后再处理源码错误
+
+状态：已完成首轮
+
+- `.github/workflows/build.yml` 已加入 `actions/cache@v4`
+- 缓存路径覆盖 Unimined Minecraft 1.12.2 与 Gradle modules-2
+- 缓存键包含 `minecraft-1.12.2`、`Cleanroom-FG3`、`0.5.6-alpha`
+- 保留 JDK 25、Gradle cache、三次 Gradle retry
 
 优先整改：
 
@@ -448,6 +672,52 @@ plugin input
 - 页面热区只保留在 `LayoutCache + InteractionHitCache`
 - 匿名 Host 接线后续继续瘦身
 
+#### P0-3A：抽离 controller Host adapter
+
+目标：
+
+- `PonderDebugScreen` 只保留事件入口和页面编排
+- controller host 迁入独立 adapter
+- showcase/debug 双分支共享 `PonderDebugScreenHostSupport`
+
+第一批 adapter：
+
+- `PonderDebugScreenHostSupport`
+- `PonderSceneControllerHostAdapter`
+- `DebugKeyboardHostAdapter`
+- `ShowcaseKeyboardHostAdapter`
+- `DebugMouseHostAdapter`
+- `ShowcaseMouseHostAdapter`
+
+第二批 adapter：
+
+- `ShowcaseHudHostAdapter`
+- `ShowcaseRendererHostAdapter`
+- `ShowcaseCaptionHostAdapter`
+- `ScreenDrawContextAdapter`
+
+迁移顺序：
+
+1. `PonderDebugScreenHostSupport` 集中 screen 视图能力、状态对象、按钮刷新、场景查询
+2. `PonderSceneControllerHostAdapter` 接收 reload、select、seek、step、button state 命令
+3. keyboard adapter 接收 debug/showcase 键盘命令
+4. mouse adapter 接收 preview、playback、component list、operation list 命中逻辑
+5. showcase render adapter 接收 HUD、caption、header、draw context 接线
+
+关键时序：
+
+- `initGui()` 后按钮字段完整
+- adapter 中的按钮刷新沿用当前生命周期
+- `selectionState`、`playbackState`、`interactionHitCache`、`previewCameraState` 继续保持单一所有权
+
+状态：已完成首轮
+
+- `PonderDebugScreenHostSupport` 已落地
+- `PonderSceneControllerHostAdapter` 已落地
+- `createSceneControllerHost()` 已改为返回 adapter
+- `PonderDebugScreen` 暴露最小包可见桥接：`getDebugPanelRenderer()`、`clearPreviewCaches()`、`centerOperationsOnActiveLine()`、`resetPreviewCamera()`
+- keyboard、mouse、showcase render adapter 留在下一轮
+
 #### P0-4：把残留 GL 直接操作迁出 `PonderDebugScreen`
 
 目标：
@@ -458,15 +728,89 @@ plugin input
 
 全部迁入 renderer 或 render context
 
+状态：部分完成
+
+- speech box、connector、line segment 已由 `SpeechRenderer` 承担
+- `PonderDebugScreen` 当前仍保留 `GlStateManager.disableLighting()` 等 preview 桥接
+- 下一步先抽 `RenderContext`，再迁 `drawSceneShadow` 和 preview scissor
+
 ### P1：建立稳定渲染骨架
 
 #### P1-1：引入 `RenderContext + GLStateGuard`
 
+交付物：
+
+- `foundation/ui/render/RenderContext.java`
+- `foundation/ui/render/GlRenderContext.java`
+- `foundation/ui/render/GLStateGuard.java`
+- `foundation/ui/render/ScissorStack.java`
+
+验收点：
+
+- `CompatGuiScreen` 的 gradient / textured rect 通过 context 暴露
+- `DrawContext` 能桥接到 `RenderContext`
+- `GLStateGuard` 覆盖 blend、alpha、texture、shade model、line width、color
+- `ScissorStack` 统一坐标换算和 GL scissor 生命周期
+
+状态：已完成基础层
+
+- `foundation/ui/render/RenderContext.java` 已落地
+- `foundation/ui/render/GlRenderContext.java` 已落地
+- `foundation/ui/render/GLStateGuard.java` 已落地
+- `foundation/ui/render/ScissorStack.java` 已落地
+- 现阶段先提供桥接能力，renderer 迁移留在下一轮
+
 #### P1-2：建立 `SceneProjectionContext + OverlayPlacementEngine`
+
+交付物：
+
+- `foundation/ui/projection/SceneProjectionContext.java`
+- `foundation/ui/projection/ProjectedBounds.java`
+- `foundation/ui/overlay/OverlayPlacementEngine.java`
+- caption、GUI overlay、highlight 的 placement record
+
+验收点：
+
+- `PonderOverlayLayoutHelper` 变成 projection adapter
+- `PonderOverlayHelper` 的 placement 计算迁入 engine
+- `GuiOverlayRenderer` 和 `ShowcaseCaptionRenderer` 消费 placement record
+- screen 侧 layout 汇总职责继续缩小
 
 #### P1-3：把 snapshot 体系升级为 sealed provider/source 模型
 
+交付物：
+
+- `SnapshotSource` sealed interface
+- `ConstantSnapshotSource`
+- `BlockGuiSnapshotSource`
+- `SandboxSnapshotSource`
+- `SnapshotCacheKey`
+- `SnapshotInvalidationPolicy`
+
+验收点：
+
+- 静态贴图、live GUI、cycling provider、sandbox block GUI 都是明确 source 类型
+- `SandboxTriggeredBlockGuiSnapshot` 的 block id、meta、tile NBT 进入不可变 key
+- registry 具备 clear / rebuild 入口
+- 旧 `SnapshotProvider#get(float)` 调用面保留 compatibility adapter
+
+状态：已完成基础层
+
+- `SnapshotSource` sealed interface 已落地
+- `SnapshotContext` 已落地
+- `SnapshotCacheKey` 已落地
+- `SnapshotInvalidationPolicy` 已落地
+- `SnapshotProvider#asSource()` 已提供 compatibility adapter
+- `PonderGuiSnapshotRegistry` 内部存储已切换到 `SnapshotSource`
+- `registerBlockGuiSnapshot(...)` 兼容入口已保留
+
 #### P1-4：建立 animation spec 与 easing 模型
+
+状态：已完成首轮
+
+- `AnimationSpec` 已落地
+- `EasingFunction` 已落地
+- `PonderSceneRuntime` 已接入 section fade、camera rotate、actor progress
 
 ### P2：把 external 和 registration 现代化
 
@@ -481,11 +825,29 @@ plugin input
 
 #### P2-1：补 `compile` 阶段，显式产出 `CompiledSceneBundle`
 
+状态：已完成首轮
+
+- `CompiledSceneBundle` 已落在 `foundation/external/register`
+- `ExternalSceneRegistrationService` 已经先 compile 再注册 component/storyboard/order
+- 后续继续补结构化 diagnostic 和 source map
+
 #### P2-2：引入结构化诊断对象
 
 #### P2-3：引入 `RegistrationCommand`
 
+状态：已完成首轮
+
+- `RegistrationCommands` 已落地
+- `RegistrationCommandService` 已落地
+- `PonderSceneRegistry`、`PonderTagRegistry`、`PonderLocalization` 内部写入已走 command
+
 #### P2-4：把 `PonderIndex.reload()` 收口成编排器
+
+下一步：
+
+- reload 只组织 scan、parse、validate、compile、register
+- 每个阶段返回结构化结果
+- 失败信息统一进入 diagnostic sink
 
 ### P3：构建层和兼容层收尾
 
@@ -526,6 +888,12 @@ CI 覆盖命令：
 
 本地只做静态检查，例如 `git diff --check`、`rg`、结构性文件审计。
 
+当前 Gate C 前置任务：
+
+- 修复 Cleanroom 依赖解析源或缓存策略
+- 保留远程三次重试
+- 依赖解析成功后读取 GitHub Actions Java 编译日志
+
 ### Gate D：运行门
 
 最少校验四项：
@@ -546,12 +914,28 @@ CI 覆盖命令：
 真正开工时按下面顺序最稳：
 
 1. 把 `PonderDebugScreen` 的匿名 Host 接线继续收口到 controller adapter
-2. 把语音框三角形和残留 GL 绘制迁入 `SpeechRenderer` 或 render context
-3. 引入 `RenderContext + GLStateGuard`
+2. 引入 `RenderContext + GLStateGuard`
+3. 迁移 `CompatGuiScreen`、`DrawContext`、`DebugPanelRenderer`、`OverlayRenderer`
 4. 引入 `SceneProjectionContext + OverlayPlacementEngine`
 5. 升级 snapshot 体系的来源、失效、缓存语义
-6. external 引入 `CompiledSceneBundle`
-7. registration 引入 `RegistrationCommand`
-8. 构建层和 shim 层收尾
+6. 合并 showcase / debug theme 到 `PonderTheme`
+7. external 继续补结构化 diagnostic 与 source map
+8. registration 继续补 command/query split
+9. 构建层和 shim 层收尾
 
 这条顺序能先消灭当前最高频的耦合点，再推进更深层的现代化改造。
+
+## 12. 下一批子代理切片
+
+新派发子代理统一使用 `gpt-5.4-mini-pixel`。
+
+建议并行切片：
+
+1. CI 依赖整改：实现 Unimined minecraft 1.12.2 缓存策略，触发远程 CI
+2. UI Host adapter：落 `PonderDebugScreenHostSupport` 和 scene/keyboard/mouse adapter
+3. RenderContext：落 `GLStateGuard`、`ScissorStack`、`DrawContext` bridge
+4. Projection：落 `SceneProjectionContext`、`ProjectedBounds`、三类 placement record
+5. Snapshot：落 `SnapshotSource`、`SnapshotContext`、`SnapshotCacheKey`
+6. Theme：落 `PonderTheme`、`SymbolicColor`、`PonderThemes` preset
+
+主代理负责范围控制、冲突处理、文档同步、远程 CI 验证。
