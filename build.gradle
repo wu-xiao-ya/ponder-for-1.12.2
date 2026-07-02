@@ -11,54 +11,15 @@ plugins {
 import org.jetbrains.gradle.ext.Gradle
 
 apply from: 'gradle/scripts/helpers.gradle'
-
-// Early Assertions
-assertProperty 'mod_version'
-assertProperty 'root_package'
-assertProperty 'mod_id'
-assertProperty 'mod_name'
-
-assertSubProperties 'use_access_transformer', 'access_transformer_locations'
-assertSubProperties 'is_coremod', 'coremod_includes_mod', 'coremod_plugin_class_name'
-assertSubProperties 'use_asset_mover', 'asset_mover_version'
-
-setDefaultProperty 'generate_sources_jar', true, false
-setDefaultProperty 'generate_javadocs_jar', true, false
-setDefaultProperty 'enable_shadow', true, false
-setDefaultProperty 'enable_lwjglx', true, true
-setDefaultProperty 'enable_foundation_debug', true, false
-setDefaultProperty 'minecraft_username', true, 'Developer'
-setDefaultProperty 'extra_jvm_args', false, ''
-
-version = propertyString('mod_version')
-group = propertyString('root_package')
-
-base {
-    archivesName = propertyString('mod_id')
-}
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(25)
-    }
-    if (propertyBool('generate_sources_jar')) {
-        withSourcesJar()
-    }
-    if (propertyBool('generate_javadocs_jar')) {
-        withJavadocJar()
-    }
-}
-
-configurations {
-    contain
-    implementation.extendsFrom(contain)
-    modCompileOnly
-    compileOnly.extendsFrom(modCompileOnly)
-    modRuntimeOnly
-    runtimeOnly.extendsFrom(modRuntimeOnly)
-}
+apply from: 'gradle/scripts/project-conventions.gradle'
 
 String remapTaskName = propertyBool('enable_shadow') ? 'remapShadowJar' : 'remapJar'
+
+if (!propertyBool('enable_shadow')) {
+    tasks.named('shadowJar').configure {
+        enabled = false
+    }
+}
 
 unimined.minecraft {
     version '1.12.2'
@@ -283,14 +244,6 @@ idea {
     }
 }
 
-if (!propertyBool('enable_shadow')) {
-    shadowJar.enabled = false
-}
-
-compileJava {
-    sourceCompatibility = targetCompatibility = JavaVersion.VERSION_25
-}
-
 jar {
     archiveClassifier = 'dev'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
@@ -334,26 +287,6 @@ tasks.named(remapTaskName).configure {
     doLast {
         logging.captureStandardOutput LogLevel.QUIET
     }
-}
-
-compileTestJava {
-    sourceCompatibility = targetCompatibility = JavaVersion.VERSION_25
-}
-
-test {
-    useJUnitPlatform()
-    javaLauncher.set(javaToolchains.launcherFor {
-        languageVersion = JavaLanguageVersion.of(25)
-    })
-    if (propertyBool('show_testing_output')) {
-        testLogging {
-            showStandardStreams = true
-        }
-    }
-}
-
-tasks.withType(JavaCompile).configureEach {
-    options.encoding = 'UTF-8'
 }
 
 tasks.register('deployToConfiguredTestMods', Copy) {

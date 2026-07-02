@@ -40,6 +40,7 @@ It still uses modern Java and modern client APIs, so the backport remains large.
 - Basic mod metadata
 - Gradle workspace setup
 - package scaffolding
+- Shared Java 25 toolchain and test defaults now live under `gradle/scripts/` for reuse by future build slices.
 
 ## Suggested order
 

@@ -50,7 +50,7 @@ Compared with modern upstream Ponder, the largest remaining gaps are still in:
 
 ## Build
 
-Gradle itself requires a modern JDK in this workspace.
+Gradle itself requires JDK 25 in this workspace.
 
 Typical commands:
 

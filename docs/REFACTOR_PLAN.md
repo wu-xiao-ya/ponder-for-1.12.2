@@ -482,12 +482,14 @@ record CompositeHitRegion(String id, List<HitRegion> children, HitAction action)
 2. 再用 `SymbolicColor` 替代裸 `int` 颜色参数
 3. 最后把默认主题迁入资源配置，保留 Java 默认值兜底
 
+当前第一步已先落 `PonderThemes.showcase()` / `PonderThemes.debug()` Java preset，debug 与 showcase 的 renderer 创建入口已经开始收口。
+
 当前 theme 分布：
 
 - `ShowcaseChromeRenderer.Theme`：chrome glow、logo alpha、边框与标题色
 - `ShowcaseRenderer.Theme`：header box、fallback panel、popup 与文本色
 - `ShowcaseHudRenderer.Theme`：playback bar、next-up card、hover label
-- `PonderUI` 与 `PonderDebugScreen` 各自构造一套 showcase/debug preset
+- `PonderUI` 与 `PonderDebugScreen` 已通过 `PonderThemes` 获取 showcase/debug preset
 
 目标结构：
 
@@ -533,10 +535,13 @@ sealed interface SnapshotSource permits StaticTextureSnapshotSource, LiveGuiSnap
     CyclingSnapshotSource, SandboxBlockGuiSnapshotSource {
     Snapshot resolve(SnapshotContext context);
     SnapshotInvalidationPolicy invalidationPolicy();
+    SnapshotCacheKey cacheKey(ResourceLocation id, SnapshotContext context);
 }
 
-record SnapshotContext(float currentTick, EntityPlayerSP player, World world) {}
-record SnapshotCacheKey(ResourceLocation id, int tickBucket, int dimension, String sourceKey) {}
+record SnapshotContext(float currentTick, EntityPlayerSP player, World world) {
+    String cacheScopeKey();
+}
+record SnapshotCacheKey(ResourceLocation id, int tickBucket, String contextKey, String sourceKey) {}
 ```
 
 迁移顺序：
@@ -544,9 +549,9 @@ record SnapshotCacheKey(ResourceLocation id, int tickBucket, int dimension, Stri
 1. `SnapshotProvider` 作为 compatibility adapter 接入 `SnapshotSource`
 2. registry 从 `Map<ResourceLocation, SnapshotProvider>` 迁到 `Map<ResourceLocation, SnapshotSource>`
 3. 静态贴图使用永久缓存，`te_*_cycle` 使用 `currentTick / 20` bucket
-4. live GUI 缓存键加入 player inventory、dimension、gui class、tile class
+4. live GUI 缓存键加入 player/world scope、gui class、tile class
 5. sandbox capture 拆成不可变 source 与独立 capture session
-6. registry 增加 `clear()` / rebuild 入口，接资源重载与数据刷新
+6. registry 增加 `registerSource`、`clearCache()`、`clear()`、`rebuild()` 入口，接资源重载与数据刷新
 
 ## 7. 构建与兼容层整改方案
 
@@ -810,7 +815,7 @@ CI 整改候选：
 
 - 静态贴图、live GUI、cycling provider、sandbox block GUI 都是明确 source 类型
 - `SandboxTriggeredBlockGuiSnapshot` 的 block id、meta、tile NBT 进入不可变 key
-- registry 具备 clear / rebuild 入口
+- registry 具备 `registerSource`、`clearCache()`、`clear()`、`rebuild()` 入口
 - 旧 `SnapshotProvider#get(float)` 调用面保留 compatibility adapter
 
 状态：已完成基础层
@@ -821,6 +826,7 @@ CI 整改候选：
 - `SnapshotInvalidationPolicy` 已落地
 - `SnapshotProvider#asSource()` 已提供 compatibility adapter
 - `PonderGuiSnapshotRegistry` 内部存储已切换到 `SnapshotSource`
+- `PonderGuiSnapshotRegistry` 已补 source cache 与 clear / rebuild 边界
 - `registerBlockGuiSnapshot(...)` 兼容入口已保留
 
 #### P1-4：建立 animation spec 与 easing 模型
@@ -871,6 +877,8 @@ CI 整改候选：
 ### P3：构建层和兼容层收尾
 
 #### P3-1：收敛 Gradle 重复逻辑
+
+- `gradle/scripts/project-conventions.gradle` 已经承接共享 JVM/toolchain/test 默认项，remap、shadow、发布逻辑继续留在主 `build.gradle`。
 
 #### P3-2：理顺 CraftTweaker 依赖与测试开关
 
@@ -953,8 +961,132 @@ CI 覆盖命令：
 1. Mouse Host adapter：落 debug/showcase mouse adapter
 2. RenderContext 迁移：迁 `DebugPanelRenderer`、`SceneOverlayRenderer`、`GuiOverlayRenderer`
 3. Projection wiring：把 `PonderOverlayLayoutHelper` 与 `PonderOverlayHelper` 接入 projection 包
-4. Snapshot 深化：补 `SnapshotCacheKey` 维度、失效策略和资源重载入口
+4. Snapshot 深化：补 `SnapshotCacheKey` 边界、失效策略和 `clear` / `rebuild` 入口
 5. Theme：落 `PonderTheme`、`SymbolicColor`、`PonderThemes` preset
 6. Build cleanup：合并主工程与 `crl_ponder` 的重复 Gradle 逻辑
 
 主代理负责范围控制、冲突处理、文档同步、远程 CI 验证。
+
+## 13. 执行级技术细则
+
+### 13.1 Java 25 落地规则
+
+- `record` 只承载不可变数据、布局结果、投影结果、注册结果和 diagnostic payload
+- `sealed interface` 只用于封闭分派面，例如 `SnapshotSource`、operation、registration command
+- pattern matching `instanceof` 用在 adapter 层和 renderer key 生成层，避免把反射判断扩散到 screen
+- `AutoCloseable` guard 用于 GL state、scissor、matrix、depth、blend 的成对恢复
+- `Map.of()` / `List.of()` 用于小型静态表，运行态热路径继续使用可控集合
+- API surface 保持稳定签名，现代语法优先留在 foundation 内部
+
+### 13.2 RenderContext 迁移规格
+
+每个 renderer 迁移时按固定顺序推进：
+
+1. 把裸 `GlStateManager`、`Tessellator`、`BufferBuilder` 调用收进 `GlRenderContext`
+2. 把颜色、alpha、z-level、scissor 写成显式参数或 guard
+3. renderer 构造器保留当前调用签名，新增 context-aware overload 作为下一阶段入口
+4. screen 侧只创建 context、layout 和 state，实际绘制落在 renderer
+5. 每迁一个 renderer，同步删除 screen 侧对应 helper 方法
+
+验收点：
+
+- renderer 方法入参可从名称判断坐标空间
+- GL 状态恢复由 guard 承担
+- `DrawContext` 只保留通用 primitive，不承载业务语义
+
+### 13.3 Projection 与 Overlay 规格
+
+坐标转换固定走三层：
+
+```text
+scene-space
+  -> SceneProjectionContext
+  -> placement record
+  -> renderer draw call
+```
+
+落地规则：
+
+- `SceneProjectionContext` 持有 scene、bounds、layout、tick、projector
+- `PonderOverlayLayoutHelper` 只承担 scene-space 到 screen-space 的投影 adapter
+- `PonderOverlayHelper` 输出 `CaptionPlacement`、`GuiOverlayPlacement`、`GuiHighlightPlacement`
+- overlay renderer 只消费 placement record 和 draw context
+- legacy `ProjectedBounds` 保留到所有调用点完成迁移后统一删除
+
+### 13.4 Snapshot Source 规格
+
+Snapshot registry 按 source、cache、renderer 三层拆分：
+
+```text
+SnapshotSource
+  -> SnapshotCacheKey
+  -> Snapshot
+  -> SnapshotRenderer
+```
+
+落地规则：
+
+- 静态贴图 source 使用 `IMMUTABLE` policy
+- cycling provider 使用 `TICK_20_BUCKET` policy
+- live GUI source key 必须包含 renderer class、gui class、tile class、tab field、tile NBT 这类稳定来源信息
+- context key 必须覆盖 dimension、player、world scope
+- registry 负责 source 注册、cache 命中、cache 清理和 rebuild
+- capture session 状态留在 renderer 实例，source key 只表达输入边界
+
+下一阶段拆分目标：
+
+- `ConstantSnapshotSource` 提升为独立文件
+- `ProviderSnapshotSource` 提升为独立文件
+- sandbox block GUI 拆成 source 与 capture session
+- 资源重载入口接 `PonderGuiSnapshotRegistry.rebuild()`
+
+### 13.5 Theme 资源化规格
+
+Theme 迁移按三步推进：
+
+1. Java preset 承接 showcase/debug 现有数值
+2. renderer 构造入口统一从 `PonderThemes` 获取 theme
+3. `ThemeResolver` 接资源配置 `ponder_themes.json`
+
+资源格式目标：
+
+```json
+{
+  "id": "showcase",
+  "colors": {
+    "chrome_glow": "#1B2430"
+  },
+  "metrics": {
+    "header_max_width": 340
+  }
+}
+```
+
+验收点：
+
+- Java preset 与资源配置字段一一对应
+- 缺失字段回退到 Java preset
+- renderer 内部只使用已解析 theme object
+
+### 13.6 构建与 CI 规格
+
+本地工作只做轻量验证：
+
+```powershell
+git -c core.whitespace=cr-at-eol diff --check
+rg -n "<<<<<<<|=======|>>>>>>>" .
+```
+
+远程编译门固定走 GitHub Actions：
+
+```powershell
+gh workflow run Build --ref codex/ponder-refactor-plan-20260624
+gh run watch <run_id> --exit-status
+```
+
+构建层目标：
+
+- `gradle/scripts/project-conventions.gradle` 承接 JVM、toolchain、test 默认项
+- `gradle/scripts/dependencies.gradle` 承接依赖和仓库解析
+- 主 `build.gradle` 聚焦 Unimined、资源处理、remap、发布和部署任务
+- 后续构建切片复用同一 conventions 层，remap、shadow、发布任务按具体工程保留

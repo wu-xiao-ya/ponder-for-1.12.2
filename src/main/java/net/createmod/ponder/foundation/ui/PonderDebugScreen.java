@@ -63,8 +63,6 @@ public class PonderDebugScreen extends CompatGuiScreen {
 
     private static final ResourceLocation SHOWCASE_WIDGETS_TEXTURE =
         new ResourceLocation("ponder", "textures/gui/widgets.png");
-    private static final ResourceLocation SHOWCASE_LOGO_TEXTURE =
-        new ResourceLocation("ponder", "textures/gui/logo.png");
     private static final int OUTER_MARGIN = 12;
     private static final int LINE_HEIGHT = 12;
     private static final int LEFT_PANEL_WIDTH = 170;
@@ -859,9 +857,8 @@ private void drawComponentList(int mouseX, int mouseY, int x, int startY, int bo
     }
 
     protected ShowcaseRenderer.Theme createShowcaseRendererTheme() {
-        return new ShowcaseRenderer.Theme(326, 42, 185.0F, 0x141920, 0x0E1218, 120.0F, 0xD5CCB8, 188.0F, 0x10151B,
-            64.0F, 0xE7E0D1, 0xB8C3CC, 0xF6F2EA, 0xAEB8C1, 0xFFC8D0D8, 188.0F, 0x1A2028, 156.0F, 0xD5CCB8, 0xF2EFE7,
-            (componentStack, componentId) -> "\u601D\u7D22", groupState -> "\u5206\u7EC4\u9009\u62E9  " + groupState.tag.getTitle());
+        return PonderThemes.debugRendererTheme((componentStack, componentId) -> "\u601D\u7D22",
+            groupState -> "\u5206\u7EC4\u9009\u62E9  " + groupState.tag.getTitle());
     }
 
     private ShowcaseRenderer getFallbackShowcaseRenderer() {
@@ -873,7 +870,7 @@ private void drawComponentList(int mouseX, int mouseY, int x, int startY, int bo
     }
 
     protected ShowcaseHudRenderer.Theme createShowcaseHudTheme() {
-        return new ShowcaseHudRenderer.Theme() {
+        return PonderThemes.debugHudTheme(new PonderTheme.HudTextProvider() {
             @Override
             public String getPlaybackBarHoverLabel(int estimatedTick, @Nullable PonderScene scene) {
                 return getHoverHintForPlaybackBar(estimatedTick, scene);
@@ -898,7 +895,7 @@ private void drawComponentList(int mouseX, int mouseY, int x, int startY, int bo
             public String getNextUpLabel() {
                 return "接下来";
             }
-        };
+        });
     }
 
     private ShowcaseHudRenderer getFallbackShowcaseHudRenderer() {
@@ -910,8 +907,7 @@ private void drawComponentList(int mouseX, int mouseY, int x, int startY, int bo
     }
 
     protected ShowcaseChromeRenderer.Theme createShowcaseChromeTheme() {
-        return new ShowcaseChromeRenderer.Theme(20, 26, 52, 60, 52.0F, 44.0F, 92.0F, 0x17202A, 0xF1E8D4, 0x2C3138,
-            0x4D545E, 0x030508, SHOWCASE_LOGO_TEXTURE, 0.72F);
+        return PonderThemes.debugChromeTheme();
     }
 
     private ShowcaseChromeRenderer getFallbackShowcaseChromeRenderer() {

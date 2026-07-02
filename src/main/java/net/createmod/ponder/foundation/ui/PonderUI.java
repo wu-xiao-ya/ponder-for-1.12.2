@@ -24,9 +24,7 @@ public class PonderUI extends PonderDebugScreen {
 
     private ShowcaseChromeRenderer getShowcaseChromeRenderer() {
         if (showcaseChromeRenderer == null) {
-            showcaseChromeRenderer = new ShowcaseChromeRenderer(mc, new ShowcaseChromeRenderer.Theme(
-                24, 28, 56, 68, 68.0F, 56.0F, 116.0F, 0x1B2430, 0xE6E0D2, 0x2B323A, 0x56606A, 0x05080C,
-                new ResourceLocation("ponder", "textures/gui/logo.png"), 0.78F));
+            showcaseChromeRenderer = new ShowcaseChromeRenderer(mc, PonderThemes.showcaseChromeTheme());
         }
         return showcaseChromeRenderer;
     }
@@ -65,7 +63,7 @@ public class PonderUI extends PonderDebugScreen {
 
     @Override
     protected ShowcaseHudRenderer.Theme createShowcaseHudTheme() {
-        return new ShowcaseHudRenderer.Theme() {
+        return PonderThemes.showcaseHudTheme(new PonderTheme.HudTextProvider() {
             @Override
             public String getPlaybackBarHoverLabel(int estimatedTick, @Nullable PonderScene scene) {
                 return getHoverHintForPlaybackBar(estimatedTick, scene);
@@ -90,13 +88,12 @@ public class PonderUI extends PonderDebugScreen {
             public String getNextUpLabel() {
                 return tr("showcase.next_up");
             }
-        };
+        });
     }
 
     @Override
     protected ShowcaseRenderer.Theme createShowcaseRendererTheme() {
-        return new ShowcaseRenderer.Theme(340, 44, 188.0F, 0x111822, 0x00000000, 96.0F, 0xD7DFE7, 188.0F, 0x10151B,
-            64.0F, 0xE7E0D1, 0xB8C3CC, 0xF6F2EA, 0xAEB8C1, 0xFFD7DFE7, 188.0F, 0x1A2028, 156.0F, 0xD7DFE7, 0xF2EFE7,
+        return PonderThemes.showcaseRendererTheme(
             (componentStack, componentId) -> componentStack.isEmpty() ? tr("showcase.title")
                 : tr("showcase.eyebrow_component", componentStack.getItem().getRegistryName()),
             groupState -> tr("hint.group"));

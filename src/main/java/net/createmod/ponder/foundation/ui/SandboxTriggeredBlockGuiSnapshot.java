@@ -1,6 +1,7 @@
 package net.createmod.ponder.foundation.ui;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,7 +17,9 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
 import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
@@ -44,6 +47,7 @@ public final class SandboxTriggeredBlockGuiSnapshot implements SnapshotRenderer.
 
     private final ResourceLocation blockId;
     private final int meta;
+    private final String cacheKey;
 
     @Nullable
     private GuiScreen capturedGui;
@@ -57,11 +61,18 @@ public final class SandboxTriggeredBlockGuiSnapshot implements SnapshotRenderer.
     @Nullable
     private NBTTagCompound sandboxTileNbt;
     @Nullable
-    private NBTTagCompound requestedTileNbt;
+    private final NBTTagCompound requestedTileNbt;
 
     public SandboxTriggeredBlockGuiSnapshot(ResourceLocation blockId, int meta) {
+        this(blockId, meta, null, buildCacheKey(blockId, meta, null));
+    }
+
+    private SandboxTriggeredBlockGuiSnapshot(ResourceLocation blockId, int meta, @Nullable NBTTagCompound requestedTileNbt,
+        String cacheKey) {
         this.blockId = blockId;
         this.meta = meta;
+        this.cacheKey = cacheKey;
+        this.requestedTileNbt = requestedTileNbt == null ? null : requestedTileNbt.copy();
         INSTANCES.add(this);
     }
 
@@ -71,16 +82,18 @@ public final class SandboxTriggeredBlockGuiSnapshot implements SnapshotRenderer.
 
     public static synchronized SandboxTriggeredBlockGuiSnapshot getOrCreate(ResourceLocation blockId, int meta,
         @Nullable NBTTagCompound tileNbt) {
-        String key = blockId + "#" + meta;
+        String key = buildCacheKey(blockId, meta, tileNbt);
         SandboxTriggeredBlockGuiSnapshot existing = BY_BLOCK.get(key);
         if (existing != null) {
-            existing.requestedTileNbt = tileNbt == null ? null : tileNbt.copy();
             return existing;
         }
-        SandboxTriggeredBlockGuiSnapshot snapshot = new SandboxTriggeredBlockGuiSnapshot(blockId, meta);
-        snapshot.requestedTileNbt = tileNbt == null ? null : tileNbt.copy();
+        SandboxTriggeredBlockGuiSnapshot snapshot = new SandboxTriggeredBlockGuiSnapshot(blockId, meta, tileNbt, key);
         BY_BLOCK.put(key, snapshot);
         return snapshot;
+    }
+
+    String cacheKey() {
+        return cacheKey;
     }
 
     @Override
@@ -469,6 +482,38 @@ public final class SandboxTriggeredBlockGuiSnapshot implements SnapshotRenderer.
         for (String key : source.getKeySet()) {
             target.setTag(key, source.getTag(key).copy());
         }
+    }
+
+    private static String buildCacheKey(ResourceLocation blockId, int meta, @Nullable NBTTagCompound tileNbt) {
+        return blockId + "#" + meta + "#" + stableNbtKey(tileNbt);
+    }
+
+    private static String stableNbtKey(@Nullable NBTTagCompound tileNbt) {
+        return tileNbt == null ? "-" : stableTagKey(tileNbt);
+    }
+
+    private static String stableTagKey(NBTBase tag) {
+        if (tag instanceof NBTTagCompound compound) {
+            List<String> keys = new ArrayList<String>(compound.getKeySet());
+            Collections.sort(keys);
+            StringBuilder builder = new StringBuilder();
+            builder.append('{');
+            for (String key : keys) {
+                builder.append(key).append(':').append(stableTagKey(compound.getTag(key))).append(';');
+            }
+            builder.append('}');
+            return builder.toString();
+        }
+        if (tag instanceof NBTTagList list) {
+            StringBuilder builder = new StringBuilder();
+            builder.append('[');
+            for (int index = 0; index < list.tagCount(); index++) {
+                builder.append(stableTagKey(list.get(index))).append(';');
+            }
+            builder.append(']');
+            return builder.toString();
+        }
+        return tag.getId() + ":" + tag.toString();
     }
 
     record ClientBlockState(IBlockState state, @Nullable NBTTagCompound nbt) {

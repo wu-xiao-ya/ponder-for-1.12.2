@@ -20,6 +20,10 @@ final class EmbeddedGuiFurnaceSnapshot implements SnapshotRenderer.GuiSnapshotRe
         this.furnaceInventory = new SnapshotFurnaceInventory();
     }
 
+    String cacheKey() {
+        return "minecraft:furnace";
+    }
+
     @Override
     public void render(int x, int y, int width, int height, float currentTick, float fade) {
         Minecraft mc = Minecraft.getMinecraft();

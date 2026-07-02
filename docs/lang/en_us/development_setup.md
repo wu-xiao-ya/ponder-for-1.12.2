@@ -5,7 +5,7 @@ repository homepage.
 
 ## JDK
 
-This workspace expects a modern JDK for Gradle itself.
+This workspace expects JDK 25 for Gradle itself.
 
 If the system default still points to Java 8, use the helper scripts already
 included in the repository:

@@ -30,6 +30,10 @@ final class EmbeddedReflectiveGuiSnapshot implements SnapshotRenderer.GuiSnapsho
         this.tileClassName = tileClassName;
     }
 
+    String cacheKey() {
+        return guiClassName + '|' + tileClassName;
+    }
+
     @Override
     public void render(int x, int y, int width, int height, float currentTick, float fade) {
         Minecraft mc = Minecraft.getMinecraft();

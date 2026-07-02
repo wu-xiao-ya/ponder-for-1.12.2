@@ -5,6 +5,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import net.createmod.ponder.Ponder;
+import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
 
@@ -18,7 +19,8 @@ public final class PonderGuiSnapshotRegistry {
     private static final int TE_COMPOSITE_WIDTH   = 276;
     private static final int TE_REDSTONE_COMPOSITE_WIDTH = 288;
 
-    private static final Map<ResourceLocation, SnapshotSource> SNAPSHOTS = new LinkedHashMap<>();
+    private static final Map<ResourceLocation, SnapshotSource> SNAPSHOT_SOURCES = new LinkedHashMap<>();
+    private static final Map<SnapshotCacheKey, Snapshot> SNAPSHOT_CACHE = new LinkedHashMap<>();
 
     static {
         registerDefaults();
@@ -31,19 +33,76 @@ public final class PonderGuiSnapshotRegistry {
         if (id == null || snapshot == null) {
             return;
         }
-        SNAPSHOTS.put(id, SnapshotSource.constant(snapshot));
+        registerSource(id, SnapshotSource.constant(snapshot));
     }
 
     public static void registerProvider(ResourceLocation id, SnapshotProvider provider) {
-        if (id == null || provider == null) {
-            return;
-        }
-        SNAPSHOTS.put(id, provider.asSource());
+        registerSource(id, provider == null ? null : provider.asSource());
     }
 
     public static Snapshot get(ResourceLocation id, float currentTick) {
-        SnapshotSource source = id == null ? null : SNAPSHOTS.get(id);
-        return source == null ? null : source.resolve(SnapshotContext.of(currentTick));
+        return get(id, snapshotContext(currentTick));
+    }
+
+    public static Snapshot get(ResourceLocation id, SnapshotContext context) {
+        if (id == null) {
+            return null;
+        }
+
+        SnapshotSource source;
+        SnapshotContext resolvedContext;
+        SnapshotCacheKey cacheKey;
+        synchronized (PonderGuiSnapshotRegistry.class) {
+            source = SNAPSHOT_SOURCES.get(id);
+            if (source == null) {
+                return null;
+            }
+            resolvedContext = context == null ? SnapshotContext.of(0.0F) : context;
+            cacheKey = source.cacheKey(id, resolvedContext);
+            Snapshot cached = SNAPSHOT_CACHE.get(cacheKey);
+            if (cached != null) {
+                return cached;
+            }
+        }
+
+        Snapshot resolved = source.resolve(resolvedContext);
+        if (resolved == null) {
+            return null;
+        }
+
+        synchronized (PonderGuiSnapshotRegistry.class) {
+            if (SNAPSHOT_SOURCES.get(id) != source) {
+                return null;
+            }
+            Snapshot cached = SNAPSHOT_CACHE.get(cacheKey);
+            if (cached != null) {
+                return cached;
+            }
+            SNAPSHOT_CACHE.put(cacheKey, resolved);
+            return resolved;
+        }
+    }
+
+    public static synchronized void registerSource(ResourceLocation id, SnapshotSource source) {
+        if (id == null || source == null) {
+            return;
+        }
+        SNAPSHOT_SOURCES.put(id, source);
+        SNAPSHOT_CACHE.entrySet().removeIf(entry -> id.equals(entry.getKey().id()));
+    }
+
+    public static synchronized void clearCache() {
+        SNAPSHOT_CACHE.clear();
+    }
+
+    public static synchronized void clear() {
+        SNAPSHOT_SOURCES.clear();
+        SNAPSHOT_CACHE.clear();
+    }
+
+    public static synchronized void rebuild() {
+        clear();
+        registerDefaults();
     }
 
     public static ResourceLocation registerBlockGuiSnapshot(ResourceLocation blockId, int meta, int width, int height) {
@@ -191,5 +250,13 @@ public final class PonderGuiSnapshotRegistry {
         register(Ponder.asResource("gui_snapshot/te_" + machineName + "_panel_" + panelName + "_live"),
             Snapshot.liveRenderer(width, height, true,
                 new EmbeddedReflectiveTabGuiSnapshot(guiClass, tileClass, tabFieldName, width, height)));
+    }
+
+    private static SnapshotContext snapshotContext(float currentTick) {
+        Minecraft mc = Minecraft.getMinecraft();
+        if (mc == null || mc.player == null) {
+            return SnapshotContext.of(currentTick);
+        }
+        return SnapshotContext.of(currentTick, mc.player, mc.world);
     }
 }

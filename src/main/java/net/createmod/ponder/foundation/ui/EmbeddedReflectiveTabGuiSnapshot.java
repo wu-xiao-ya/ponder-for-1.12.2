@@ -37,6 +37,10 @@ final class EmbeddedReflectiveTabGuiSnapshot implements SnapshotRenderer.GuiSnap
         this.panelHeight = panelHeight;
     }
 
+    String cacheKey() {
+        return guiClassName + '|' + tileClassName + '|' + tabFieldName + '|' + panelWidth + 'x' + panelHeight;
+    }
+
     @Override
     public void render(int x, int y, int width, int height, float currentTick, float fade) {
         Minecraft mc = Minecraft.getMinecraft();

@@ -63,7 +63,9 @@ progress rather than feature parity with current upstream.
 
 ## Build
 
-This workspace expects a modern JDK for Gradle.
+This workspace expects JDK 25 for Gradle.
+
+Shared Java 25 toolchain and test conventions live in `gradle/scripts/project-conventions.gradle`, with dependency and repository wiring kept in `gradle/scripts/dependencies.gradle`.
 
 Typical commands:
 

@@ -24,6 +24,10 @@ public final class PonderOverlayLayoutHelper {
             this.maxX = maxX;
             this.maxY = maxY;
         }
+
+        public net.createmod.ponder.foundation.ui.projection.ProjectedBounds toProjectionBounds() {
+            return new net.createmod.ponder.foundation.ui.projection.ProjectedBounds(minX, minY, maxX, maxY);
+        }
     }
 
     private final boolean showcaseMode;
@@ -78,9 +82,7 @@ public final class PonderOverlayLayoutHelper {
         if (context == null) {
             return null;
         }
-        SceneBounds sceneBounds = context.sceneBounds();
-        PreviewBounds bounds = new PreviewBounds(sceneBounds.minX(), sceneBounds.maxX(), sceneBounds.minZ(),
-            sceneBounds.maxZ(), sceneBounds.maxY(), sceneBounds.minY());
+        PreviewBounds bounds = toPreviewBounds(context.sceneBounds());
         return projectScenePoint(context.scene(), bounds, context.layout(), context.renderTick(), point);
     }
 
@@ -108,8 +110,27 @@ public final class PonderOverlayLayoutHelper {
     }
 
     @Nullable
+    public net.createmod.ponder.foundation.ui.projection.ProjectedBounds projectSceneBounds(
+        SceneProjectionContext context, AxisAlignedBB sceneBounds) {
+        if (context == null) {
+            return null;
+        }
+        return projectSceneBoundsInternal(context.scene(), toPreviewBounds(context.sceneBounds()), context.layout(),
+            context.renderTick(), sceneBounds);
+    }
+
+    @Nullable
     public ProjectedBounds projectSceneBounds(PonderScene scene, PreviewBounds bounds, PreviewLayout layout,
         float renderTick, AxisAlignedBB sceneBounds) {
+        net.createmod.ponder.foundation.ui.projection.ProjectedBounds projected =
+            projectSceneBoundsInternal(scene, bounds, layout, renderTick, sceneBounds);
+        return projected == null ? null : new ProjectedBounds(projected.minX(), projected.minY(), projected.maxX(),
+            projected.maxY());
+    }
+
+    @Nullable
+    private net.createmod.ponder.foundation.ui.projection.ProjectedBounds projectSceneBoundsInternal(
+        PonderScene scene, PreviewBounds bounds, PreviewLayout layout, float renderTick, AxisAlignedBB sceneBounds) {
         if (sceneBounds == null) {
             return null;
         }
@@ -148,6 +169,11 @@ public final class PonderOverlayLayoutHelper {
         minY = MathHelper.clamp(minY - 1, layout.originY, layout.originY + layout.height - 1);
         maxX = MathHelper.clamp(maxX + 1, minX + 2, layout.originX + layout.width);
         maxY = MathHelper.clamp(maxY + 1, minY + 2, layout.originY + layout.height);
-        return new ProjectedBounds(minX, minY, maxX, maxY);
+        return new net.createmod.ponder.foundation.ui.projection.ProjectedBounds(minX, minY, maxX, maxY);
+    }
+
+    private static PreviewBounds toPreviewBounds(SceneBounds sceneBounds) {
+        return new PreviewBounds(sceneBounds.minX(), sceneBounds.maxX(), sceneBounds.minZ(), sceneBounds.maxZ(),
+            sceneBounds.maxY(), sceneBounds.minY());
     }
 }

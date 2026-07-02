@@ -2,6 +2,8 @@ package net.createmod.ponder.foundation.ui;
 
 import java.util.Objects;
 
+import net.minecraft.util.ResourceLocation;
+
 public sealed interface SnapshotSource permits SnapshotSource.ConstantSnapshotSource,
     SnapshotSource.ProviderSnapshotSource {
 
@@ -10,6 +12,10 @@ public sealed interface SnapshotSource permits SnapshotSource.ConstantSnapshotSo
     SnapshotInvalidationPolicy invalidationPolicy();
 
     String sourceKey();
+
+    default SnapshotCacheKey cacheKey(ResourceLocation id, SnapshotContext context) {
+        return SnapshotCacheKey.of(id, context, invalidationPolicy(), sourceKey());
+    }
 
     static SnapshotSource constant(Snapshot snapshot) {
         return new ConstantSnapshotSource(snapshot);
@@ -78,8 +84,28 @@ public sealed interface SnapshotSource permits SnapshotSource.ConstantSnapshotSo
         builder.append(snapshot.displayWidth).append('|');
         builder.append(snapshot.displayHeight).append('|');
         builder.append(snapshot.framed).append('|');
-        builder.append(snapshot.renderer == null ? "-" : snapshot.renderer.getClass().getName() + '@'
-            + Integer.toHexString(System.identityHashCode(snapshot.renderer)));
+        builder.append(rendererKey(snapshot.renderer));
+        return builder.toString();
+    }
+
+    static String rendererKey(SnapshotRenderer renderer) {
+        if (renderer == null) {
+            return "-";
+        }
+
+        StringBuilder builder = new StringBuilder(128);
+        builder.append(renderer.getClass().getName()).append('|');
+        if (renderer instanceof EmbeddedReflectiveGuiSnapshot embeddedReflectiveGuiSnapshot) {
+            builder.append(embeddedReflectiveGuiSnapshot.cacheKey());
+        } else if (renderer instanceof EmbeddedReflectiveTabGuiSnapshot embeddedReflectiveTabGuiSnapshot) {
+            builder.append(embeddedReflectiveTabGuiSnapshot.cacheKey());
+        } else if (renderer instanceof EmbeddedGuiFurnaceSnapshot embeddedGuiFurnaceSnapshot) {
+            builder.append(embeddedGuiFurnaceSnapshot.cacheKey());
+        } else if (renderer instanceof SandboxTriggeredBlockGuiSnapshot sandboxTriggeredBlockGuiSnapshot) {
+            builder.append(sandboxTriggeredBlockGuiSnapshot.cacheKey());
+        } else {
+            builder.append('@').append(Integer.toHexString(System.identityHashCode(renderer)));
+        }
         return builder.toString();
     }
 

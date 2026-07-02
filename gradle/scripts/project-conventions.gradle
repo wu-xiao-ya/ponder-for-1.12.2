@@ -1,0 +1,73 @@
+import org.gradle.api.tasks.compile.JavaCompile
+import org.gradle.api.tasks.testing.Test
+
+assertProperty 'mod_version'
+assertProperty 'root_package'
+assertProperty 'mod_id'
+assertProperty 'mod_name'
+
+assertSubProperties 'use_access_transformer', 'access_transformer_locations'
+assertSubProperties 'is_coremod', 'coremod_includes_mod', 'coremod_plugin_class_name'
+assertSubProperties 'use_asset_mover', 'asset_mover_version'
+
+setDefaultProperty 'generate_sources_jar', true, false
+setDefaultProperty 'generate_javadocs_jar', true, false
+setDefaultProperty 'enable_shadow', true, false
+setDefaultProperty 'enable_lwjglx', true, true
+setDefaultProperty 'enable_foundation_debug', true, false
+setDefaultProperty 'minecraft_username', true, 'Developer'
+setDefaultProperty 'extra_jvm_args', false, ''
+
+version = propertyString('mod_version')
+group = propertyString('root_package')
+
+base {
+    archivesName = propertyString('mod_id')
+}
+
+def javaToolchainVersion = JavaLanguageVersion.of(25)
+
+java {
+    toolchain {
+        languageVersion = javaToolchainVersion
+    }
+    if (propertyBool('generate_sources_jar')) {
+        withSourcesJar()
+    }
+    if (propertyBool('generate_javadocs_jar')) {
+        withJavadocJar()
+    }
+}
+
+configurations {
+    contain
+    implementation.extendsFrom(contain)
+    modCompileOnly
+    compileOnly.extendsFrom(modCompileOnly)
+    modRuntimeOnly
+    runtimeOnly.extendsFrom(modRuntimeOnly)
+}
+
+tasks.named('compileJava', JavaCompile).configure {
+    sourceCompatibility = targetCompatibility = JavaVersion.VERSION_25
+}
+
+tasks.named('compileTestJava', JavaCompile).configure {
+    sourceCompatibility = targetCompatibility = JavaVersion.VERSION_25
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+tasks.named('test', Test).configure {
+    useJUnitPlatform()
+    javaLauncher.set(javaToolchains.launcherFor {
+        languageVersion = javaToolchainVersion
+    })
+    if (propertyBool('show_testing_output')) {
+        testLogging {
+            showStandardStreams = true
+        }
+    }
+}
