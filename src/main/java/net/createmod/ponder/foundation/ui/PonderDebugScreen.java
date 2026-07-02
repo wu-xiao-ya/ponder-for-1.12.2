@@ -315,120 +315,39 @@ public class PonderDebugScreen extends CompatGuiScreen {
     }
 
     protected DebugKeyboardController.Host createDebugKeyboardHost() {
-        return new DebugKeyboardController.Host() {
-            @Override
-            public PonderSceneSelectionState getSelectionState() {
-                return PonderDebugScreen.this.getSelectionState();
-            }
-
-            @Override
-            public PonderPlaybackState getPlaybackState() {
-                return playbackState;
-            }
-
-            @Override
-            public void reloadRegisteredComponents() {
-                selectionState.loadComponents(getRegisteredComponents());
-                selectionState.setSelectedComponentIndex(MathHelper.clamp(selectionState.getSelectedComponentIndex(), 0,
-                    Math.max(0, selectionState.getComponentIds().size() - 1)));
-            }
-
-            @Override
-            public void reloadCurrentComponent(boolean preserveSceneIndex) {
-                sceneController.reloadCurrentComponent(preserveSceneIndex);
-            }
-
-            @Override
-            public void selectScene(int sceneIndex) {
-                sceneController.selectScene(sceneIndex);
-            }
-
-            @Override
-            public void stepPlaybackTick(int delta) {
-                sceneController.stepPlaybackTick(delta);
-            }
-
-            @Override
-            public void seekToStart() {
-                sceneController.seekToStart(false);
-            }
-
-            @Override
-            public void seekToEnd() {
-                sceneController.seekToEnd();
-            }
-
-            @Override
-            public void updateButtonState() {
-                PonderDebugScreen.this.updateButtonState();
-            }
-
-            @Override
-            public void delegateKeyTyped(char typedChar, int keyCode) throws IOException {
-                PonderDebugScreen.super.keyTyped(typedChar, keyCode);
-            }
-        };
+        return new DebugKeyboardHostAdapter(hostSupport);
     }
 
     protected ShowcaseKeyboardController.Host createShowcaseKeyboardHost() {
-        return new ShowcaseKeyboardController.Host() {
-            @Override
-            public PonderSceneSelectionState getSelectionState() {
-                return PonderDebugScreen.this.getSelectionState();
-            }
+        return new ShowcaseKeyboardHostAdapter(hostSupport);
+    }
 
-            @Override
-            public PonderPlaybackState getPlaybackState() {
-                return playbackState;
-            }
+    void reloadCurrentComponentFromHost(boolean preserveSceneIndex) {
+        sceneController.reloadCurrentComponent(preserveSceneIndex);
+    }
 
-            @Override
-            public void reloadRegisteredComponents() {
-                selectionState.loadComponents(getRegisteredComponents());
-                selectionState.setSelectedComponentIndex(MathHelper.clamp(selectionState.getSelectedComponentIndex(), 0,
-                    Math.max(0, selectionState.getComponentIds().size() - 1)));
-            }
+    void selectSceneFromHost(int sceneIndex) {
+        sceneController.selectScene(sceneIndex);
+    }
 
-            @Override
-            public void reloadCurrentComponent(boolean preserveSceneIndex) {
-                sceneController.reloadCurrentComponent(preserveSceneIndex);
-            }
+    void stepPlaybackTickFromHost(int delta) {
+        sceneController.stepPlaybackTick(delta);
+    }
 
-            @Override
-            public void selectScene(int sceneIndex) {
-                sceneController.selectScene(sceneIndex);
-            }
+    void seekToStartFromHost() {
+        sceneController.seekToStart(false);
+    }
 
-            @Override
-            public void stepPlaybackTick(int delta) {
-                sceneController.stepPlaybackTick(delta);
-            }
+    void seekToEndFromHost() {
+        sceneController.seekToEnd();
+    }
 
-            @Override
-            public void updateButtonState() {
-                PonderDebugScreen.this.updateButtonState();
-            }
+    void openScreenFromHost(GuiScreen screen) {
+        mc.displayGuiScreen(screen);
+    }
 
-            @Override
-            public boolean allowDebugShortcutFromShowcase() {
-                return PonderDebugScreen.this.allowDebugShortcutFromShowcase();
-            }
-
-            @Override
-            public GuiScreen createDebugScreenFromShowcase() {
-                return PonderDebugScreen.this.createDebugScreenFromShowcase();
-            }
-
-            @Override
-            public void openScreen(GuiScreen screen) {
-                mc.displayGuiScreen(screen);
-            }
-
-            @Override
-            public void delegateKeyTyped(char typedChar, int keyCode) throws IOException {
-                PonderDebugScreen.super.keyTyped(typedChar, keyCode);
-            }
-        };
+    void delegateKeyTypedFromHost(char typedChar, int keyCode) throws IOException {
+        PonderDebugScreen.super.keyTyped(typedChar, keyCode);
     }
 
     protected DebugMouseController.Host createDebugMouseHost() {
@@ -1699,7 +1618,8 @@ private void drawComponentList(int mouseX, int mouseY, int x, int startY, int bo
         SpeechRenderer.drawCenteredStringNoShadow(fontRenderer, text, centerX, y, color);
     }
 
-    private int blendColors(int baseColor, int accentColor, float accentWeight) {
+    @Override
+    public int blendColors(int baseColor, int accentColor, float accentWeight) {
         float clampedWeight = MathHelper.clamp(accentWeight, 0.0F, 1.0F);
         float baseWeight = 1.0F - clampedWeight;
         int red = Math.round(((baseColor >> 16) & 0xFF) * baseWeight + ((accentColor >> 16) & 0xFF) * clampedWeight);
@@ -1708,7 +1628,8 @@ private void drawComponentList(int mouseX, int mouseY, int x, int startY, int bo
         return red << 16 | green << 8 | blue;
     }
 
-    private int withAlpha(int color, float alpha) {
+    @Override
+    public int withAlpha(int color, float alpha) {
         int alphaChannel = MathHelper.clamp((int) alpha, 0, 255);
         return alphaChannel << 24 | (color & 0x00FFFFFF);
     }
@@ -1722,7 +1643,8 @@ private void drawComponentList(int mouseX, int mouseY, int x, int startY, int bo
         SpeechRenderer.drawCaptionConnector(startX, startY, endX, endY, color, fade);
     }
 
-    private void drawLineSegment(int startX, int startY, int endX, int endY, int color, float width) {
+    @Override
+    public void drawLineSegment(int startX, int startY, int endX, int endY, int color, float width) {
         SpeechRenderer.drawLineSegment(startX, startY, endX, endY, color, width);
     }
 

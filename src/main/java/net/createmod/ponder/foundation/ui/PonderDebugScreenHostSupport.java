@@ -1,6 +1,11 @@
 package net.createmod.ponder.foundation.ui;
 
+import java.io.IOException;
+
 import net.createmod.ponder.foundation.PonderScene;
+import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.util.math.MathHelper;
+
 final class PonderDebugScreenHostSupport {
 
     private final PonderDebugScreen screen;
@@ -34,6 +39,32 @@ final class PonderDebugScreenHostSupport {
         screen.clearPreviewCaches();
     }
 
+    void reloadRegisteredComponents() {
+        selectionState.loadComponents(PonderDebugScreen.getRegisteredComponents());
+        selectionState.setSelectedComponentIndex(MathHelper.clamp(selectionState.getSelectedComponentIndex(), 0,
+            Math.max(0, selectionState.getComponentIds().size() - 1)));
+    }
+
+    void reloadCurrentComponent(boolean preserveSceneIndex) {
+        screen.reloadCurrentComponentFromHost(preserveSceneIndex);
+    }
+
+    void selectScene(int sceneIndex) {
+        screen.selectSceneFromHost(sceneIndex);
+    }
+
+    void stepPlaybackTick(int delta) {
+        screen.stepPlaybackTickFromHost(delta);
+    }
+
+    void seekToStart() {
+        screen.seekToStartFromHost();
+    }
+
+    void seekToEnd() {
+        screen.seekToEndFromHost();
+    }
+
     void setShowcaseGroupSelectorOpen(boolean open) {
         interactionHitCache.setShowcaseGroupSelectorOpen(open);
     }
@@ -52,6 +83,22 @@ final class PonderDebugScreenHostSupport {
 
     void updateButtonState() {
         screen.updateButtonState();
+    }
+
+    boolean allowDebugShortcutFromShowcase() {
+        return screen.allowDebugShortcutFromShowcase();
+    }
+
+    GuiScreen createDebugScreenFromShowcase() {
+        return screen.createDebugScreenFromShowcase();
+    }
+
+    void openScreen(GuiScreen screenToOpen) {
+        screen.openScreenFromHost(screenToOpen);
+    }
+
+    void delegateKeyTyped(char typedChar, int keyCode) throws IOException {
+        screen.delegateKeyTypedFromHost(typedChar, keyCode);
     }
 
     int getMaxComponentScroll() {

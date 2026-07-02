@@ -22,8 +22,9 @@
 
 - `937a362 Refactor ponder foundation architecture` 已推送
 - `d661bbc Retry remote CI Gradle build` 已推送
+- `29d6ba7fef03813b3d86c279021595037bd9ff43` 已通过远程 CI
 - `patch1.patch` 是未跟踪文件，暂存前需要确认用途
-- GitHub Actions 当前卡在 Cleanroom 依赖解析阶段，尚未进入 Java 编译诊断
+- 第二批 UI adapter、RenderContext bridge、projection 预铺处于本地整合阶段
 
 ## 1. 目标
 
@@ -551,7 +552,7 @@ record SnapshotCacheKey(ResourceLocation id, int tickBucket, int dimension, Stri
 
 ### 7.1 构建层
 
-当前 CI 关键阻塞：
+历史 CI 关键阻塞：
 
 ```text
 Could not GET 'https://curse.cleanroommc.com/net/minecraft/minecraft/1.12.2/minecraft-1.12.2.pom'
@@ -587,7 +588,7 @@ CI 整改候选：
 4. 若缓存命中仍失败，再考虑把 Unimined 产物整理成 `mavenLocal()` 可读结构
 5. 远程 CI 进入 Java 编译阶段后再处理源码错误
 
-状态：已完成首轮
+状态：已完成并通过远程 CI
 
 - `.github/workflows/build.yml` 已加入 `actions/cache@v4`
 - 缓存路径覆盖 Unimined Minecraft 1.12.2 与 Gradle modules-2
@@ -595,6 +596,8 @@ CI 整改候选：
 - 保留 JDK 25、Gradle cache、三次 Gradle retry
 - `gradle/scripts/dependencies.gradle` 在 CI 中优先使用 `mavenLocal()`
 - 远程 Gradle 首轮失败后会尝试从 Unimined cache 的 Cleanroom MCP jar 生成 `net.minecraft:minecraft:1.12.2` 的本地 Maven 条目，再进入下一轮 retry
+- 远程验证：`https://github.com/wu-xiao-ya/ponder-for-1.12.2/actions/runs/28585921669`
+- 通过提交：`29d6ba7fef03813b3d86c279021595037bd9ff43`
 
 优先整改：
 
@@ -649,7 +652,7 @@ CI 整改候选：
 
 #### P0-1：彻底收口 debug timeline scroll
 
-状态：已完成首轮
+状态：第二批进行中
 
 - `operationScroll` 由 `DebugPanelRenderer` 单一持有
 - screen 只保留必要访问桥接
@@ -718,7 +721,9 @@ CI 整改候选：
 - `PonderSceneControllerHostAdapter` 已落地
 - `createSceneControllerHost()` 已改为返回 adapter
 - `PonderDebugScreen` 暴露最小包可见桥接：`getDebugPanelRenderer()`、`clearPreviewCaches()`、`centerOperationsOnActiveLine()`、`resetPreviewCamera()`
-- keyboard、mouse、showcase render adapter 留在下一轮
+- `DebugKeyboardHostAdapter` 已落地，debug 键盘命令经 `PonderDebugScreenHostSupport` 转发
+- `ShowcaseKeyboardHostAdapter` 已落地，showcase 键盘命令经 `PonderDebugScreenHostSupport` 转发
+- mouse、showcase render adapter 留在下一轮
 
 #### P0-4：把残留 GL 直接操作迁出 `PonderDebugScreen`
 
@@ -760,6 +765,8 @@ CI 整改候选：
 - `foundation/ui/render/GlRenderContext.java` 已落地
 - `foundation/ui/render/GLStateGuard.java` 已落地
 - `foundation/ui/render/ScissorStack.java` 已落地
+- `CompatGuiScreen` 已实现 `DrawContext`
+- `DrawContext` 已继承 `RenderContext` 并提供 1.12.2 GUI bridge
 - 现阶段先提供桥接能力，renderer 迁移留在下一轮
 
 #### P1-2：建立 `SceneProjectionContext + OverlayPlacementEngine`
@@ -776,6 +783,15 @@ CI 整改候选：
 - `PonderOverlayLayoutHelper` 变成 projection adapter
 - `PonderOverlayHelper` 的 placement 计算迁入 engine
 - `GuiOverlayRenderer` 和 `ShowcaseCaptionRenderer` 消费 placement record
+
+状态：第二批基础模型已预铺
+
+- `foundation/ui/projection/SceneProjectionContext.java` 已落地
+- `foundation/ui/projection/ScenePointProjector.java` 已落地
+- `foundation/ui/projection/SceneBounds.java` 已落地
+- `foundation/ui/projection/ProjectedBounds.java` 已落地
+- `CaptionPlacement`、`GuiOverlayPlacement`、`GuiHighlightPlacement` 已在 projection 包预铺
+- 下一轮把 `PonderOverlayLayoutHelper` 与 `PonderOverlayHelper` 迁入 projection 管线
 - screen 侧 layout 汇总职责继续缩小
 
 #### P1-3：把 snapshot 体系升级为 sealed provider/source 模型
@@ -892,9 +908,9 @@ CI 覆盖命令：
 
 当前 Gate C 前置任务：
 
-- 修复 Cleanroom 依赖解析源或缓存策略
+- 维持 Cleanroom 依赖解析源和缓存策略
 - 保留远程三次重试
-- 依赖解析成功后读取 GitHub Actions Java 编译日志
+- 每批本地整合后触发 GitHub Actions 编译门
 
 ### Gate D：运行门
 
@@ -933,11 +949,11 @@ CI 覆盖命令：
 
 建议并行切片：
 
-1. CI 依赖整改：实现 Unimined minecraft 1.12.2 缓存策略，触发远程 CI
-2. UI Host adapter：落 `PonderDebugScreenHostSupport` 和 scene/keyboard/mouse adapter
-3. RenderContext：落 `GLStateGuard`、`ScissorStack`、`DrawContext` bridge
-4. Projection：落 `SceneProjectionContext`、`ProjectedBounds`、三类 placement record
-5. Snapshot：落 `SnapshotSource`、`SnapshotContext`、`SnapshotCacheKey`
-6. Theme：落 `PonderTheme`、`SymbolicColor`、`PonderThemes` preset
+1. Mouse Host adapter：落 debug/showcase mouse adapter
+2. RenderContext 迁移：迁 `DebugPanelRenderer`、`SceneOverlayRenderer`、`GuiOverlayRenderer`
+3. Projection wiring：把 `PonderOverlayLayoutHelper` 与 `PonderOverlayHelper` 接入 projection 包
+4. Snapshot 深化：补 `SnapshotCacheKey` 维度、失效策略和资源重载入口
+5. Theme：落 `PonderTheme`、`SymbolicColor`、`PonderThemes` preset
+6. Build cleanup：合并主工程与 `crl_ponder` 的重复 Gradle 逻辑
 
 主代理负责范围控制、冲突处理、文档同步、远程 CI 验证。

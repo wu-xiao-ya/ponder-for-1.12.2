@@ -2,6 +2,8 @@ package net.createmod.ponder.foundation.ui;
 
 import java.util.List;
 
+import net.createmod.ponder.foundation.ui.render.GLStateGuard;
+import net.createmod.ponder.foundation.ui.render.ScissorStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiLabel;
@@ -11,13 +13,18 @@ import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.renderer.RenderItem;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.client.config.GuiUtils;
+import net.minecraft.item.ItemStack;
+import net.minecraft.util.math.MathHelper;
 
-abstract class CompatGuiScreen extends GuiScreen {
+import org.lwjgl.opengl.GL11;
+
+abstract class CompatGuiScreen extends GuiScreen implements DrawContext {
 
     // Runtime-obfuscated jars resolve inherited Gui fields against this subclass.
     // Keep local shadow fields so bytecode compiled against this class can resolve
@@ -34,10 +41,75 @@ abstract class CompatGuiScreen extends GuiScreen {
     protected boolean keyHandled;
     protected boolean mouseHandled;
     protected float zLevel;
+    private ScissorStack renderScissorStack;
 
     protected CompatGuiScreen() {
         super();
         syncCompatFields();
+    }
+
+    @Override
+    public AutoCloseable push() {
+        return GLStateGuard.matrix();
+    }
+
+    @Override
+    public AutoCloseable scissor(int x, int y, int width, int height) {
+        if (mc == null) {
+            return () -> {
+            };
+        }
+        return getRenderScissorStack().push(x, y, width, height);
+    }
+
+    @Override
+    public void translate(float x, float y, float z) {
+        GlStateManager.translate(x, y, z);
+    }
+
+    @Override
+    public void scale(float x, float y, float z) {
+        GlStateManager.scale(x, y, z);
+    }
+
+    @Override
+    public void rotate(float angle, float x, float y, float z) {
+        GlStateManager.rotate(angle, x, y, z);
+    }
+
+    @Override
+    public void fillRect(int left, int top, int right, int bottom, int color) {
+        drawRect(left, top, right, bottom, color);
+    }
+
+    @Override
+    public void fillGradientRect(int left, int top, int right, int bottom, int startColor, int endColor) {
+        drawGradientRect(left, top, right, bottom, startColor, endColor, this.zLevel);
+    }
+
+    @Override
+    public void fillTexturedRect(int x, int y, int textureX, int textureY, int width, int height) {
+        drawTexturedModalRect(x, y, textureX, textureY, width, height, this.zLevel);
+    }
+
+    @Override
+    public void drawLine(int startX, int startY, int endX, int endY, int color, float width) {
+        drawLineSegment(startX, startY, endX, endY, color, width);
+    }
+
+    @Override
+    public void renderItem(ItemStack stack, int x, int y) {
+        renderItemStack(stack, x, y);
+    }
+
+    @Override
+    public void renderText(String text, int x, int y, int color) {
+        drawString(text, x, y, color);
+    }
+
+    @Override
+    public void renderCenteredText(String text, int centerX, int y, int color) {
+        drawCenteredString(text, centerX, y, color);
     }
 
     @Override
@@ -98,6 +170,64 @@ abstract class CompatGuiScreen extends GuiScreen {
             return;
         }
         fontRenderer.drawStringWithShadow(text, x, y, color);
+    }
+
+    @Override
+    public void drawString(String text, int x, int y, int color) {
+        drawString(fontRenderer, text, x, y, color);
+    }
+
+    @Override
+    public void drawLineSegment(int startX, int startY, int endX, int endY, int color, float width) {
+        SpeechRenderer.drawLineSegment(startX, startY, endX, endY, color, width);
+    }
+
+    @Override
+    public int withAlpha(int color, float alpha) {
+        int alphaChannel = MathHelper.clamp((int) alpha, 0, 255);
+        return alphaChannel << 24 | (color & 0x00FFFFFF);
+    }
+
+    @Override
+    public int blendColors(int baseColor, int accentColor, float accentWeight) {
+        float clampedWeight = MathHelper.clamp(accentWeight, 0.0F, 1.0F);
+        float baseWeight = 1.0F - clampedWeight;
+        int red = Math.round(((baseColor >> 16) & 0xFF) * baseWeight + ((accentColor >> 16) & 0xFF) * clampedWeight);
+        int green = Math.round(((baseColor >> 8) & 0xFF) * baseWeight + ((accentColor >> 8) & 0xFF) * clampedWeight);
+        int blue = Math.round((baseColor & 0xFF) * baseWeight + (accentColor & 0xFF) * clampedWeight);
+        return red << 16 | green << 8 | blue;
+    }
+
+    @Override
+    public void renderItemStack(ItemStack stack, int x, int y) {
+        if (stack == null || stack.isEmpty()) {
+            return;
+        }
+        RenderItem renderItem = itemRender != null ? itemRender : mc == null ? null : mc.getRenderItem();
+        if (renderItem == null) {
+            return;
+        }
+
+        RenderHelper.enableGUIStandardItemLighting();
+        try {
+            renderItem.renderItemAndEffectIntoGUI(stack, x, y);
+        } finally {
+            RenderHelper.disableStandardItemLighting();
+            GlStateManager.disableLighting();
+        }
+    }
+
+    @Override
+    public int getStringWidth(String text) {
+        if (fontRenderer == null || text == null) {
+            return 0;
+        }
+        return fontRenderer.getStringWidth(text);
+    }
+
+    @Override
+    public void drawCenteredString(String text, int centerX, int y, int color) {
+        drawCenteredString(fontRenderer, text, centerX, y, color);
     }
 
     public void drawTexturedModalRect(int x, int y, int textureX, int textureY, int width, int height) {
@@ -166,6 +296,13 @@ abstract class CompatGuiScreen extends GuiScreen {
         this.mouseHandled = super.mouseHandled;
         // GuiScreen itself does not declare zLevel on 1.12 runtime; keep a local depth slot.
         this.zLevel = 0.0F;
+    }
+
+    private ScissorStack getRenderScissorStack() {
+        if (renderScissorStack == null) {
+            renderScissorStack = new ScissorStack(mc);
+        }
+        return renderScissorStack;
     }
 
     protected void clearCompatButtons() {
