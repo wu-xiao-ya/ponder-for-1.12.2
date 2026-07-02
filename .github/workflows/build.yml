@@ -47,10 +47,14 @@ jobs:
               Write-Host "Unimined Cleanroom cache is not present yet."
               return
             }
-            $sourceJar = Get-ChildItem -LiteralPath $uniminedRoot -Recurse -File -Filter "minecraft-1.12.2-official.jar" |
+            $sourceJar = Get-ChildItem -LiteralPath $uniminedRoot -Recurse -File -Filter "forge-0.5.6-alpha-Cleanroom-FG3+cleanroom-0.5.6-alpha-mcp.jar" |
               Select-Object -First 1
             if ($null -eq $sourceJar) {
-              Write-Host "minecraft-1.12.2-official.jar is not present in Unimined cache yet."
+              $sourceJar = Get-ChildItem -LiteralPath $uniminedRoot -Recurse -File -Filter "*-mcp.jar" |
+                Select-Object -First 1
+            }
+            if ($null -eq $sourceJar) {
+              Write-Host "Cleanroom MCP jar is not present in Unimined cache yet."
               return
             }
             $targetDir = Join-Path $env:USERPROFILE ".m2\repository\net\minecraft\minecraft\1.12.2"
