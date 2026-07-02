@@ -11,6 +11,7 @@ import net.createmod.ponder.api.scene.SceneBuilder;
 import net.createmod.ponder.api.scene.SceneBuildingUtil;
 import net.createmod.ponder.foundation.registration.PonderLocalization;
 import net.createmod.ponder.foundation.ui.PonderGuiSnapshotRegistry;
+import net.createmod.ponder.foundation.ui.Snapshot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ResourceLocation;
@@ -643,7 +644,7 @@ public class PonderScene {
             return this;
         }
 
-        public OverlayEvent applySnapshot(PonderGuiSnapshotRegistry.Snapshot snapshot, int offsetX, int offsetY) {
+        public OverlayEvent applySnapshot(Snapshot snapshot, int offsetX, int offsetY) {
             if (snapshot == null) {
                 return this;
             }

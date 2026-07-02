@@ -3,7 +3,7 @@ package net.createmod.ponder.compat.crafttweaker;
 import crafttweaker.annotations.ModOnly;
 import crafttweaker.annotations.ZenRegister;
 import net.createmod.ponder.foundation.PonderIndex;
-import net.createmod.ponder.foundation.external.ExternalPonderScenes;
+import net.createmod.ponder.foundation.external.scan.ExternalPonderSceneScanner;
 import stanhebben.zenscript.annotations.ZenClass;
 import stanhebben.zenscript.annotations.ZenMethod;
 
@@ -14,12 +14,12 @@ public class PonderSceneFilesCrT {
 
     @ZenMethod
     public static void loadJson(String path) {
-        ExternalPonderScenes.rememberScriptJson(path);
+        ExternalPonderSceneScanner.rememberScriptJson(path);
     }
 
     @ZenMethod
     public static void clearQueuedJson() {
-        ExternalPonderScenes.clearRememberedScriptJson();
+        ExternalPonderSceneScanner.clearRememberedScriptJson();
     }
 
     @ZenMethod

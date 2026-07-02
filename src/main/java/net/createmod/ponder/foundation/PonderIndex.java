@@ -5,16 +5,18 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 import net.createmod.ponder.Ponder;
 import net.createmod.ponder.api.registration.LangRegistryAccess;
+import net.createmod.ponder.api.registration.IndexExclusionHelper;
 import net.createmod.ponder.api.registration.PonderPlugin;
 import net.createmod.ponder.api.registration.SceneRegistryAccess;
 import net.createmod.ponder.api.registration.TagRegistryAccess;
 import net.createmod.ponder.foundation.registration.DefaultPonderSceneRegistrationHelper;
 import net.createmod.ponder.foundation.registration.DefaultPonderTagRegistrationHelper;
+import net.createmod.ponder.foundation.registration.PonderIndexExclusionHelper;
 import net.createmod.ponder.foundation.registration.PonderComponentMatcher;
-import net.createmod.ponder.foundation.registration.DefaultSharedTextRegistrationHelper;
 import net.createmod.ponder.foundation.registration.PonderLocalization;
 import net.createmod.ponder.foundation.registration.PonderSceneRegistry;
 import net.createmod.ponder.foundation.registration.PonderTagRegistry;
@@ -57,11 +59,26 @@ public final class PonderIndex {
 
     public static void reload() {
         Ponder.LOGGER.info("Reloading Ponder plugin registry");
+
+        // Phase 1: Reset all registries and localization data
         LOCALIZATION.clearAll();
         SCENES.clearRegistry();
         TAGS.clearRegistry();
+
+        // Phase 2: Apply index exclusions from all plugins
+        applyIndexExclusions();
+
+        // Phase 2: Register scenes and tags from plugins
         registerAll();
+        SCENES.finishRegistration();
+        TAGS.finishRegistration();
+
+        // Phase 3: Gather shared text entries
         gatherSharedText();
+
+        // Phase 4: Compile scene-specific language entries
+        LOCALIZATION.generateSceneLang(SCENES);
+
         Ponder.LOGGER.info("Ponder registry now contains {} scene entries and {} listed tags",
             Integer.valueOf(SCENES.getRegisteredEntryCount()), Integer.valueOf(TAGS.getListedTagCount()));
     }
@@ -80,7 +97,8 @@ public final class PonderIndex {
         forEachPlugin(new Consumer<PonderPlugin>() {
             @Override
             public void accept(PonderPlugin plugin) {
-                plugin.registerSharedText(new DefaultSharedTextRegistrationHelper(plugin.getModId(), LOCALIZATION));
+                plugin.registerSharedText((key, enUs) ->
+                    LOCALIZATION.registerShared(new ResourceLocation(plugin.getModId(), key), enUs));
             }
         });
     }
@@ -103,5 +121,19 @@ public final class PonderIndex {
 
     public static int getPluginCount() {
         return PLUGINS.size();
+    }
+
+    private static void applyIndexExclusions() {
+        PonderIndexExclusionHelper helper = new PonderIndexExclusionHelper();
+        forEachPlugin(new Consumer<PonderPlugin>() {
+            @Override
+            public void accept(PonderPlugin plugin) {
+                plugin.indexExclusions(helper);
+            }
+        });
+
+        List<Predicate<ResourceLocation>> exclusions = helper.getExclusions();
+        SCENES.setIndexExclusions(exclusions);
+        TAGS.setIndexExclusions(exclusions);
     }
 }

@@ -10,13 +10,13 @@ import net.createmod.ponder.api.scene.PonderStoryBoard;
 import net.createmod.ponder.foundation.PonderStoryBoardEntry;
 import net.minecraft.util.ResourceLocation;
 
-public class DefaultPonderSceneRegistrationHelper implements PonderSceneRegistrationHelper<ResourceLocation> {
+public class DefaultPonderSceneRegistrationHelper extends NamespaceRegistrationHelper
+    implements PonderSceneRegistrationHelper<ResourceLocation> {
 
-    private final String namespace;
     private final PonderSceneRegistry sceneRegistry;
 
     public DefaultPonderSceneRegistrationHelper(String namespace, PonderSceneRegistry sceneRegistry) {
-        this.namespace = namespace;
+        super(namespace, Function.identity());
         this.sceneRegistry = sceneRegistry;
     }
 
@@ -48,10 +48,5 @@ public class DefaultPonderSceneRegistrationHelper implements PonderSceneRegistra
     @Override
     public MultiSceneBuilder forComponents(Iterable<? extends ResourceLocation> components) {
         return new GenericMultiSceneBuilder<ResourceLocation>(this, components);
-    }
-
-    @Override
-    public ResourceLocation asLocation(String path) {
-        return new ResourceLocation(namespace, path);
     }
 }

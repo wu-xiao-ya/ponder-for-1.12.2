@@ -16,8 +16,9 @@ final class PonderScenePreview {
     }
 
     static PreviewState buildState(PonderScene scene, int tick) {
-        PonderSceneRuntime.RuntimeState runtimeState = PonderSceneRuntime.buildState(scene, tick);
-        return new PreviewState(runtimeState.cellsByColumn, runtimeState.visibleBlocks, runtimeState.columnsWithBlocks);
+        PonderSceneRuntimeTypes.RuntimeState runtimeState = PonderSceneRuntime.buildState(scene, tick);
+        return new PreviewState(runtimeState.cellsByColumn(), runtimeState.visibleBlocks(),
+            runtimeState.columnsWithBlocks());
     }
 
     static int colorForState(String stateDescription) {

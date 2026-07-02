@@ -5,10 +5,16 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import net.minecraft.item.ItemStack;
 
 import net.createmod.ponder.foundation.PonderScene;
 import net.createmod.ponder.foundation.PonderSchematic;
 import net.createmod.ponder.foundation.Vec3iAccessor;
+import net.createmod.ponder.foundation.ui.PonderSceneRuntimeTypes.MoveStep;
+import net.createmod.ponder.foundation.ui.PonderSceneRuntimeTypes.RotateStep;
+import net.createmod.ponder.foundation.ui.PonderSceneRuntimeTypes.RuntimeBlockState;
+import net.createmod.ponder.foundation.ui.PonderSceneRuntimeTypes.RuntimeState;
+import net.createmod.ponder.foundation.ui.PonderSceneRuntimeTypes.TransformStep;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Blocks;
@@ -22,6 +28,9 @@ final class PonderSceneRuntime {
 
     static final int SECTION_FADE_TICKS = 15;
     static final int CAMERA_ROTATE_TICKS = 18;
+    private static final AnimationSpec SECTION_SHOW_FADE = AnimationSpec.easeOutQuad(SECTION_FADE_TICKS);
+    private static final AnimationSpec SECTION_HIDE_FADE = AnimationSpec.linear(SECTION_FADE_TICKS);
+    private static final AnimationSpec CAMERA_ROTATE = AnimationSpec.easeOutQuad(CAMERA_ROTATE_TICKS);
     private static final float SECTION_FADE_DISTANCE = 0.5F;
 
     private PonderSceneRuntime() {
@@ -78,10 +87,13 @@ final class PonderSceneRuntime {
         PonderSchematic schematic = scene.getSchematic();
 
         for (Map.Entry<BlockPos, IBlockState> entry : schematic.getBlocks().entrySet()) {
-            RuntimeBlockState state = new RuntimeBlockState(entry.getKey());
+            RuntimeBlockState state = new RuntimeBlockState(entry.getKey(), new ArrayList<TransformStep>());
             state.originalState = entry.getValue();
             state.currentState = entry.getValue();
             state.stateDescription = describeState(entry.getValue());
+            state.renderCenterX = Vec3iAccessor.x(entry.getKey()) + 0.5D;
+            state.renderCenterY = Vec3iAccessor.y(entry.getKey()) + 0.5D;
+            state.renderCenterZ = Vec3iAccessor.z(entry.getKey()) + 0.5D;
             blocksByPosition.put(state.pos, state);
         }
 
@@ -96,7 +108,10 @@ final class PonderSceneRuntime {
                 BlockPos key = new BlockPos(pos);
                 RuntimeBlockState state = blocksByPosition.get(key);
                 if (state == null) {
-                    state = new RuntimeBlockState(key);
+                    state = new RuntimeBlockState(key, new ArrayList<TransformStep>());
+                    state.renderCenterX = Vec3iAccessor.x(key) + 0.5D;
+                    state.renderCenterY = Vec3iAccessor.y(key) + 0.5D;
+                    state.renderCenterZ = Vec3iAccessor.z(key) + 0.5D;
                     blocksByPosition.put(key, state);
                 }
 
@@ -203,8 +218,7 @@ final class PonderSceneRuntime {
                 break;
             }
 
-            float progress = animationProgress(tick - event.getTick(), CAMERA_ROTATE_TICKS);
-            yaw += event.getYawDegrees() * easeOutQuad(progress);
+            yaw += event.getYawDegrees() * CAMERA_ROTATE.progress(tick - event.getTick());
         }
         return yaw;
     }
@@ -243,8 +257,7 @@ final class PonderSceneRuntime {
         state.currentState = state.originalState;
         state.stateDescription = describeState(state.currentState);
 
-        float progress = animationProgress(elapsed, SECTION_FADE_TICKS);
-        float fade = easeOutQuad(progress);
+        float fade = SECTION_SHOW_FADE.progress(elapsed);
         state.visible = fade > 0.0F;
         state.fade = fade;
         applyDirectionalFadeOffset(state, direction, -1.0F, 1.0F - fade);
@@ -258,7 +271,7 @@ final class PonderSceneRuntime {
             return;
         }
 
-        float progress = animationProgress(elapsed, SECTION_FADE_TICKS);
+        float progress = SECTION_HIDE_FADE.progress(elapsed);
         float fade = 1.0F - progress * progress;
         state.visible = fade > 0.0F;
         state.fade = fade;
@@ -275,7 +288,7 @@ final class PonderSceneRuntime {
             return;
         }
 
-        float progress = transformProgress(elapsed, event.getDuration());
+        float progress = AnimationSpec.easeOutQuad(event.getDuration()).progress(elapsed);
         if (progress <= 0.0F) {
             return;
         }
@@ -284,7 +297,7 @@ final class PonderSceneRuntime {
         if (isNearZero(applied)) {
             return;
         }
-        state.transforms.add(TransformStep.move(applied));
+        state.transforms.add(new MoveStep(applied));
     }
 
     private static void applySectionRotation(RuntimeBlockState state, PonderScene.WorldEvent event, float elapsed) {
@@ -294,7 +307,7 @@ final class PonderSceneRuntime {
             return;
         }
 
-        float progress = transformProgress(elapsed, event.getDuration());
+        float progress = AnimationSpec.easeOutQuad(event.getDuration()).progress(elapsed);
         if (progress <= 0.0F) {
             return;
         }
@@ -303,26 +316,7 @@ final class PonderSceneRuntime {
         if (isNearZero(applied)) {
             return;
         }
-        state.transforms.add(TransformStep.rotate(pivot, applied));
-    }
-
-    private static float animationProgress(float elapsed, int totalTicks) {
-        if (totalTicks <= 0) {
-            return 1.0F;
-        }
-        return MathHelper.clamp((elapsed + 1.0F) / totalTicks, 0.0F, 1.0F);
-    }
-
-    private static float easeOutQuad(float progress) {
-        float inverse = 1.0F - progress;
-        return 1.0F - inverse * inverse;
-    }
-
-    private static float transformProgress(float elapsed, int duration) {
-        if (duration <= 0) {
-            return 1.0F;
-        }
-        return easeOutQuad(animationProgress(elapsed, duration));
+        state.transforms.add(new RotateStep(pivot, applied));
     }
 
     private static void applyDirectionalFadeOffset(RuntimeBlockState state, EnumFacing direction, float directionScale,
@@ -437,11 +431,11 @@ final class PonderSceneRuntime {
 
     private static Vec3d applyTransform(Vec3d point, TransformStep transform) {
         Vec3d transformed = point;
-        if (transform.offset != null) {
-            transformed = transformed.add(transform.offset);
+        if (transform instanceof MoveStep moveStep) {
+            transformed = transformed.add(moveStep.offset());
         }
-        if (transform.rotation != null && transform.pivot != null) {
-            transformed = rotateAround(transformed, transform.pivot, transform.rotation);
+        if (transform instanceof RotateStep rotateStep) {
+            transformed = rotateAround(transformed, rotateStep.pivot(), rotateStep.rotation());
         }
         return transformed;
     }
@@ -497,85 +491,99 @@ final class PonderSceneRuntime {
         }
 
         for (TransformStep transform : state.transforms) {
-            if (transform.offset != null && !isNearZero(transform.offset)) {
-                net.minecraft.client.renderer.GlStateManager.translate(transform.offset.x, transform.offset.y,
-                    transform.offset.z);
+            if (transform instanceof MoveStep moveStep && !isNearZero(moveStep.offset())) {
+                net.minecraft.client.renderer.GlStateManager.translate(moveStep.offset().x, moveStep.offset().y,
+                    moveStep.offset().z);
             }
-            if (transform.rotation != null && transform.pivot != null && !isNearZero(transform.rotation)) {
-                net.minecraft.client.renderer.GlStateManager.translate(transform.pivot.x, transform.pivot.y,
-                    transform.pivot.z);
-                if (Math.abs(transform.rotation.x) >= 1.0E-4D) {
-                    net.minecraft.client.renderer.GlStateManager.rotate((float) transform.rotation.x, 1.0F, 0.0F, 0.0F);
+            if (transform instanceof RotateStep rotateStep && !isNearZero(rotateStep.rotation())) {
+                net.minecraft.client.renderer.GlStateManager.translate(rotateStep.pivot().x, rotateStep.pivot().y,
+                    rotateStep.pivot().z);
+                if (Math.abs(rotateStep.rotation().x) >= 1.0E-4D) {
+                    net.minecraft.client.renderer.GlStateManager.rotate((float) rotateStep.rotation().x, 1.0F, 0.0F, 0.0F);
                 }
-                if (Math.abs(transform.rotation.y) >= 1.0E-4D) {
-                    net.minecraft.client.renderer.GlStateManager.rotate((float) transform.rotation.y, 0.0F, 1.0F, 0.0F);
+                if (Math.abs(rotateStep.rotation().y) >= 1.0E-4D) {
+                    net.minecraft.client.renderer.GlStateManager.rotate((float) rotateStep.rotation().y, 0.0F, 1.0F, 0.0F);
                 }
-                if (Math.abs(transform.rotation.z) >= 1.0E-4D) {
-                    net.minecraft.client.renderer.GlStateManager.rotate((float) transform.rotation.z, 0.0F, 0.0F, 1.0F);
+                if (Math.abs(rotateStep.rotation().z) >= 1.0E-4D) {
+                    net.minecraft.client.renderer.GlStateManager.rotate((float) rotateStep.rotation().z, 0.0F, 0.0F, 1.0F);
                 }
-                net.minecraft.client.renderer.GlStateManager.translate(-transform.pivot.x, -transform.pivot.y,
-                    -transform.pivot.z);
+                net.minecraft.client.renderer.GlStateManager.translate(-rotateStep.pivot().x, -rotateStep.pivot().y,
+                    -rotateStep.pivot().z);
             }
         }
     }
 
-    static final class TransformStep {
-        final Vec3d offset;
-        final Vec3d pivot;
-        final Vec3d rotation;
+    static final class ActorRuntimeState {
+        public final int actorId;
+        public final PonderScene.ActorKind kind;
+        public Vec3d position;
+        public Vec3d rotation = Vec3d.ZERO;
+        public float cartYaw;
+        public float fade = 1.0F;
+        public boolean visible = true;
+        public String poseName;
+        public String displayName;
+        public ItemStack itemStack = ItemStack.EMPTY;
 
-        private TransformStep(Vec3d offset, Vec3d pivot, Vec3d rotation) {
-            this.offset = offset;
-            this.pivot = pivot;
-            this.rotation = rotation;
-        }
-
-        static TransformStep move(Vec3d offset) {
-            return new TransformStep(offset, null, null);
-        }
-
-        static TransformStep rotate(Vec3d pivot, Vec3d rotation) {
-            return new TransformStep(null, pivot, rotation);
-        }
-    }
-
-    static final class RuntimeBlockState {
-        final BlockPos pos;
-        IBlockState originalState;
-        IBlockState currentState;
-        boolean visible;
-        float fade;
-        float fadeOffsetX;
-        float fadeOffsetY;
-        float fadeOffsetZ;
-        int breakingProgress;
-        String stateDescription = "visible";
-        String tileNbt;
-        final List<TransformStep> transforms = new ArrayList<TransformStep>();
-        double renderCenterX;
-        double renderCenterY;
-        double renderCenterZ;
-
-        RuntimeBlockState(BlockPos pos) {
-            this.pos = pos;
-            this.renderCenterX = Vec3iAccessor.x(pos) + 0.5D;
-            this.renderCenterY = Vec3iAccessor.y(pos) + 0.5D;
-            this.renderCenterZ = Vec3iAccessor.z(pos) + 0.5D;
+        ActorRuntimeState(int actorId, PonderScene.ActorKind kind, Vec3d position) {
+            this.actorId = actorId;
+            this.kind = kind;
+            this.position = position;
         }
     }
 
-    static final class RuntimeState {
-        final Map<BlockPos, RuntimeBlockState> blocksByPosition;
-        final Map<Long, PonderScenePreview.PreviewCellState> cellsByColumn;
-        final int visibleBlocks;
-        final int columnsWithBlocks;
-
-        RuntimeState(Map<BlockPos, RuntimeBlockState> blocksByPosition,
-            Map<Long, PonderScenePreview.PreviewCellState> cellsByColumn, int visibleBlocks, int columnsWithBlocks) {
-            this.blocksByPosition = Collections.unmodifiableMap(blocksByPosition);
-            this.cellsByColumn = Collections.unmodifiableMap(cellsByColumn);
-            this.visibleBlocks = visibleBlocks;
-            this.columnsWithBlocks = columnsWithBlocks;
+    public static List<ActorRuntimeState> buildActorStates(PonderScene scene, float currentTick) {
+        if (scene == null) {
+            return Collections.emptyList();
         }
+
+        Map<Integer, ActorRuntimeState> actors = new LinkedHashMap<Integer, ActorRuntimeState>();
+        for (PonderScene.ActorEvent event : scene.getActorEvents()) {
+            if (event.getTick() > currentTick) {
+                break;
+            }
+
+            ActorRuntimeState actor = actors.get(Integer.valueOf(event.getActorId()));
+            if (event.getType() == PonderScene.ActorEventType.SPAWN) {
+                actor = new ActorRuntimeState(event.getActorId(), event.getActorKind(),
+                    event.getLocation() == null ? Vec3d.ZERO : event.getLocation());
+                actor.poseName = event.getPoseName();
+                actor.cartYaw = event.getAngle();
+                actor.displayName = event.getDisplayName();
+                actor.itemStack = event.getItemStack().copy();
+                float progress = actorProgress(event, currentTick);
+                actor.fade = progress;
+                actor.visible = progress > 0.0F;
+                actors.put(Integer.valueOf(event.getActorId()), actor);
+                continue;
+            }
+
+            if (actor == null) {
+                continue;
+            }
+
+            if (event.getType() == PonderScene.ActorEventType.MOVE && event.getOffset() != null) {
+                actor.position = actor.position.add(event.getOffset().scale(actorProgress(event, currentTick)));
+            } else if (event.getType() == PonderScene.ActorEventType.ROTATE) {
+                if (event.getRotation() != null) {
+                    actor.rotation = actor.rotation.add(event.getRotation().scale(actorProgress(event, currentTick)));
+                } else {
+                    actor.cartYaw += event.getAngle() * actorProgress(event, currentTick);
+                }
+            } else if (event.getType() == PonderScene.ActorEventType.POSE) {
+                actor.poseName = event.getPoseName();
+            } else if (event.getType() == PonderScene.ActorEventType.HIDE) {
+                float progress = actorProgress(event, currentTick);
+                actor.fade = 1.0F - progress;
+                actor.visible = actor.fade > 0.0F;
+            }
+        }
+
+        return new ArrayList<ActorRuntimeState>(actors.values());
     }
+
+    private static float actorProgress(PonderScene.ActorEvent event, float currentTick) {
+        return AnimationSpec.linear(Math.max(1, event.getDuration())).progress(currentTick - event.getTick());
+    }
+
 }

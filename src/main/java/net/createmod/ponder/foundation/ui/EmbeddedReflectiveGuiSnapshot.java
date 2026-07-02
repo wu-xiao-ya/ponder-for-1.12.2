@@ -18,7 +18,7 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import org.lwjgl.opengl.GL11;
 
-final class EmbeddedReflectiveGuiSnapshot implements PonderGuiSnapshotRegistry.SnapshotRenderer {
+final class EmbeddedReflectiveGuiSnapshot implements SnapshotRenderer.GuiSnapshotRenderer {
 
     private final String guiClassName;
     private final String tileClassName;
@@ -92,7 +92,7 @@ final class EmbeddedReflectiveGuiSnapshot implements PonderGuiSnapshotRegistry.S
         Constructor<?> ctor = tileClass.getDeclaredConstructor();
         ctor.setAccessible(true);
         Object tile = ctor.newInstance();
-        return tile instanceof TileEntity ? (TileEntity) tile : null;
+        return tile instanceof TileEntity te ? te : null;
     }
 
     private GuiScreen createGui(InventoryPlayer playerInventory, TileEntity tile) throws Exception {
@@ -128,13 +128,13 @@ final class EmbeddedReflectiveGuiSnapshot implements PonderGuiSnapshotRegistry.S
         try {
             Method method = tile.getClass().getMethod("getGuiClient", InventoryPlayer.class);
             Object gui = method.invoke(tile, playerInventory);
-            return gui instanceof GuiScreen ? (GuiScreen) gui : null;
+            return gui instanceof GuiScreen screen ? screen : null;
         } catch (Throwable ignored) {
         }
         try {
             Method method = tile.getClass().getMethod("func_180556_a", InventoryPlayer.class);
             Object gui = method.invoke(tile, playerInventory);
-            return gui instanceof GuiScreen ? (GuiScreen) gui : null;
+            return gui instanceof GuiScreen screen ? screen : null;
         } catch (Throwable ignored) {
         }
         return null;
@@ -150,8 +150,8 @@ final class EmbeddedReflectiveGuiSnapshot implements PonderGuiSnapshotRegistry.S
             }
             ctor.setAccessible(true);
             Object gui = ctor.newInstance(arguments);
-            if (gui instanceof GuiScreen) {
-                return (GuiScreen) gui;
+            if (gui instanceof GuiScreen screen) {
+                return screen;
             }
         }
         return null;

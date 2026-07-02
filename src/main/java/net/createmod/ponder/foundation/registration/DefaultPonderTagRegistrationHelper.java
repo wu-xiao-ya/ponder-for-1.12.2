@@ -9,15 +9,15 @@ import net.createmod.ponder.api.registration.TagBuilder;
 import net.createmod.ponder.foundation.PonderTag;
 import net.minecraft.util.ResourceLocation;
 
-public class DefaultPonderTagRegistrationHelper implements PonderTagRegistrationHelper<ResourceLocation> {
+public class DefaultPonderTagRegistrationHelper extends NamespaceRegistrationHelper
+    implements PonderTagRegistrationHelper<ResourceLocation> {
 
-    private final String namespace;
     private final PonderTagRegistry tagRegistry;
     private final PonderLocalization localization;
 
     public DefaultPonderTagRegistrationHelper(String namespace, PonderTagRegistry tagRegistry,
         PonderLocalization localization) {
-        this.namespace = namespace;
+        super(namespace, Function.identity());
         this.tagRegistry = tagRegistry;
         this.localization = localization;
     }

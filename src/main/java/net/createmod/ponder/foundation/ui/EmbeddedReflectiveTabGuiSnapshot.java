@@ -18,7 +18,7 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import org.lwjgl.opengl.GL11;
 
-final class EmbeddedReflectiveTabGuiSnapshot implements PonderGuiSnapshotRegistry.SnapshotRenderer {
+final class EmbeddedReflectiveTabGuiSnapshot implements SnapshotRenderer.GuiSnapshotRenderer {
 
     private final String guiClassName;
     private final String tileClassName;
@@ -99,7 +99,7 @@ final class EmbeddedReflectiveTabGuiSnapshot implements PonderGuiSnapshotRegistr
         Constructor<?> ctor = tileClass.getDeclaredConstructor();
         ctor.setAccessible(true);
         Object tile = ctor.newInstance();
-        return tile instanceof TileEntity ? (TileEntity) tile : null;
+        return tile instanceof TileEntity te ? te : null;
     }
 
     private GuiScreen createGui(InventoryPlayer playerInventory, TileEntity tile) throws Exception {
@@ -135,13 +135,13 @@ final class EmbeddedReflectiveTabGuiSnapshot implements PonderGuiSnapshotRegistr
         try {
             Method method = tile.getClass().getMethod("getGuiClient", InventoryPlayer.class);
             Object gui = method.invoke(tile, playerInventory);
-            return gui instanceof GuiScreen ? (GuiScreen) gui : null;
+            return gui instanceof GuiScreen screen ? screen : null;
         } catch (Throwable ignored) {
         }
         try {
             Method method = tile.getClass().getMethod("func_180556_a", InventoryPlayer.class);
             Object gui = method.invoke(tile, playerInventory);
-            return gui instanceof GuiScreen ? (GuiScreen) gui : null;
+            return gui instanceof GuiScreen screen ? screen : null;
         } catch (Throwable ignored) {
         }
         return null;
@@ -157,8 +157,8 @@ final class EmbeddedReflectiveTabGuiSnapshot implements PonderGuiSnapshotRegistr
             }
             ctor.setAccessible(true);
             Object gui = ctor.newInstance(arguments);
-            if (gui instanceof GuiScreen) {
-                return (GuiScreen) gui;
+            if (gui instanceof GuiScreen screen) {
+                return screen;
             }
         }
         return null;
@@ -221,8 +221,8 @@ final class EmbeddedReflectiveTabGuiSnapshot implements PonderGuiSnapshotRegistr
             return;
         }
 
-        int tabOffsetX = tabBounds.x - guiLeft;
-        int tabOffsetY = tabBounds.y - guiTop;
+        int tabOffsetX = tabBounds.x() - guiLeft;
+        int tabOffsetY = tabBounds.y() - guiTop;
         setGuiContainerPosition(gui, x - tabOffsetX, y - tabOffsetY);
         invokeBoolean(tab, "setVisible", true);
         invokeNoArg(tab, "setFullyOpen");
@@ -253,9 +253,8 @@ final class EmbeddedReflectiveTabGuiSnapshot implements PonderGuiSnapshotRegistr
             Object y = getFieldValue(bounds, "y");
             Object w = getFieldValue(bounds, "w");
             Object h = getFieldValue(bounds, "h");
-            if (x instanceof Integer && y instanceof Integer && w instanceof Integer && h instanceof Integer) {
-                return new Rect(((Integer) x).intValue(), ((Integer) y).intValue(), ((Integer) w).intValue(),
-                    ((Integer) h).intValue());
+            if (x instanceof Integer xi && y instanceof Integer yi && w instanceof Integer wi && h instanceof Integer hi) {
+                return new Rect(xi, yi, wi, hi);
             }
         } catch (Throwable ignored) {
         }
@@ -363,11 +362,11 @@ final class EmbeddedReflectiveTabGuiSnapshot implements PonderGuiSnapshotRegistr
 
     private int getIntField(Object target, String primaryField, String secondaryField) {
         Object primary = getFieldValue(target, primaryField);
-        if (primary instanceof Integer) {
-            return ((Integer) primary).intValue();
+        if (primary instanceof Integer pi) {
+            return pi;
         }
         Object secondary = getFieldValue(target, secondaryField);
-        return secondary instanceof Integer ? ((Integer) secondary).intValue() : 0;
+        return secondary instanceof Integer si ? si : 0;
     }
 
     private void invokeNoArg(Object target, String methodName) {
@@ -420,17 +419,6 @@ final class EmbeddedReflectiveTabGuiSnapshot implements PonderGuiSnapshotRegistr
         }
     }
 
-    private static final class Rect {
-        private final int x;
-        private final int y;
-        private final int w;
-        private final int h;
-
-        private Rect(int x, int y, int w, int h) {
-            this.x = x;
-            this.y = y;
-            this.w = w;
-            this.h = h;
-        }
+    record Rect(int x, int y, int w, int h) {
     }
 }

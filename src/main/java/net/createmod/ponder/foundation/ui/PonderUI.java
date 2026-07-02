@@ -14,9 +14,36 @@ import net.minecraft.util.ResourceLocation;
 public class PonderUI extends PonderDebugScreen {
 
     private static final String UI_LANG_PREFIX = "ponder.ui.";
+    private ShowcaseChromeRenderer showcaseChromeRenderer;
+    private ShowcaseHudRenderer showcaseHudRenderer;
+    private ShowcaseRenderer showcaseRenderer;
 
     private PonderUI(@Nullable ResourceLocation componentId, int sceneIndex, @Nullable GuiScreen parentScreen) {
         super(componentId, sceneIndex, true, parentScreen);
+    }
+
+    private ShowcaseChromeRenderer getShowcaseChromeRenderer() {
+        if (showcaseChromeRenderer == null) {
+            showcaseChromeRenderer = new ShowcaseChromeRenderer(mc, new ShowcaseChromeRenderer.Theme(
+                24, 28, 56, 68, 68.0F, 56.0F, 116.0F, 0x1B2430, 0xE6E0D2, 0x2B323A, 0x56606A, 0x05080C,
+                new ResourceLocation("ponder", "textures/gui/logo.png"), 0.78F));
+        }
+        return showcaseChromeRenderer;
+    }
+
+    private ShowcaseHudRenderer getShowcaseHudRenderer() {
+        if (showcaseHudRenderer == null) {
+            showcaseHudRenderer = new ShowcaseHudRenderer(createShowcaseHudHost(), fontRenderer, createShowcaseHudTheme());
+        }
+        return showcaseHudRenderer;
+    }
+
+    private ShowcaseRenderer getShowcaseRenderer() {
+        if (showcaseRenderer == null) {
+            showcaseRenderer = new ShowcaseRenderer(mc, fontRenderer, createShowcaseRendererHost(),
+                createShowcaseRendererTheme());
+        }
+        return showcaseRenderer;
     }
 
     public static PonderUI showcase(@Nullable ResourceLocation componentId, int sceneIndex) {
@@ -34,6 +61,45 @@ public class PonderUI extends PonderDebugScreen {
 
     private String tr(String key, Object... args) {
         return I18n.format(UI_LANG_PREFIX + key, args);
+    }
+
+    @Override
+    protected ShowcaseHudRenderer.Theme createShowcaseHudTheme() {
+        return new ShowcaseHudRenderer.Theme() {
+            @Override
+            public String getPlaybackBarHoverLabel(int estimatedTick, @Nullable PonderScene scene) {
+                return getHoverHintForPlaybackBar(estimatedTick, scene);
+            }
+
+            @Override
+            public String getGroupSelectorHoverLabel() {
+                return getHoverHintForGroupSelector();
+            }
+
+            @Override
+            public String getNextUpHoverLabel() {
+                return getHoverHintForNextUp();
+            }
+
+            @Override
+            public String getSceneShortLabel(int sceneIndex) {
+                return tr("showcase.scene_short", Integer.valueOf(sceneIndex));
+            }
+
+            @Override
+            public String getNextUpLabel() {
+                return tr("showcase.next_up");
+            }
+        };
+    }
+
+    @Override
+    protected ShowcaseRenderer.Theme createShowcaseRendererTheme() {
+        return new ShowcaseRenderer.Theme(340, 44, 188.0F, 0x111822, 0x00000000, 96.0F, 0xD7DFE7, 188.0F, 0x10151B,
+            64.0F, 0xE7E0D1, 0xB8C3CC, 0xF6F2EA, 0xAEB8C1, 0xFFD7DFE7, 188.0F, 0x1A2028, 156.0F, 0xD7DFE7, 0xF2EFE7,
+            (componentStack, componentId) -> componentStack.isEmpty() ? tr("showcase.title")
+                : tr("showcase.eyebrow_component", componentStack.getItem().getRegistryName()),
+            groupState -> tr("hint.group"));
     }
 
     @Override
@@ -71,12 +137,12 @@ public class PonderUI extends PonderDebugScreen {
         addCompatButton(playPauseButton);
         addCompatButton(nextSceneButton);
         addCompatButton(startButton);
-        playing = true;
+        updateButtonState();
     }
 
     @Override
     protected GuiScreen createDebugScreenFromShowcase() {
-        return new PonderDebugScreen(getSelectedComponentId(), getSelectedSceneIndex(), this);
+        return new PonderDebugScreen(selectionState().getSelectedComponentId(), selectionState().getSelectedSceneIndex(), this);
     }
 
     @Override
@@ -123,7 +189,7 @@ public class PonderUI extends PonderDebugScreen {
     @Override
     protected void drawShowcaseScreen(int mouseX, int mouseY, float partialTicks) {
         drawDefaultBackground();
-        resetShowcaseTransientState();
+        interactionHitCache().resetShowcase();
 
         PreviewLayout showcaseLayout = getShowcasePreviewLayout();
         int previewX = showcaseLayout.originX;
@@ -132,22 +198,23 @@ public class PonderUI extends PonderDebugScreen {
         int previewHeight = showcaseLayout.height;
         int headerX = previewX + 32;
         int headerY = previewY + 16;
-        float fade = getShowcaseFade(partialTicks);
+        float fade = previewCameraState().getShowcaseFade(partialTicks);
 
         drawGradientRect(0, 0, width, height, 0xF40A1016, 0xFF020406);
 
-        PonderScene scene = getSelectedScene();
-        ResourceLocation componentId = getSelectedComponentId();
+        PonderScene scene = selectionState().getSelectedScene();
+        ResourceLocation componentId = selectionState().getSelectedComponentId();
         ItemStack componentStack = createComponentStack(componentId);
         String stackLabel = componentStack.isEmpty() ? tr("showcase.missing_item") : componentStack.getDisplayName();
         String sceneTitle = scene == null ? getShowcaseEmptyTitle() : scene.getTitle();
         String title = fontRenderer.trimStringToWidth(sceneTitle, 240);
         String subtitle = componentId == null ? getShowcaseNoSceneSubtitle() : stackLabel;
+        float renderTick = scene == null ? 0.0F : playbackState().getRenderTick(getSceneEndTick(scene), partialTicks);
 
         drawScenePreview(previewX, previewY, previewWidth, previewHeight, partialTicks);
         drawShowcaseBackdrop(previewX, previewY, previewWidth, previewHeight, fade);
-        drawGuiTextureOverlays(scene, lastPreviewLayout, getRenderTick(scene, partialTicks), fade);
-        drawSceneSpaceOverlays(scene, lastPreviewLayout, getRenderTick(scene, partialTicks), fade);
+        drawGuiTextureOverlays(scene, showcaseLayout, renderTick, fade);
+        drawSceneSpaceOverlays(scene, showcaseLayout, renderTick, fade);
         drawShowcaseHeader(headerX, headerY, previewWidth - 64, componentStack, title, subtitle, fade);
         drawShowcaseGroupPopup(headerX - 2, headerY + 48, previewWidth - 88, fade);
         drawShowcaseLogo(previewX + previewWidth - 48, previewY + 14, fade);
@@ -156,185 +223,76 @@ public class PonderUI extends PonderDebugScreen {
         int playbackX = previewX + (previewWidth - playbackWidth) / 2;
         int playbackY = previewY + previewHeight - 28;
         drawPlaybackBar(playbackX, playbackY, playbackWidth, 3);
-        drawShowcaseCaption(scene, previewX, previewY, previewWidth, previewHeight, getRenderTick(scene, partialTicks),
-            fade);
+        drawShowcaseCaption(scene, previewX, previewY, previewWidth, previewHeight, renderTick, fade);
         drawNextUpCard(scene, fade);
         drawUserFooter();
     }
 
     @Override
     protected void drawShowcaseBackdrop(int previewX, int previewY, int previewWidth, int previewHeight, float fade) {
-        int glowAlpha = (int) (fade * 68.0F) << 24;
-        int borderAlpha = (int) (fade * 56.0F) << 24;
-        int vignetteAlpha = (int) (fade * 116.0F) << 24;
-        drawGradientRect(previewX - 24, previewY - 24, previewX + previewWidth + 24, previewY + previewHeight + 28,
-            glowAlpha | 0x1B2430, 0x00000000);
-        drawRect(previewX, previewY, previewX + previewWidth, previewY + 1, borderAlpha | 0xE6E0D2);
-        drawRect(previewX, previewY + previewHeight - 1, previewX + previewWidth, previewY + previewHeight,
-            borderAlpha | 0x2B323A);
-        drawRect(previewX, previewY, previewX + 1, previewY + previewHeight, borderAlpha | 0x56606A);
-        drawRect(previewX + previewWidth - 1, previewY, previewX + previewWidth, previewY + previewHeight,
-            borderAlpha | 0x2B323A);
-        drawGradientRect(previewX, previewY, previewX + previewWidth, previewY + 56, vignetteAlpha | 0x05080C,
-            0x00000000);
-        drawGradientRect(previewX, previewY + previewHeight - 68, previewX + previewWidth, previewY + previewHeight,
-            0x00000000, vignetteAlpha | 0x05080C);
+        getShowcaseChromeRenderer().drawBackdrop(this, previewX, previewY, previewWidth, previewHeight, fade);
     }
 
     @Override
     protected void drawShowcaseLogo(int x, int y, float fade) {
-        mc.getTextureManager().bindTexture(new ResourceLocation("ponder", "textures/gui/logo.png"));
-        net.minecraft.client.renderer.GlStateManager.enableBlend();
-        net.minecraft.client.renderer.GlStateManager.color(1.0F, 1.0F, 1.0F, Math.min(1.0F, fade * 0.78F));
-        drawTexturedModalRect(x, y, 0, 0, 32, 32);
-        net.minecraft.client.renderer.GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        getShowcaseChromeRenderer().drawLogo(this, x, y, fade);
     }
 
     @Override
     protected void drawShowcaseHeader(int x, int y, int width, ItemStack componentStack, String title, String subtitle,
         float fade) {
-        int boxWidth = Math.min(340, width);
-        int boxHeight = 44;
-        int alpha = (int) (fade * 188.0F) << 24;
-        drawGradientRect(x, y, x + boxWidth, y + boxHeight, alpha | 0x111822, 0x00000000);
-        drawRect(x + 36, y + boxHeight - 1, x + boxWidth - 10, y + boxHeight, ((int) (fade * 96.0F) << 24) | 0xD7DFE7);
-        drawRect(x - 2, y + 4, x + 28, y + 34, alpha | 0x10151B);
-        drawRect(x - 1, y + 5, x + 27, y + 33, ((int) (fade * 64.0F) << 24) | 0xE7E0D1);
-        setShowcaseHeaderIconBounds(x - 1, y + 5, 28);
-
-        if (!componentStack.isEmpty()) {
-            net.minecraft.client.renderer.RenderHelper.enableGUIStandardItemLighting();
-            mc.getRenderItem().renderItemAndEffectIntoGUI(componentStack, x + 5, y + 11);
-            net.minecraft.client.renderer.RenderHelper.disableStandardItemLighting();
-            net.minecraft.client.renderer.GlStateManager.disableLighting();
-        }
-
-        ShowcaseGroupState groupState = getShowcaseGroupState();
-        if (groupState != null && groupState.components.size() > 1) {
-            int chipX = x + 16;
-            int chipY = y + 22;
-            int chipFill = ((int) (fade * 188.0F) << 24) | 0x1A2028;
-            int chipBorder = ((int) (fade * 156.0F) << 24) | 0xD7DFE7;
-            drawRect(chipX, chipY, chipX + 12, chipY + 10, chipBorder);
-            drawRect(chipX + 1, chipY + 1, chipX + 11, chipY + 9, chipFill);
-            drawCenteredString(fontRenderer, String.valueOf(groupState.components.size()), chipX + 6, chipY + 1, 0xF2EFE7);
-        }
-
-        String eyebrow = componentStack.isEmpty() ? tr("showcase.title")
-            : tr("showcase.eyebrow_component", componentStack.getItem().getRegistryName());
-        drawString(fontRenderer, fontRenderer.trimStringToWidth(eyebrow, boxWidth - 90), x + 36, y + 5, 0xB8C3CC);
-        drawString(fontRenderer, fontRenderer.trimStringToWidth(title, boxWidth - 90), x + 36, y + 17, 0xF6F2EA);
-        drawString(fontRenderer, fontRenderer.trimStringToWidth(subtitle, boxWidth - 90), x + 36, y + 29, 0xAEB8C1);
-
-        if (getCompiledSceneCount() > 0) {
-            String sceneIndex = (getSelectedSceneIndex() + 1) + " / " + getCompiledSceneCount();
-            drawString(fontRenderer, sceneIndex, x + boxWidth - 12 - fontRenderer.getStringWidth(sceneIndex), y + 6,
-                0xD7DFE7);
-        }
+        ShowcaseRenderer.HeaderLayout header =
+            getShowcaseRenderer().drawHeader(x, y, width, componentStack, selectionState().getSelectedComponentId(),
+                title, subtitle, fade, selectionState().getSelectedSceneIndex(),
+                selectionState().getCompiledSceneCount());
+        interactionHitCache().setShowcaseHeaderIconBounds(header.iconX, header.iconY, header.iconSize);
     }
 
     @Override
     protected void drawPlaybackBar(int x, int y, int width, int height) {
-        PonderScene scene = getSelectedScene();
-        int maxTick = scene == null ? 0 : Math.max(1, getSceneEndTick(scene));
-        float progress = scene == null ? 0.0F : getPlaybackTickValue() / (float) maxTick;
-        int filled = net.minecraft.util.math.MathHelper.clamp((int) (progress * width), 0, width);
-
-        drawRect(x, y, x + width, y + height, 0x44121820);
-        drawRect(x, y, x + filled, y + height, 0xFFD7DFE7);
-        if (filled > 0) {
-            drawRect(x + filled - 1, y - 1, x + filled, y + height + 1, 0xFFFDFBF4);
-        }
-
-        String leftLabel = scene == null ? tr("showcase.none_short")
-            : tr("showcase.scene_short", Integer.valueOf(getSelectedSceneIndex() + 1));
-        String rightLabel = scene == null ? "T+0" : "T+" + getPlaybackTickValue() + " / " + getSceneEndTick(scene);
-        drawString(fontRenderer, leftLabel, x, y - 11, 0xC4CFD7);
-        drawString(fontRenderer, rightLabel, x + width - fontRenderer.getStringWidth(rightLabel), y - 11, 0xC4CFD7);
+        interactionHitCache().setPlaybackBarBounds(x, y, width, height);
+        PonderScene scene = selectionState().getSelectedScene();
+        int selectedSceneIndex = selectionState().getSelectedSceneIndex();
+        int compiledSceneCount = selectionState().getCompiledSceneCount();
+        int playbackTickValue = playbackState().getPlaybackTick();
+        boolean playbackRunning = playbackState().isPlaying();
+        int sceneEndTick = scene == null ? 0 : getSceneEndTick(scene);
+        getShowcaseHudRenderer().drawPlaybackBar(scene, selectedSceneIndex, compiledSceneCount, playbackTickValue,
+            playbackRunning, sceneEndTick, true, x, y, width, height);
     }
 
     @Override
     protected void drawNextUpCard(PonderScene scene, float fade) {
-        setNextUpCardBounds(0, 0, 0, 0);
-        PonderScene nextScene = getNextScene();
-        if (scene == null || nextScene == null || nextSceneButton == null) {
-            return;
+        ShowcaseHudRenderer.NextUpCardBounds nextUpCard = getShowcaseHudRenderer().drawNextUpCardIfNeeded(scene,
+            selectionState().getSelectedSceneIndex(), selectionState().getCompiledSceneCount(),
+            selectionState().getCompiledScenes(), playbackState().getPlaybackTick(),
+            scene == null ? 0 : getSceneEndTick(scene), nextSceneButton, fade, true);
+        if (nextUpCard == null) {
+            interactionHitCache().setNextUpCardBounds(0, 0, 0, 0);
+        } else {
+            interactionHitCache().setNextUpCardBounds(nextUpCard.x, nextUpCard.y, nextUpCard.width,
+                nextUpCard.height);
         }
-
-        int maxTick = Math.max(1, getSceneEndTick(scene));
-        if (getPlaybackTickValue() < (int) (maxTick * 0.7F)) {
-            return;
-        }
-
-        String nextUpLabel = tr("showcase.next_up");
-        String nextTitle = fontRenderer.trimStringToWidth(nextScene.getTitle(), 170);
-        int boxWidth = Math.max(108,
-            Math.max(fontRenderer.getStringWidth(nextUpLabel), fontRenderer.getStringWidth(nextTitle)) + 26);
-        int anchorX = nextSceneButton.x + nextSceneButton.width / 2;
-        int anchorY = nextSceneButton.y - 8;
-        int boxX = anchorX - boxWidth / 2;
-        int boxY = anchorY - 36;
-        setNextUpCardBounds(boxX, boxY, boxWidth, 28);
-
-        int fillTop = ((int) (fade * 188.0F) << 24) | 0x111822;
-        int fillBottom = ((int) (fade * 188.0F) << 24) | 0x090D12;
-        int border = ((int) (fade * 148.0F) << 24) | 0xD7DFE7;
-        drawGradientRect(boxX, boxY, boxX + boxWidth, boxY + 28, fillTop, fillBottom);
-        drawRect(boxX, boxY, boxX + boxWidth, boxY + 1, border);
-        drawRect(boxX, boxY + 27, boxX + boxWidth, boxY + 28, border);
-        drawRect(boxX, boxY, boxX + 1, boxY + 28, border);
-        drawRect(boxX + boxWidth - 1, boxY, boxX + boxWidth, boxY + 28, border);
-        drawCenteredString(fontRenderer, nextUpLabel, boxX + boxWidth / 2, boxY + 6, 0xAEB8C1);
-        drawCenteredString(fontRenderer, nextTitle, boxX + boxWidth / 2, boxY + 17, 0xF3EFE7);
     }
 
     @Override
-    protected void drawShowcaseHoverHints(int mouseX, int mouseY) {
-        if (isMouseOverPlaybackBar(mouseX, mouseY)) {
-            drawCenteredString(fontRenderer, getHoverHintForPlaybackBar(estimatePlaybackTickForMouse(mouseX),
-                getSelectedScene()), width / 2, height - 12, 0xB8C3CC);
-            return;
-        }
-        if (isMouseOverShowcaseHeaderIcon(mouseX, mouseY) && hasShowcaseGroupChoices()) {
-            drawCenteredString(fontRenderer, getHoverHintForGroupSelector(), width / 2, height - 12, 0xB8C3CC);
-            return;
-        }
-        ShowcaseGroupIcon groupIcon = getShowcaseGroupIconAt(mouseX, mouseY);
-        if (groupIcon != null) {
-            ItemStack stack = createComponentStack(groupIcon.componentId);
-            String label = stack.isEmpty() ? groupIcon.componentId.toString() : stack.getDisplayName();
-            String groupLabel = groupIcon.tag == null ? label : groupIcon.tag.getTitle() + "  |  " + label;
-            drawCenteredString(fontRenderer, groupLabel, width / 2, height - 12, 0xB8C3CC);
-            return;
-        }
-        if (isMouseOverNextUpCard(mouseX, mouseY)) {
-            drawCenteredString(fontRenderer, getHoverHintForNextUp(), width / 2, height - 12, 0xB8C3CC);
-            return;
-        }
-
-        GuiButton hoveredButton = null;
-        for (GuiButton button : buttonList) {
-            if (button.visible && button.isMouseOver()) {
-                hoveredButton = button;
-                break;
-            }
-        }
-
-        if (hoveredButton == null || hoveredButton.displayString == null || hoveredButton.displayString.isEmpty()) {
-            return;
-        }
-
-        drawCenteredString(fontRenderer, hoveredButton.displayString, width / 2, height - 12, 0xB8C3CC);
+    protected void drawShowcaseHoverHints(@Nullable String hoverLabel) {
+        getShowcaseHudRenderer().drawHoverHints(width, height - 12, hoverLabel, buttonList.toArray(new GuiButton[0]));
     }
 
-    private void drawUserFooter() {
-        PonderScene scene = getSelectedScene();
+   private void drawUserFooter() {
+        PonderScene scene = selectionState().getSelectedScene();
+        int selectedSceneIndex = selectionState().getSelectedSceneIndex();
+        int compiledSceneCount = selectionState().getCompiledSceneCount();
+        int playbackTickValue = playbackState().getPlaybackTick();
+        boolean playbackRunning = playbackState().isPlaying();
+        int sceneEndTick = scene == null ? 0 : getSceneEndTick(scene);
         String left = scene == null ? tr("footer.no_scene")
-            : tr("footer.scene", Integer.valueOf(getSelectedSceneIndex() + 1),
-                Integer.valueOf(Math.max(1, getCompiledSceneCount())));
+            : tr("footer.scene", Integer.valueOf(selectedSceneIndex + 1),
+                Integer.valueOf(Math.max(1, compiledSceneCount)));
         String middle = scene == null ? "T+0"
-            : tr("footer.tick", Integer.valueOf(getPlaybackTickValue()), Integer.valueOf(getSceneEndTick(scene)),
-                tr(isPlaybackRunning() ? "footer.playing" : "footer.paused"));
+            : tr("footer.tick", Integer.valueOf(playbackTickValue), Integer.valueOf(sceneEndTick),
+                tr(playbackRunning ? "footer.playing" : "footer.paused"));
         String right = tr("footer.help");
         int y = height - 32;
         drawRect(18, y - 4, width - 18, y + 12, 0x66101518);
@@ -342,5 +300,4 @@ public class PonderUI extends PonderDebugScreen {
         drawCenteredString(fontRenderer, middle, width / 2, y, 0xD7DFE7);
         drawString(fontRenderer, right, width - 28 - fontRenderer.getStringWidth(right), y, 0xAEB8C1);
     }
-
 }

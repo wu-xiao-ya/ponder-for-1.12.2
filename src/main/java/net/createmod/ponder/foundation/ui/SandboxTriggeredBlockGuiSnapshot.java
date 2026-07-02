@@ -28,7 +28,7 @@ import net.minecraft.world.WorldServer;
 import net.minecraftforge.client.event.GuiOpenEvent;
 import org.lwjgl.opengl.GL11;
 
-public final class SandboxTriggeredBlockGuiSnapshot implements PonderGuiSnapshotRegistry.SnapshotRenderer {
+public final class SandboxTriggeredBlockGuiSnapshot implements SnapshotRenderer.GuiSnapshotRenderer {
 
     private static final BlockPos SANDBOX_POS = new BlockPos(1000000, 200, 1000000);
     private static final int CAPTURE_TIMEOUT_TICKS = 40;
@@ -56,6 +56,8 @@ public final class SandboxTriggeredBlockGuiSnapshot implements PonderGuiSnapshot
     private ServerBlockState originalServerState;
     @Nullable
     private NBTTagCompound sandboxTileNbt;
+    @Nullable
+    private NBTTagCompound requestedTileNbt;
 
     public SandboxTriggeredBlockGuiSnapshot(ResourceLocation blockId, int meta) {
         this.blockId = blockId;
@@ -64,12 +66,19 @@ public final class SandboxTriggeredBlockGuiSnapshot implements PonderGuiSnapshot
     }
 
     public static synchronized SandboxTriggeredBlockGuiSnapshot getOrCreate(ResourceLocation blockId, int meta) {
+        return getOrCreate(blockId, meta, null);
+    }
+
+    public static synchronized SandboxTriggeredBlockGuiSnapshot getOrCreate(ResourceLocation blockId, int meta,
+        @Nullable NBTTagCompound tileNbt) {
         String key = blockId + "#" + meta;
         SandboxTriggeredBlockGuiSnapshot existing = BY_BLOCK.get(key);
         if (existing != null) {
+            existing.requestedTileNbt = tileNbt == null ? null : tileNbt.copy();
             return existing;
         }
         SandboxTriggeredBlockGuiSnapshot snapshot = new SandboxTriggeredBlockGuiSnapshot(blockId, meta);
+        snapshot.requestedTileNbt = tileNbt == null ? null : tileNbt.copy();
         BY_BLOCK.put(key, snapshot);
         return snapshot;
     }
@@ -226,6 +235,11 @@ public final class SandboxTriggeredBlockGuiSnapshot implements PonderGuiSnapshot
         if (sandboxTile != null) {
             seedSandboxTile(sandboxTile);
             sandboxTileNbt = sandboxTile.writeToNBT(new NBTTagCompound());
+            if (requestedTileNbt != null) {
+                mergeNbt(sandboxTileNbt, requestedTileNbt);
+                sandboxTile.readFromNBT(sandboxTileNbt);
+                sandboxTileNbt = sandboxTile.writeToNBT(new NBTTagCompound());
+            }
         } else {
             sandboxTileNbt = null;
         }
@@ -295,11 +309,11 @@ public final class SandboxTriggeredBlockGuiSnapshot implements PonderGuiSnapshot
         if (mc == null || mc.world == null || originalClientState == null) {
             return;
         }
-        mc.world.setBlockState(SANDBOX_POS, originalClientState.state, 3);
-        if (originalClientState.nbt == null) {
+        mc.world.setBlockState(SANDBOX_POS, originalClientState.state(), 3);
+        if (originalClientState.nbt() == null) {
             mc.world.removeTileEntity(SANDBOX_POS);
         } else {
-            TileEntity tile = TileEntity.create(mc.world, originalClientState.nbt);
+            TileEntity tile = TileEntity.create(mc.world, originalClientState.nbt());
             if (tile != null) {
                 tile.setPos(SANDBOX_POS);
                 tile.setWorld(mc.world);
@@ -314,7 +328,7 @@ public final class SandboxTriggeredBlockGuiSnapshot implements PonderGuiSnapshot
         if (server == null || playerId == null || originalServerState == null) {
             return;
         }
-        final ServerBlockState restore = originalServerState;
+        var restore = originalServerState;
         originalServerState = null;
         server.addScheduledTask(new Runnable() {
             @Override
@@ -328,15 +342,15 @@ public final class SandboxTriggeredBlockGuiSnapshot implements PonderGuiSnapshot
                     player.closeContainer();
                 } catch (Throwable ignored) {
                 }
-                WorldServer world = server.getWorld(restore.dimension);
+                WorldServer world = server.getWorld(restore.dimension());
                 if (world == null) {
                     return;
                 }
-                world.setBlockState(SANDBOX_POS, restore.state, 3);
-                if (restore.nbt == null) {
+                world.setBlockState(SANDBOX_POS, restore.state(), 3);
+                if (restore.nbt() == null) {
                     world.removeTileEntity(SANDBOX_POS);
                 } else {
-                    TileEntity tile = TileEntity.create(world, restore.nbt);
+                    TileEntity tile = TileEntity.create(world, restore.nbt());
                     if (tile != null) {
                         tile.setPos(SANDBOX_POS);
                         tile.setWorld(world);
@@ -451,27 +465,21 @@ public final class SandboxTriggeredBlockGuiSnapshot implements PonderGuiSnapshot
         }
     }
 
-    private static final class ClientBlockState {
-        private final IBlockState state;
-        @Nullable
-        private final NBTTagCompound nbt;
-
-        private ClientBlockState(IBlockState state, @Nullable NBTTagCompound nbt) {
-            this.state = state;
-            this.nbt = nbt == null ? null : nbt.copy();
+    private void mergeNbt(NBTTagCompound target, NBTTagCompound source) {
+        for (String key : source.getKeySet()) {
+            target.setTag(key, source.getTag(key).copy());
         }
     }
 
-    private static final class ServerBlockState {
-        private final int dimension;
-        private final IBlockState state;
-        @Nullable
-        private final NBTTagCompound nbt;
+    record ClientBlockState(IBlockState state, @Nullable NBTTagCompound nbt) {
+        ClientBlockState {
+            nbt = nbt != null ? nbt.copy() : null;
+        }
+    }
 
-        private ServerBlockState(int dimension, IBlockState state, @Nullable NBTTagCompound nbt) {
-            this.dimension = dimension;
-            this.state = state;
-            this.nbt = nbt == null ? null : nbt.copy();
+    record ServerBlockState(int dimension, IBlockState state, @Nullable NBTTagCompound nbt) {
+        ServerBlockState {
+            nbt = nbt != null ? nbt.copy() : null;
         }
     }
 }

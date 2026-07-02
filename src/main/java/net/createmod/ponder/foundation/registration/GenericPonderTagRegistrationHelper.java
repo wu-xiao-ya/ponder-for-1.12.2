@@ -8,15 +8,12 @@ import net.createmod.ponder.api.registration.PonderTagRegistrationHelper;
 import net.createmod.ponder.api.registration.TagBuilder;
 import net.minecraft.util.ResourceLocation;
 
-public class GenericPonderTagRegistrationHelper<T> implements PonderTagRegistrationHelper<T> {
-
-    private final PonderTagRegistrationHelper<ResourceLocation> helperDelegate;
-    private final Function<T, ResourceLocation> keyGen;
+public class GenericPonderTagRegistrationHelper<T> extends KeyResolvingHelper<T, PonderTagRegistrationHelper<ResourceLocation>>
+    implements PonderTagRegistrationHelper<T> {
 
     public GenericPonderTagRegistrationHelper(PonderTagRegistrationHelper<ResourceLocation> helperDelegate,
         Function<T, ResourceLocation> keyGen) {
-        this.helperDelegate = helperDelegate;
-        this.keyGen = keyGen;
+        super(helperDelegate, keyGen);
     }
 
     @Override
@@ -36,7 +33,7 @@ public class GenericPonderTagRegistrationHelper<T> implements PonderTagRegistrat
 
     @Override
     public void addTagToComponent(T component, ResourceLocation tag) {
-        helperDelegate.addTagToComponent(keyGen.apply(component), tag);
+        helperDelegate.addTagToComponent(resolveKey(component), tag);
     }
 
     @Override

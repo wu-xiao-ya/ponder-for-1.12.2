@@ -8,7 +8,7 @@ import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.tileentity.TileEntityFurnace;
 import org.lwjgl.opengl.GL11;
 
-final class EmbeddedGuiFurnaceSnapshot implements PonderGuiSnapshotRegistry.SnapshotRenderer {
+final class EmbeddedGuiFurnaceSnapshot implements SnapshotRenderer.GuiSnapshotRenderer {
 
     static final EmbeddedGuiFurnaceSnapshot INSTANCE = new EmbeddedGuiFurnaceSnapshot();
 

@@ -9,15 +9,12 @@ import net.createmod.ponder.api.registration.StoryBoardEntry;
 import net.createmod.ponder.api.scene.PonderStoryBoard;
 import net.minecraft.util.ResourceLocation;
 
-public class GenericPonderSceneRegistrationHelper<T> implements PonderSceneRegistrationHelper<T> {
-
-    private final PonderSceneRegistrationHelper<ResourceLocation> helperDelegate;
-    private final Function<T, ResourceLocation> keyGen;
+public class GenericPonderSceneRegistrationHelper<T> extends KeyResolvingHelper<T, PonderSceneRegistrationHelper<ResourceLocation>>
+    implements PonderSceneRegistrationHelper<T> {
 
     public GenericPonderSceneRegistrationHelper(PonderSceneRegistrationHelper<ResourceLocation> helperDelegate,
         Function<T, ResourceLocation> keyGen) {
-        this.helperDelegate = helperDelegate;
-        this.keyGen = keyGen;
+        super(helperDelegate, keyGen);
     }
 
     @Override
@@ -28,13 +25,13 @@ public class GenericPonderSceneRegistrationHelper<T> implements PonderSceneRegis
     @Override
     public StoryBoardEntry addStoryBoard(T component, ResourceLocation schematicLocation, PonderStoryBoard storyBoard,
         ResourceLocation... tags) {
-        return helperDelegate.addStoryBoard(keyGen.apply(component), schematicLocation, storyBoard, tags);
+        return helperDelegate.addStoryBoard(resolveKey(component), schematicLocation, storyBoard, tags);
     }
 
     @Override
     public StoryBoardEntry addStoryBoard(T component, String schematicPath, PonderStoryBoard storyBoard,
         ResourceLocation... tags) {
-        return helperDelegate.addStoryBoard(keyGen.apply(component), schematicPath, storyBoard, tags);
+        return helperDelegate.addStoryBoard(resolveKey(component), schematicPath, storyBoard, tags);
     }
 
     @Override

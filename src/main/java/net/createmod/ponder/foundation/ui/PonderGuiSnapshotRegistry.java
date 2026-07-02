@@ -5,20 +5,20 @@ import java.util.Locale;
 import java.util.Map;
 
 import net.createmod.ponder.Ponder;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
 
 public final class PonderGuiSnapshotRegistry {
 
-    private static final int TE_BASE_WIDTH = 198;
-    private static final int TE_BASE_HEIGHT = 166;
-    private static final int TE_PANEL_WIDTH = 100;
-    private static final int TE_PANEL_HEIGHT = 92;
+    private static final int TE_BASE_WIDTH        = 198;
+    private static final int TE_BASE_HEIGHT       = 166;
+    private static final int TE_PANEL_WIDTH       = 100;
+    private static final int TE_PANEL_HEIGHT      = 92;
     private static final int TE_REDSTONE_PANEL_WIDTH = 112;
-    private static final int TE_COMPOSITE_WIDTH = 276;
+    private static final int TE_COMPOSITE_WIDTH   = 276;
     private static final int TE_REDSTONE_COMPOSITE_WIDTH = 288;
 
-    private static final Map<ResourceLocation, SnapshotProvider> SNAPSHOTS =
-        new LinkedHashMap<ResourceLocation, SnapshotProvider>();
+    private static final Map<ResourceLocation, SnapshotProvider> SNAPSHOTS = new LinkedHashMap<>();
 
     static {
         registerDefaults();
@@ -31,7 +31,7 @@ public final class PonderGuiSnapshotRegistry {
         if (id == null || snapshot == null) {
             return;
         }
-        registerProvider(id, currentTick -> snapshot);
+        registerProvider(id, SnapshotProvider.constant(snapshot));
     }
 
     public static void registerProvider(ResourceLocation id, SnapshotProvider provider) {
@@ -47,11 +47,20 @@ public final class PonderGuiSnapshotRegistry {
     }
 
     public static ResourceLocation registerBlockGuiSnapshot(ResourceLocation blockId, int meta, int width, int height) {
-        ResourceLocation snapshotId = Ponder.asResource("gui_snapshot/block/" + sanitizePath(blockId.getNamespace())
-            + "/" + sanitizePath(blockId.getPath()) + "/" + Math.max(0, meta) + "/"
-            + Math.max(1, width) + "x" + Math.max(1, height));
+        return registerBlockGuiSnapshot(blockId, meta, null, width, height);
+    }
+
+    public static ResourceLocation registerBlockGuiSnapshot(ResourceLocation blockId, int meta, NBTTagCompound tileNbt,
+        int width, int height) {
+        var snapshotId = Ponder.asResource(
+            "gui_snapshot/block/%s/%s/%d/%dx%d".formatted(
+                sanitizePath(blockId.getNamespace()),
+                sanitizePath(blockId.getPath()),
+                Math.max(0, meta),
+                Math.max(1, width),
+                Math.max(1, height)));
         register(snapshotId, Snapshot.liveRenderer(Math.max(1, width), Math.max(1, height), true,
-            SandboxTriggeredBlockGuiSnapshot.getOrCreate(blockId, Math.max(0, meta))));
+            SandboxTriggeredBlockGuiSnapshot.getOrCreate(blockId, Math.max(0, meta), tileNbt)));
         return snapshotId;
     }
 
@@ -100,9 +109,9 @@ public final class PonderGuiSnapshotRegistry {
     }
 
     private static void registerThermalPanelAliases() {
-        Snapshot augmentPanel = thermalSnapshot("furnace_panel_augment.png", TE_PANEL_WIDTH, TE_PANEL_HEIGHT);
-        Snapshot configPanel = thermalSnapshot("furnace_panel_config.png", TE_PANEL_WIDTH, TE_PANEL_HEIGHT);
-        Snapshot redstonePanel = thermalSnapshot("furnace_panel_redstone.png", TE_REDSTONE_PANEL_WIDTH, TE_PANEL_HEIGHT);
+        var augmentPanel = thermalSnapshot("furnace_panel_augment.png", TE_PANEL_WIDTH, TE_PANEL_HEIGHT);
+        var configPanel = thermalSnapshot("furnace_panel_config.png", TE_PANEL_WIDTH, TE_PANEL_HEIGHT);
+        var redstonePanel = thermalSnapshot("furnace_panel_redstone.png", TE_REDSTONE_PANEL_WIDTH, TE_PANEL_HEIGHT);
 
         register(Ponder.asResource("gui_snapshot/te_panel_augment"), augmentPanel);
         register(Ponder.asResource("gui_snapshot/te_panel_config"), configPanel);
@@ -114,15 +123,15 @@ public final class PonderGuiSnapshotRegistry {
     }
 
     private static void registerThermalMachine(String machineName) {
-        ResourceLocation baseId = Ponder.asResource("gui_snapshot/te_" + machineName + "_base");
-        ResourceLocation augmentId = Ponder.asResource("gui_snapshot/te_" + machineName + "_augment");
-        ResourceLocation configId = Ponder.asResource("gui_snapshot/te_" + machineName + "_config");
-        ResourceLocation redstoneId = Ponder.asResource("gui_snapshot/te_" + machineName + "_redstone");
+        var baseId = Ponder.asResource("gui_snapshot/te_" + machineName + "_base");
+        var augmentId = Ponder.asResource("gui_snapshot/te_" + machineName + "_augment");
+        var configId = Ponder.asResource("gui_snapshot/te_" + machineName + "_config");
+        var redstoneId = Ponder.asResource("gui_snapshot/te_" + machineName + "_redstone");
 
-        Snapshot base = thermalSnapshot(machineName + "_snapshot_base.png", TE_BASE_WIDTH, TE_BASE_HEIGHT);
-        Snapshot augment = thermalSnapshot(machineName + "_snapshot_augment.png", TE_COMPOSITE_WIDTH, TE_BASE_HEIGHT);
-        Snapshot config = thermalSnapshot(machineName + "_snapshot_config.png", TE_COMPOSITE_WIDTH, TE_BASE_HEIGHT);
-        Snapshot redstone = thermalSnapshot(machineName + "_snapshot_redstone.png", TE_REDSTONE_COMPOSITE_WIDTH,
+        var base = thermalSnapshot(machineName + "_snapshot_base.png", TE_BASE_WIDTH, TE_BASE_HEIGHT);
+        var augment = thermalSnapshot(machineName + "_snapshot_augment.png", TE_COMPOSITE_WIDTH, TE_BASE_HEIGHT);
+        var config = thermalSnapshot(machineName + "_snapshot_config.png", TE_COMPOSITE_WIDTH, TE_BASE_HEIGHT);
+        var redstone = thermalSnapshot(machineName + "_snapshot_redstone.png", TE_REDSTONE_COMPOSITE_WIDTH,
             TE_BASE_HEIGHT);
 
         register(baseId, base);
@@ -151,9 +160,9 @@ public final class PonderGuiSnapshotRegistry {
     }
 
     private static void registerThermalLive(String machineName) {
-        String suffix = Character.toUpperCase(machineName.charAt(0)) + machineName.substring(1);
-        String guiClass = "cofh.thermalexpansion.gui.client.machine.Gui" + suffix;
-        String tileClass = "cofh.thermalexpansion.block.machine.Tile" + suffix;
+        var suffix = Character.toUpperCase(machineName.charAt(0)) + machineName.substring(1);
+        var guiClass = "cofh.thermalexpansion.gui.client.machine.Gui" + suffix;
+        var tileClass = "cofh.thermalexpansion.block.machine.Tile" + suffix;
         register(Ponder.asResource("gui_snapshot/te_" + machineName + "_live"),
             Snapshot.liveRenderer(TE_BASE_WIDTH, TE_BASE_HEIGHT, true,
                 new EmbeddedReflectiveGuiSnapshot(guiClass, tileClass)));
@@ -182,50 +191,5 @@ public final class PonderGuiSnapshotRegistry {
         register(Ponder.asResource("gui_snapshot/te_" + machineName + "_panel_" + panelName + "_live"),
             Snapshot.liveRenderer(width, height, true,
                 new EmbeddedReflectiveTabGuiSnapshot(guiClass, tileClass, tabFieldName, width, height)));
-    }
-
-    public interface SnapshotProvider {
-        Snapshot provide(float currentTick);
-    }
-
-    public interface SnapshotRenderer {
-        void render(int x, int y, int width, int height, float currentTick, float fade);
-    }
-
-    public static final class Snapshot {
-        public final ResourceLocation texture;
-        public final int u;
-        public final int v;
-        public final int regionWidth;
-        public final int regionHeight;
-        public final int textureWidth;
-        public final int textureHeight;
-        public final int displayWidth;
-        public final int displayHeight;
-        public final boolean framed;
-        public final SnapshotRenderer renderer;
-
-        public Snapshot(ResourceLocation texture, int u, int v, int regionWidth, int regionHeight, int textureWidth,
-            int textureHeight, int displayWidth, int displayHeight, boolean framed, SnapshotRenderer renderer) {
-            this.texture = texture;
-            this.u = u;
-            this.v = v;
-            this.regionWidth = regionWidth;
-            this.regionHeight = regionHeight;
-            this.textureWidth = textureWidth;
-            this.textureHeight = textureHeight;
-            this.displayWidth = displayWidth;
-            this.displayHeight = displayHeight;
-            this.framed = framed;
-            this.renderer = renderer;
-        }
-
-        public static Snapshot fullTexture(ResourceLocation texture, int width, int height) {
-            return new Snapshot(texture, 0, 0, width, height, width, height, width, height, true, null);
-        }
-
-        public static Snapshot liveRenderer(int width, int height, boolean framed, SnapshotRenderer renderer) {
-            return new Snapshot(null, 0, 0, width, height, width, height, width, height, framed, renderer);
-        }
     }
 }

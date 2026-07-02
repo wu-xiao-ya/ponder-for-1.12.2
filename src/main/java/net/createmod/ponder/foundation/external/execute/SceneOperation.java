@@ -1,0 +1,138 @@
+package net.createmod.ponder.foundation.external.execute;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import net.createmod.ponder.foundation.external.definition.SceneOperationDefinition;
+
+public class SceneOperation {
+    public String type;
+    public int xOffset;
+    public int zOffset;
+    public int size;
+    public int duration;
+    public int ticks;
+    public int times;
+    public int independentY = Integer.MIN_VALUE;
+    public float factor;
+    public float degrees;
+    public float offsetY;
+    public boolean enabled = true;
+    public String text;
+    public String color;
+    public String overlayId;
+    public String parentOverlayId;
+    public String parentGuiId;
+    public String blockGui;
+    public String blockState;
+    public int blockMeta = -1;
+    public String blockNbt;
+    public String direction;
+    public int captionX = Integer.MIN_VALUE;
+    public int captionY = Integer.MIN_VALUE;
+    public int captionOffsetX;
+    public int captionOffsetY;
+    public boolean connectorVisible = true;
+    public boolean placeNearTarget;
+    public String pointMode;
+    public String snapshot;
+    public String texture;
+    public int textureU;
+    public int textureV;
+    public int regionWidth = -1;
+    public int regionHeight = -1;
+    public int displayWidth = -1;
+    public int displayHeight = -1;
+    public int textureWidth = 256;
+    public int textureHeight = 256;
+    public int offsetX;
+    public boolean framed = true;
+    public boolean scaleToParent;
+    public boolean stretchTexture;
+    public int stretchBorder = 4;
+    public int guiX;
+    public int guiY;
+    public int guiWidth = -1;
+    public int guiHeight = -1;
+    public int[] pos;
+    public int[] from;
+    public int[] to;
+    public double[] offset;
+    public double[] rotation;
+    public double[] pivot;
+    public double[] pointAt;
+    public float rotX;
+    public float rotY;
+    public float rotZ;
+    public List<SceneOperation> childOperations = Collections.emptyList();
+
+    public static SceneOperation fromDefinition(SceneOperationDefinition def) {
+        SceneOperation op = new SceneOperation();
+        op.type = def.type();
+        op.xOffset = def.xOffset();
+        op.zOffset = def.zOffset();
+        op.size = def.size();
+        op.duration = def.duration();
+        op.ticks = def.ticks();
+        op.times = def.times();
+        op.independentY = def.independentY();
+        op.factor = def.factor();
+        op.degrees = def.degrees();
+        op.offsetY = def.offsetY();
+        op.enabled = def.enabled();
+        op.text = def.text();
+        op.color = def.color();
+        op.overlayId = def.overlayId();
+        op.parentOverlayId = def.parentOverlayId();
+        op.parentGuiId = def.parentGuiId();
+        op.blockGui = def.blockGui();
+        op.blockState = def.blockState();
+        op.blockMeta = def.blockMeta();
+        op.blockNbt = def.blockNbt();
+        op.direction = def.direction();
+        op.captionX = def.captionX();
+        op.captionY = def.captionY();
+        op.captionOffsetX = def.captionOffsetX();
+        op.captionOffsetY = def.captionOffsetY();
+        op.connectorVisible = def.connectorVisible();
+        op.placeNearTarget = def.placeNearTarget();
+        op.pointMode = def.pointMode();
+        op.snapshot = def.snapshot();
+        op.texture = def.texture();
+        op.textureU = def.textureU();
+        op.textureV = def.textureV();
+        op.regionWidth = def.regionWidth();
+        op.regionHeight = def.regionHeight();
+        op.displayWidth = def.displayWidth();
+        op.displayHeight = def.displayHeight();
+        op.textureWidth = def.textureWidth();
+        op.textureHeight = def.textureHeight();
+        op.offsetX = def.offsetX();
+        op.framed = def.framed();
+        op.scaleToParent = def.scaleToParent();
+        op.stretchTexture = def.stretchTexture();
+        op.stretchBorder = def.stretchBorder();
+        op.guiX = def.guiX();
+        op.guiY = def.guiY();
+        op.guiWidth = def.guiWidth();
+        op.guiHeight = def.guiHeight();
+        op.pos = def.pos() == null ? null : def.pos().clone();
+        op.from = def.from() == null ? null : def.from().clone();
+        op.to = def.to() == null ? null : def.to().clone();
+        op.offset = def.offset() == null ? null : def.offset().clone();
+        op.rotation = def.rotation() == null ? null : def.rotation().clone();
+        op.pivot = def.pivot() == null ? null : def.pivot().clone();
+        op.pointAt = def.pointAt() == null ? null : def.pointAt().clone();
+        op.rotX = def.rotX();
+        op.rotY = def.rotY();
+        op.rotZ = def.rotZ();
+        if (!def.childOperations().isEmpty()) {
+            op.childOperations = new ArrayList<>();
+            for (SceneOperationDefinition childDef : def.childOperations()) {
+                op.childOperations.add(fromDefinition(childDef));
+            }
+        }
+        return op;
+    }
+}

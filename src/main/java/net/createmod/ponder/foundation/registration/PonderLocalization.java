@@ -1,67 +1,62 @@
 package net.createmod.ponder.foundation.registration;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.BiConsumer;
 
 import net.createmod.ponder.api.registration.LangRegistryAccess;
-import net.createmod.ponder.foundation.PonderIndex;
+import net.createmod.ponder.api.registration.SceneRegistryAccess;
 import net.createmod.ponder.api.registration.StoryBoardEntry;
 import net.minecraft.util.ResourceLocation;
 
 public class PonderLocalization implements LangRegistryAccess {
 
-    private final Map<ResourceLocation, String> shared = new LinkedHashMap<ResourceLocation, String>();
-    private final Map<ResourceLocation, TagLangEntry> tag = new LinkedHashMap<ResourceLocation, TagLangEntry>();
-    private final Map<ResourceLocation, Map<String, String>> specific =
-        new LinkedHashMap<ResourceLocation, Map<String, String>>();
+    private final LocalizationCatalog catalog;
+
+    public PonderLocalization() {
+        this.catalog = new LocalizationCatalog();
+    }
+
+    PonderLocalization(LocalizationCatalog catalog) {
+        this.catalog = catalog;
+    }
 
     public void clearAll() {
-        shared.clear();
-        tag.clear();
-        specific.clear();
+        RegistrationCommandService.execute(RegistrationCommands.clearLocalization(this));
     }
 
     public void clearSpecific() {
-        specific.clear();
+        RegistrationCommandService.execute(RegistrationCommands.clearSpecificLocalization(this));
     }
 
     public void registerShared(ResourceLocation key, String enUs) {
-        shared.put(key, enUs);
+        RegistrationCommandService.execute(RegistrationCommands.registerSharedText(this, key, enUs));
     }
 
     public void registerTag(ResourceLocation key, String title, String description) {
-        tag.put(key, new TagLangEntry(title, description));
+        RegistrationCommandService.execute(RegistrationCommands.registerTagText(this, key, title, description));
     }
 
     public void registerSpecific(ResourceLocation sceneId, String key, String enUs) {
-        Map<String, String> values = specific.get(sceneId);
-        if (values == null) {
-            values = new LinkedHashMap<String, String>();
-            specific.put(sceneId, values);
-        }
-        values.put(key, enUs);
+        RegistrationCommandService.execute(RegistrationCommands.registerSpecificText(this, sceneId, key, enUs));
     }
 
     @Override
     public void provideLang(String modId, BiConsumer<String, String> consumer) {
-        generateSceneLang();
-
-        for (Entry<ResourceLocation, String> entry : shared.entrySet()) {
+        for (Entry<ResourceLocation, String> entry : catalog.getSharedEntries().entrySet()) {
             if (modId.equals(entry.getKey().getNamespace())) {
                 consumer.accept(langKeyForShared(entry.getKey()), entry.getValue());
             }
         }
 
-        for (Entry<ResourceLocation, TagLangEntry> entry : tag.entrySet()) {
+        for (Entry<ResourceLocation, TagLangEntry> entry : catalog.getTagEntries().entrySet()) {
             if (modId.equals(entry.getKey().getNamespace())) {
-                consumer.accept(langKeyForTag(entry.getKey()), entry.getValue().title);
-                consumer.accept(langKeyForTagDescription(entry.getKey()), entry.getValue().description);
+                consumer.accept(langKeyForTag(entry.getKey()), entry.getValue().getTitle());
+                consumer.accept(langKeyForTagDescription(entry.getKey()), entry.getValue().getDescription());
             }
         }
 
-        for (Entry<ResourceLocation, Map<String, String>> entry : specific.entrySet()) {
+        for (Entry<ResourceLocation, Map<String, String>> entry : catalog.getSpecificEntries().entrySet()) {
             if (!modId.equals(entry.getKey().getNamespace())) {
                 continue;
             }
@@ -71,16 +66,16 @@ public class PonderLocalization implements LangRegistryAccess {
         }
     }
 
-    private void generateSceneLang() {
-        clearSpecific();
-        for (Entry<ResourceLocation, StoryBoardEntry> entry : PonderIndex.getSceneAccess().getRegisteredEntries()) {
+    public void generateSceneLang(SceneRegistryAccess scenes) {
+        catalog.clearSpecific();
+        for (Entry<ResourceLocation, StoryBoardEntry> entry : scenes.getRegisteredEntries()) {
             PonderSceneRegistry.compileScene(this, entry.getValue());
         }
     }
 
     @Override
     public String getShared(ResourceLocation key) {
-        String value = shared.get(key);
+        String value = catalog.getShared(key);
         return value != null ? value : "unregistered shared entry: " + key;
     }
 
@@ -91,23 +86,20 @@ public class PonderLocalization implements LangRegistryAccess {
 
     @Override
     public String getTagName(ResourceLocation key) {
-        TagLangEntry value = tag.get(key);
-        return value != null ? value.title : "unregistered tag entry: " + key;
+        TagLangEntry value = catalog.getTag(key);
+        return value != null ? value.getTitle() : "unregistered tag entry: " + key;
     }
 
     @Override
     public String getTagDescription(ResourceLocation key) {
-        TagLangEntry value = tag.get(key);
-        return value != null ? value.description : "unregistered tag entry: " + key;
+        TagLangEntry value = catalog.getTag(key);
+        return value != null ? value.getDescription() : "unregistered tag entry: " + key;
     }
 
     @Override
     public String getSpecific(ResourceLocation sceneId, String key) {
-        Map<String, String> values = specific.get(sceneId);
-        if (values == null || !values.containsKey(key)) {
-            return "missing specific entry: " + sceneId + "/" + key;
-        }
-        return values.get(key);
+        String value = catalog.getSpecific(sceneId, key);
+        return value != null ? value : "missing specific entry: " + sceneId + "/" + key;
     }
 
     @Override
@@ -131,13 +123,23 @@ public class PonderLocalization implements LangRegistryAccess {
         return sceneId.getNamespace() + ".ponder." + sceneId.getPath() + "." + key;
     }
 
-    private static final class TagLangEntry {
-        private final String title;
-        private final String description;
+    void clearAllState() {
+        catalog.clearAll();
+    }
 
-        private TagLangEntry(String title, String description) {
-            this.title = title;
-            this.description = description;
-        }
+    void clearSpecificState() {
+        catalog.clearSpecific();
+    }
+
+    void registerSharedState(ResourceLocation key, String enUs) {
+        catalog.registerShared(key, enUs);
+    }
+
+    void registerTagState(ResourceLocation key, String title, String description) {
+        catalog.registerTag(key, title, description);
+    }
+
+    void registerSpecificState(ResourceLocation sceneId, String key, String enUs) {
+        catalog.registerSpecific(sceneId, key, enUs);
     }
 }
