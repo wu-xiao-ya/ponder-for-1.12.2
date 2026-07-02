@@ -1,11 +1,13 @@
 package net.createmod.ponder.foundation.external.register;
 
-import net.createmod.ponder.Ponder;
+import java.util.function.Consumer;
+
 import net.createmod.ponder.api.registration.PonderSceneRegistrationHelper;
 import net.createmod.ponder.api.registration.StoryBoardEntry;
 import net.createmod.ponder.foundation.PonderIndex;
 import net.createmod.ponder.foundation.external.definition.ComponentDefinition;
 import net.createmod.ponder.foundation.external.definition.ExternalDefinitionSet;
+import net.createmod.ponder.foundation.external.definition.SourceInfo;
 import net.createmod.ponder.foundation.external.definition.SceneDefinition;
 import net.minecraft.util.ResourceLocation;
 
@@ -16,17 +18,23 @@ public final class ExternalSceneRegistrationService {
 
     public static RegistrationOutcome registerLoadedScenes(ExternalDefinitionSet definitions,
         PonderSceneRegistrationHelper<ResourceLocation> helper) {
-        return registerScenes(RegistrationContext.of(definitions), helper);
+        return registerScenes(RegistrationContext.of(definitions), helper, ExternalRegistrationDiagnostics.logger());
     }
 
     private static RegistrationOutcome registerScenes(RegistrationContext ctx,
-        PonderSceneRegistrationHelper<ResourceLocation> helper) {
+        PonderSceneRegistrationHelper<ResourceLocation> helper,
+        Consumer<ExternalRegistrationDiagnostic> diagnosticSink) {
+        Consumer<ExternalRegistrationDiagnostic> sink = diagnosticSink != null ? diagnosticSink
+            : ExternalRegistrationDiagnostics.logger();
         int registered = 0;
         int failed = 0;
         for (SceneDefinition definition : ctx.definitions().scenes()) {
+            SourceInfo source = ctx.source(definition.source());
+            ResourceLocation currentComponentId = null;
             try {
                 CompiledSceneBundle bundle = CompiledSceneBundle.compile(ctx, definition);
                 for (ComponentDefinition component : definition.components()) {
+                    currentComponentId = component.componentId();
                     StoryBoardEntry entry = helper.addStoryBoard(component.componentId(),
                         bundle.schematicLocation(),
                         bundle.storyBoard(),
@@ -42,9 +50,10 @@ public final class ExternalSceneRegistrationService {
                     registered++;
                 }
             } catch (RuntimeException exception) {
-                Ponder.LOGGER.error("Failed to register external ponder scene '{}:{}' from {}",
-                    ctx.namespace(definition.source()), definition.sceneId(), ctx.sourcePath(definition.source()),
-                    exception);
+                sink.accept(ExternalRegistrationDiagnostic.error("scene", definition.sceneId().toString(), source,
+                    currentComponentId == null ? "scene compilation failed"
+                        : "component " + currentComponentId + " registration failed",
+                    exception));
                 failed++;
             }
         }

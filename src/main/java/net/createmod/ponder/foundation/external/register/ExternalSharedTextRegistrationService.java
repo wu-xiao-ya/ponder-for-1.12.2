@@ -1,9 +1,9 @@
 package net.createmod.ponder.foundation.external.register;
 
 import java.util.LinkedHashSet;
+import java.util.function.Consumer;
 import java.util.Set;
 
-import net.createmod.ponder.Ponder;
 import net.createmod.ponder.api.registration.SharedTextRegistrationHelper;
 import net.createmod.ponder.foundation.external.definition.ExternalDefinitionSet;
 import net.createmod.ponder.foundation.external.definition.SharedTextDefinition;
@@ -15,11 +15,15 @@ public final class ExternalSharedTextRegistrationService {
 
     public static RegistrationOutcome registerLoadedSharedText(ExternalDefinitionSet definitions,
         SharedTextRegistrationHelper helper) {
-        return registerSharedTexts(RegistrationContext.of(definitions), helper);
+        return registerSharedTexts(RegistrationContext.of(definitions), helper,
+            ExternalRegistrationDiagnostics.logger());
     }
 
     private static RegistrationOutcome registerSharedTexts(RegistrationContext ctx,
-        SharedTextRegistrationHelper helper) {
+        SharedTextRegistrationHelper helper,
+        Consumer<ExternalRegistrationDiagnostic> diagnosticSink) {
+        Consumer<ExternalRegistrationDiagnostic> sink = diagnosticSink != null ? diagnosticSink
+            : ExternalRegistrationDiagnostics.logger();
         Set<String> registeredKeys = new LinkedHashSet<String>();
         int count = 0;
         int skipped = 0;
@@ -27,7 +31,8 @@ public final class ExternalSharedTextRegistrationService {
 
         for (SharedTextDefinition definition : ctx.definitions().sharedTexts()) {
             if (!registeredKeys.add(definition.key())) {
-                Ponder.LOGGER.warn("Skipping duplicate external ponder shared text definition '{}'", definition.key());
+                sink.accept(ExternalRegistrationDiagnostic.warn("shared text", definition.key(),
+                    ctx.source(definition.source()), "duplicate definition skipped"));
                 skipped++;
                 continue;
             }
@@ -36,8 +41,8 @@ public final class ExternalSharedTextRegistrationService {
                 helper.registerSharedText(definition.key(), definition.text());
                 count++;
             } catch (RuntimeException exception) {
-                Ponder.LOGGER.error("Failed to register external ponder shared text '{}' from {}", definition.key(),
-                    ctx.sourcePath(definition.source()), exception);
+                sink.accept(ExternalRegistrationDiagnostic.error("shared text", definition.key(),
+                    ctx.source(definition.source()), "shared text registration failed", exception));
                 failed++;
             }
         }

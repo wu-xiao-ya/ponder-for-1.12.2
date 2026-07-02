@@ -1,11 +1,8 @@
 package net.createmod.ponder.foundation.ui;
 
-import java.util.Objects;
-
 import net.minecraft.util.ResourceLocation;
 
-public sealed interface SnapshotSource permits SnapshotSource.ConstantSnapshotSource,
-    SnapshotSource.ProviderSnapshotSource {
+public sealed interface SnapshotSource permits ConstantSnapshotSource, ProviderSnapshotSource {
 
     Snapshot resolve(SnapshotContext context);
 
@@ -23,48 +20,6 @@ public sealed interface SnapshotSource permits SnapshotSource.ConstantSnapshotSo
 
     static SnapshotSource adapt(SnapshotProvider provider) {
         return new ProviderSnapshotSource(provider);
-    }
-
-    record ConstantSnapshotSource(Snapshot snapshot) implements SnapshotSource {
-        public ConstantSnapshotSource {
-            Objects.requireNonNull(snapshot);
-        }
-
-        @Override
-        public Snapshot resolve(SnapshotContext context) {
-            return snapshot;
-        }
-
-        @Override
-        public SnapshotInvalidationPolicy invalidationPolicy() {
-            return SnapshotInvalidationPolicy.IMMUTABLE;
-        }
-
-        @Override
-        public String sourceKey() {
-            return snapshotKey(snapshot);
-        }
-    }
-
-    record ProviderSnapshotSource(SnapshotProvider provider) implements SnapshotSource {
-        public ProviderSnapshotSource {
-            Objects.requireNonNull(provider);
-        }
-
-        @Override
-        public Snapshot resolve(SnapshotContext context) {
-            return provider.provide(context == null ? 0.0F : context.currentTick());
-        }
-
-        @Override
-        public SnapshotInvalidationPolicy invalidationPolicy() {
-            return SnapshotInvalidationPolicy.TICK_20_BUCKET;
-        }
-
-        @Override
-        public String sourceKey() {
-            return provider.getClass().getName() + '@' + Integer.toHexString(System.identityHashCode(provider));
-        }
     }
 
     static String snapshotKey(Snapshot snapshot) {

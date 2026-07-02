@@ -307,9 +307,10 @@ plugin input
 - `scale()`
 - `rotate()`
 - `fillRect()`
+- `drawBorderedRect()`
+- `drawCrossMarker()`
 - `fillGradientRect()`
 - `fillTexturedRect()`
-- `fillTriangle()`
 - `drawLine()`
 - `renderItem()`
 - `renderText()`
@@ -336,7 +337,8 @@ interface RenderContext {
     void scale(float x, float y, float z);
     void rotate(float angle, float x, float y, float z);
     void fillRect(int x, int y, int width, int height, int color);
-    void fillTriangle(Point a, Point b, Point c, int color);
+    void drawBorderedRect(int left, int top, int right, int bottom, int fillColor, int borderColor);
+    void drawCrossMarker(int centerX, int centerY, int armRadius, int centerRadius, int accentColor, int fillColor);
     void drawLine(Point from, Point to, int color, float width);
 }
 ```
@@ -495,6 +497,9 @@ record CompositeHitRegion(String id, List<HitRegion> children, HitAction action)
 
 ```java
 record PonderTheme(String id, Map<SymbolicColor, Integer> colors, Map<ThemeMetric, Float> metrics) {}
+
+record ThemeResourceTheme(String id, Map<SymbolicColor, Integer> colors, Map<ThemeMetric, Float> metrics,
+    @Nullable ResourceLocation logoTexture) {}
 
 enum SymbolicColor {
     PANEL_BACKGROUND,
@@ -771,6 +776,9 @@ CI 整改候选：
 - `foundation/ui/render/GLStateGuard.java` 已落地
 - `foundation/ui/render/ScissorStack.java` 已落地
 - `CompatGuiScreen` 已实现 `DrawContext`
+- `RenderContext` 已补 `drawBorderedRect` / `drawCrossMarker` 等通用 primitive
+- `GLStateGuard` 已补 color restore guard，`GlRenderContext.drawLine()` 已收束颜色恢复
+- `DebugPanelRenderer` 已接入 local `RenderContext` bridge 复用 entry chrome
 - `DrawContext` 已继承 `RenderContext` 并提供 1.12.2 GUI bridge
 - 现阶段先提供桥接能力，renderer 迁移留在下一轮
 
@@ -854,9 +862,16 @@ CI 整改候选：
 
 - `CompiledSceneBundle` 已落在 `foundation/external/register`
 - `ExternalSceneRegistrationService` 已经先 compile 再注册 component/storyboard/order
-- 后续继续补结构化 diagnostic 和 source map
+- `RegistrationContext` 现在负责 source info 归一化
+- 后续注册失败会走结构化 diagnostic sink
 
 #### P2-2：引入结构化诊断对象
+
+状态：已完成首轮
+
+- `ExternalRegistrationDiagnostic` 已落地，承载 severity / subject / source / detail / cause
+- `ExternalSceneRegistrationService`、`ExternalTagDefinitionRegistrar`、`ExternalSharedTextRegistrationService` 已改成通过 sink 发出失败信息
+- `RegistrationContext` 负责 source info 归一化，注册边界直接携带 `SourceInfo`
 
 #### P2-3：引入 `RegistrationCommand`
 

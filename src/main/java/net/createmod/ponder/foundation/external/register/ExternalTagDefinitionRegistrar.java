@@ -1,9 +1,9 @@
 package net.createmod.ponder.foundation.external.register;
 
 import java.util.LinkedHashSet;
+import java.util.function.Consumer;
 import java.util.Set;
 
-import net.createmod.ponder.Ponder;
 import net.createmod.ponder.api.registration.PonderTagRegistrationHelper;
 import net.createmod.ponder.api.registration.TagBuilder;
 import net.createmod.ponder.foundation.external.definition.TagDefinition;
@@ -15,6 +15,13 @@ final class ExternalTagDefinitionRegistrar {
     }
 
     static Result register(RegistrationContext ctx, PonderTagRegistrationHelper<ResourceLocation> helper) {
+        return register(ctx, helper, ExternalRegistrationDiagnostics.logger());
+    }
+
+    static Result register(RegistrationContext ctx, PonderTagRegistrationHelper<ResourceLocation> helper,
+        Consumer<ExternalRegistrationDiagnostic> diagnosticSink) {
+        Consumer<ExternalRegistrationDiagnostic> sink = diagnosticSink != null ? diagnosticSink
+            : ExternalRegistrationDiagnostics.logger();
         Set<ResourceLocation> registeredTags = new LinkedHashSet<ResourceLocation>();
         int registered = 0;
         int skipped = 0;
@@ -22,7 +29,8 @@ final class ExternalTagDefinitionRegistrar {
 
         for (TagDefinition definition : ctx.definitions().tags()) {
             if (!registeredTags.add(definition.id())) {
-                Ponder.LOGGER.warn("Skipping duplicate external ponder tag definition '{}'", definition.id());
+                sink.accept(ExternalRegistrationDiagnostic.warn("tag", definition.id().toString(),
+                    ctx.source(definition.source()), "duplicate definition skipped"));
                 skipped++;
                 continue;
             }
@@ -31,8 +39,8 @@ final class ExternalTagDefinitionRegistrar {
                 registerOne(helper, definition);
                 registered++;
             } catch (RuntimeException exception) {
-                Ponder.LOGGER.error("Failed to register external ponder tag '{}' from {}", definition.id(),
-                    ctx.sourcePath(definition.source()), exception);
+                sink.accept(ExternalRegistrationDiagnostic.error("tag", definition.id().toString(),
+                    ctx.source(definition.source()), "tag registration failed", exception));
                 failed++;
             }
         }

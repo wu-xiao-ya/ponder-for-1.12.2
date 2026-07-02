@@ -43,6 +43,19 @@ public final class GLStateGuard implements AutoCloseable {
         return new GLStateGuard(() -> GL11.glLineWidth(1.0F));
     }
 
+    public static GLStateGuard color(float red, float green, float blue, float alpha) {
+        GlStateManager.color(red, green, blue, alpha);
+        return new GLStateGuard(() -> GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F));
+    }
+
+    public static GLStateGuard color(int color) {
+        float alpha = (float) (color >> 24 & 255) / 255.0F;
+        float red = (float) (color >> 16 & 255) / 255.0F;
+        float green = (float) (color >> 8 & 255) / 255.0F;
+        float blue = (float) (color & 255) / 255.0F;
+        return color(red, green, blue, alpha);
+    }
+
     @Override
     public void close() {
         if (closed) {

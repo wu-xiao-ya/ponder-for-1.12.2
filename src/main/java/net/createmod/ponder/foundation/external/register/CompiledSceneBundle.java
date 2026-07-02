@@ -6,11 +6,13 @@ import java.util.List;
 
 import net.createmod.ponder.api.scene.PonderStoryBoard;
 import net.createmod.ponder.foundation.external.definition.SceneDefinition;
+import net.createmod.ponder.foundation.external.definition.SourceInfo;
 import net.createmod.ponder.foundation.external.validate.ExternalJsonValidation;
 import net.minecraft.util.ResourceLocation;
 
 public record CompiledSceneBundle(
     SceneDefinition definition,
+    SourceInfo source,
     PonderStoryBoard storyBoard,
     ResourceLocation schematicLocation,
     ResourceLocation[] tags,
@@ -20,6 +22,9 @@ public record CompiledSceneBundle(
     public CompiledSceneBundle {
         if (definition == null) {
             throw new IllegalArgumentException("definition must not be null");
+        }
+        if (source == null) {
+            source = SourceInfo.EMPTY;
         }
         if (storyBoard == null) {
             throw new IllegalArgumentException("storyBoard must not be null");
@@ -63,9 +68,11 @@ public record CompiledSceneBundle(
         if (definition == null) {
             throw new IllegalArgumentException("definition must not be null");
         }
-        String namespace = ctx.namespace(definition.source());
+        SourceInfo source = ctx.source(definition.source());
+        String namespace = source.namespace();
         return new CompiledSceneBundle(
             definition,
+            source,
             ExternalStoryBoardBuilder.buildStoryBoard(definition),
             ExternalJsonValidation.parseLocation(definition.schematic(), namespace),
             copyLocations(definition.tags()),

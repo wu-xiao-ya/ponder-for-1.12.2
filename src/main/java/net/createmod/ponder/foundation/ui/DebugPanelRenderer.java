@@ -15,7 +15,9 @@ import net.createmod.ponder.foundation.PonderScene.WorldEvent;
 import net.createmod.ponder.foundation.PonderTag;
 import net.createmod.ponder.foundation.ui.PonderScenePreview.PreviewBounds;
 import net.createmod.ponder.foundation.ui.PonderScenePreview.PreviewState;
+import net.createmod.ponder.foundation.ui.render.RenderContext;
 import net.minecraft.client.gui.FontRenderer;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
 
@@ -26,15 +28,85 @@ class DebugPanelRenderer {
     private static final int OUTER_MARGIN = 12;
     private static final int HEADER_HEIGHT = 186;
 
-   private final FontRenderer fontRenderer;
-   private final PonderSceneSelectionState selectionState;
-   private final Function<WorldEvent, String> formatWorldEventFn;
-   private int operationScroll;
+    private final FontRenderer fontRenderer;
+    private final PonderSceneSelectionState selectionState;
+    private final Function<WorldEvent, String> formatWorldEventFn;
+    private int operationScroll;
     private int componentScroll;
 
     @FunctionalInterface
     interface HoverTextRenderer {
         void render(List<String> textLines, int x, int y);
+    }
+
+    private final class DebugPanelRenderContext implements RenderContext {
+
+        private final DebugDrawContext drawContext;
+
+        private DebugPanelRenderContext(DebugDrawContext drawContext) {
+            this.drawContext = drawContext;
+        }
+
+        @Override
+        public AutoCloseable push() {
+            return () -> {
+            };
+        }
+
+        @Override
+        public AutoCloseable scissor(int x, int y, int width, int height) {
+            return () -> {
+            };
+        }
+
+        @Override
+        public void translate(float x, float y, float z) {
+        }
+
+        @Override
+        public void scale(float x, float y, float z) {
+        }
+
+        @Override
+        public void rotate(float angle, float x, float y, float z) {
+        }
+
+        @Override
+        public void fillRect(int left, int top, int right, int bottom, int color) {
+            drawContext.fillRect(left, top, right, bottom, color);
+        }
+
+        @Override
+        public void fillGradientRect(int left, int top, int right, int bottom, int startColor, int endColor) {
+            drawContext.fillRect(left, top, right, bottom, startColor);
+        }
+
+        @Override
+        public void fillTexturedRect(int x, int y, int textureX, int textureY, int width, int height) {
+        }
+
+        @Override
+        public void drawLine(int startX, int startY, int endX, int endY, int color, float width) {
+        }
+
+        @Override
+        public void renderItem(ItemStack stack, int x, int y) {
+        }
+
+        @Override
+        public void renderText(String text, int x, int y, int color) {
+            drawContext.drawString(text, x, y, color);
+        }
+
+        @Override
+        public void renderCenteredText(String text, int centerX, int y, int color) {
+            int drawX = centerX - fontRenderer.getStringWidth(text) / 2;
+            drawContext.drawString(text, drawX, y, color);
+        }
+
+        @Override
+        public void drawHoveringText(List<String> textLines, int x, int y) {
+        }
     }
 
     DebugPanelRenderer(FontRenderer fontRenderer, PonderSceneSelectionState selectionState,
@@ -52,9 +124,10 @@ class DebugPanelRenderer {
         this.operationScroll = Math.max(0, operationScroll);
     }
 
-   void resetOperationScroll() {
-       this.operationScroll = 0;
-   }
+    void resetOperationScroll() {
+        this.operationScroll = 0;
+    }
+
     int getComponentScroll() {
         return componentScroll;
     }
@@ -86,6 +159,7 @@ class DebugPanelRenderer {
 
     void drawComponentList(int mouseX, int mouseY, int x, int startY, int bottom,
         int lineHeight, int leftPanelWidth, DebugDrawContext ctx) {
+        RenderContext render = bridge(ctx);
         List<ResourceLocation> componentIds = selectionState.getComponentIds();
         int visibleLines = Math.max(1, (bottom - startY - 6) / lineHeight);
         int maxIndex = Math.min(componentIds.size(), componentScroll + visibleLines);
@@ -95,17 +169,19 @@ class DebugPanelRenderer {
             boolean selected = index == selectionState.getSelectedComponentIndex();
             boolean hovered = isWithin(mouseX, mouseY, x + 4, y - 1, x + leftPanelWidth - 4, y + lineHeight - 1);
             int background = selected ? 0xCC304060 : hovered ? 0x66303030 : 0x33202020;
-            drawEntry(ctx, x, y, leftPanelWidth, lineHeight, background,
+            drawEntry(render, x, y, leftPanelWidth, lineHeight, background,
                 componentIds.get(index).toString(), selected ? 0xFFFFFF : 0xD0D0D0);
         }
     }
 
-    void drawSceneSummary(int x, int y, int width, int playbackTick, boolean playing, int sceneEndTick, DebugDrawContext ctx) {
+    void drawSceneSummary(int x, int y, int width, int playbackTick, boolean playing, int sceneEndTick,
+        DebugDrawContext ctx) {
+        RenderContext render = bridge(ctx);
         PonderScene scene = selectionState.getSelectedScene();
         ResourceLocation componentId = selectionState.getSelectedComponentId();
 
         if (componentId == null) {
-            ctx.drawString("No Ponder components registered.", x + 6, y, 0xFF8888);
+            render.renderText("No Ponder components registered.", x + 6, y, 0xFF8888);
             return;
         }
 
@@ -142,17 +218,18 @@ class DebugPanelRenderer {
         }
 
         for (int i = 0; i < lines.size(); i++) {
-            ctx.drawString(fontRenderer.trimStringToWidth(lines.get(i), width - 12), x + 6, y + i * 12, 0xE0E0E0);
+            render.renderText(fontRenderer.trimStringToWidth(lines.get(i), width - 12), x + 6, y + i * 12, 0xE0E0E0);
         }
     }
 
     void drawOperationList(int mouseX, int mouseY, int x, int startY, int width, int bottom,
         int lineHeight, int playbackTick, DebugDrawContext ctx) {
+        RenderContext render = bridge(ctx);
         List<RecordedOperation> operations = getSelectedRecordedOperations();
-        ctx.drawString("Timeline", x + 6, startY - 14, 0xFFEEDD);
+        render.renderText("Timeline", x + 6, startY - 14, 0xFFEEDD);
 
         if (operations.isEmpty()) {
-            ctx.drawString("No recorded operations for the current scene.", x + 6, startY, 0xA0A0A0);
+            render.renderText("No recorded operations for the current scene.", x + 6, startY, 0xA0A0A0);
             return;
         }
 
@@ -167,14 +244,14 @@ class DebugPanelRenderer {
             boolean active = index == activeIndex;
             boolean reached = operation.getTick() <= playbackTick;
             int background = active ? 0xCC6F5A1E : reached ? 0x663A4A28 : hovered ? 0x55303030 : 0x33202020;
-            drawEntry(ctx, x, y, width, lineHeight, background, "T+" + operation.getTick() + " "
+            drawEntry(render, x, y, width, lineHeight, background, "T+" + operation.getTick() + " "
                 + operation.getDescription(), active ? 0xFFFFFF : reached ? 0xE5F0D0 : 0xD0D0D0);
         }
     }
 
     void drawTooltips(int mouseX, int mouseY, List<ResourceLocation> componentIds,
-        int leftPanelX, int leftPanelY, int leftPanelWidth, int rightPanelX, int rightPanelY, int rightPanelWidth, int lineHeight,
-        HoverTextRenderer hoverTextRenderer) {
+        int leftPanelX, int leftPanelY, int leftPanelWidth, int rightPanelX, int rightPanelY, int rightPanelWidth,
+        int lineHeight, HoverTextRenderer hoverTextRenderer) {
 
         if (mouseX >= leftPanelX + 4 && mouseX <= leftPanelX + leftPanelWidth - 4) {
             int relativeY = mouseY - (leftPanelY + 20);
@@ -308,9 +385,13 @@ class DebugPanelRenderer {
         return mouseX >= minX && mouseX <= maxX && mouseY >= minY && mouseY <= maxY;
     }
 
-    private void drawEntry(DebugDrawContext ctx, int x, int y, int width, int lineHeight, int background,
+    private void drawEntry(RenderContext ctx, int x, int y, int width, int lineHeight, int background,
         String label, int color) {
-        ctx.fillRect(x + 4, y - 1, x + width - 4, y + lineHeight - 1, background);
-        ctx.drawString(fontRenderer.trimStringToWidth(label, width - 12), x + 8, y + 1, color);
+        ctx.drawBorderedRect(x + 4, y - 1, x + width - 4, y + lineHeight - 1, background, background);
+        ctx.renderText(fontRenderer.trimStringToWidth(label, width - 12), x + 8, y + 1, color);
+    }
+
+    private RenderContext bridge(DebugDrawContext drawContext) {
+        return new DebugPanelRenderContext(drawContext);
     }
 }

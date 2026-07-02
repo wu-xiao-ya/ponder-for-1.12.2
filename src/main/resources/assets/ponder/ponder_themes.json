@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "themes": {
+    "showcase": {
+      "logo_texture": "ponder:textures/gui/logo.png",
+      "colors": {
+        "chrome_glow": "#1B2430",
+        "chrome_border_top": "#E6E0D2",
+        "chrome_border_bottom": "#2B323A",
+        "chrome_border_side": "#56606A",
+        "chrome_vignette": "#05080C",
+        "header_fill": "#111822",
+        "header_right_edge": "#00000000",
+        "header_underline": "#D7DFE7",
+        "header_slot_outer": "#10151B",
+        "header_slot_inner": "#E7E0D1",
+        "header_eyebrow": "#B8C3CC",
+        "header_title": "#F6F2EA",
+        "header_subtitle": "#AEB8C1",
+        "header_index": "#FFD7DFE7",
+        "group_chip_fill": "#1A2028",
+        "group_chip_border": "#D7DFE7",
+        "group_chip_text": "#F2EFE7"
+      },
+      "metrics": {
+        "chrome_glow_inset": 24.0,
+        "chrome_glow_bottom_inset": 28.0,
+        "chrome_top_glow_height": 56.0,
+        "chrome_bottom_glow_height": 68.0,
+        "chrome_glow_alpha_scale": 68.0,
+        "chrome_border_alpha_scale": 56.0,
+        "chrome_vignette_alpha_scale": 116.0,
+        "chrome_logo_alpha_scale": 0.78,
+        "header_max_width": 340.0,
+        "header_height": 44.0,
+        "header_alpha_scale": 188.0,
+        "header_underline_alpha_scale": 96.0,
+        "header_slot_outer_alpha_scale": 188.0,
+        "header_slot_inner_alpha_scale": 64.0,
+        "group_chip_fill_alpha_scale": 188.0,
+        "group_chip_border_alpha_scale": 156.0
+      }
+    },
+    "debug": {
+      "logo_texture": "ponder:textures/gui/logo.png",
+      "colors": {
+        "chrome_glow": "#17202A",
+        "chrome_border_top": "#F1E8D4",
+        "chrome_border_bottom": "#2C3138",
+        "chrome_border_side": "#4D545E",
+        "chrome_vignette": "#030508",
+        "header_fill": "#141920",
+        "header_right_edge": "#0E1218",
+        "header_underline": "#D5CCB8",
+        "header_slot_outer": "#10151B",
+        "header_slot_inner": "#E7E0D1",
+        "header_eyebrow": "#B8C3CC",
+        "header_title": "#F6F2EA",
+        "header_subtitle": "#AEB8C1",
+        "header_index": "#FFC8D0D8",
+        "group_chip_fill": "#1A2028",
+        "group_chip_border": "#D5CCB8",
+        "group_chip_text": "#F2EFE7"
+      },
+      "metrics": {
+        "chrome_glow_inset": 20.0,
+        "chrome_glow_bottom_inset": 26.0,
+        "chrome_top_glow_height": 52.0,
+        "chrome_bottom_glow_height": 60.0,
+        "chrome_glow_alpha_scale": 52.0,
+        "chrome_border_alpha_scale": 44.0,
+        "chrome_vignette_alpha_scale": 92.0,
+        "chrome_logo_alpha_scale": 0.72,
+        "header_max_width": 326.0,
+        "header_height": 42.0,
+        "header_alpha_scale": 185.0,
+        "header_underline_alpha_scale": 120.0,
+        "header_slot_outer_alpha_scale": 188.0,
+        "header_slot_inner_alpha_scale": 64.0,
+        "group_chip_fill_alpha_scale": 188.0,
+        "group_chip_border_alpha_scale": 156.0
+      }
+    }
+  }
+}

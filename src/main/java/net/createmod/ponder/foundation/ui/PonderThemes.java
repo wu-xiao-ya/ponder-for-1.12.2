@@ -5,8 +5,10 @@ import net.minecraft.util.ResourceLocation;
 final class PonderThemes {
 
     private static final ResourceLocation LOGO_TEXTURE = new ResourceLocation("ponder", "textures/gui/logo.png");
-    private static final PonderTheme SHOWCASE = createShowcaseTheme();
-    private static final PonderTheme DEBUG = createDebugTheme();
+    private static final PonderTheme SHOWCASE_PRESET = createShowcasePreset();
+    private static final PonderTheme DEBUG_PRESET = createDebugPreset();
+    private static final PonderTheme SHOWCASE = ThemeResolver.resolve("showcase");
+    private static final PonderTheme DEBUG = ThemeResolver.resolve("debug");
 
     private PonderThemes() {
     }
@@ -45,7 +47,22 @@ final class PonderThemes {
         return DEBUG.createShowcaseHudTheme(textProvider);
     }
 
-    private static PonderTheme createShowcaseTheme() {
+    static PonderTheme showcasePreset() {
+        return SHOWCASE_PRESET;
+    }
+
+    static PonderTheme debugPreset() {
+        return DEBUG_PRESET;
+    }
+
+    static PonderTheme preset(String themeId) {
+        if ("debug".equals(themeId)) {
+            return DEBUG_PRESET;
+        }
+        return SHOWCASE_PRESET;
+    }
+
+    private static PonderTheme createShowcasePreset() {
         return PonderTheme.builder("showcase")
             .metric(ThemeMetric.CHROME_GLOW_INSET, 24.0F)
             .metric(ThemeMetric.CHROME_GLOW_BOTTOM_INSET, 28.0F)
@@ -84,7 +101,7 @@ final class PonderThemes {
             .build();
     }
 
-    private static PonderTheme createDebugTheme() {
+    private static PonderTheme createDebugPreset() {
         return PonderTheme.builder("debug")
             .metric(ThemeMetric.CHROME_GLOW_INSET, 20.0F)
             .metric(ThemeMetric.CHROME_GLOW_BOTTOM_INSET, 26.0F)

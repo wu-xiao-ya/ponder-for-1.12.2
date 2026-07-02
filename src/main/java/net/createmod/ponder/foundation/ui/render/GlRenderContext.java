@@ -97,14 +97,16 @@ public final class GlRenderContext implements RenderContext {
     public void fillTexturedRect(int x, int y, int textureX, int textureY, int width, int height) {
         float uScale = 0.00390625F;
         float vScale = 0.00390625F;
-        BufferBuilder buffer = Tessellator.getInstance().getBuffer();
-        buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX);
-        buffer.pos(x, y + height, zLevel).tex(textureX * uScale, (textureY + height) * vScale).endVertex();
-        buffer.pos(x + width, y + height, zLevel).tex((textureX + width) * uScale,
-            (textureY + height) * vScale).endVertex();
-        buffer.pos(x + width, y, zLevel).tex((textureX + width) * uScale, textureY * vScale).endVertex();
-        buffer.pos(x, y, zLevel).tex(textureX * uScale, textureY * vScale).endVertex();
-        Tessellator.getInstance().draw();
+        try (GLStateGuard color = GLStateGuard.color(1.0F, 1.0F, 1.0F, 1.0F)) {
+            BufferBuilder buffer = Tessellator.getInstance().getBuffer();
+            buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX);
+            buffer.pos(x, y + height, zLevel).tex(textureX * uScale, (textureY + height) * vScale).endVertex();
+            buffer.pos(x + width, y + height, zLevel).tex((textureX + width) * uScale,
+                (textureY + height) * vScale).endVertex();
+            buffer.pos(x + width, y, zLevel).tex((textureX + width) * uScale, textureY * vScale).endVertex();
+            buffer.pos(x, y, zLevel).tex(textureX * uScale, textureY * vScale).endVertex();
+            Tessellator.getInstance().draw();
+        }
     }
 
     @Override
@@ -116,13 +118,12 @@ public final class GlRenderContext implements RenderContext {
         try (GLStateGuard texture = GLStateGuard.textureDisabled();
              GLStateGuard blend = GLStateGuard.blendEnabled();
              GLStateGuard alphaState = GLStateGuard.alphaDisabled();
-             GLStateGuard lineWidth = GLStateGuard.lineWidth(width)) {
-            GlStateManager.color(red, green, blue, alpha);
+             GLStateGuard lineWidth = GLStateGuard.lineWidth(width);
+             GLStateGuard colorGuard = GLStateGuard.color(red, green, blue, alpha)) {
             GL11.glBegin(GL11.GL_LINES);
             GL11.glVertex2f(startX + 0.5F, startY + 0.5F);
             GL11.glVertex2f(endX + 0.5F, endY + 0.5F);
             GL11.glEnd();
-            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         }
     }
 

@@ -2,19 +2,19 @@
 
 日期：2026-06-28
 来源工作区：E:\mc_modding\Ponder_refactor_plan
-分析目标：src/main/java/net/createmod/ponder/foundation/ui（55 个 Java 文件，~6800 行）
+分析目标：src/main/java/net/createmod/ponder/foundation/ui（91 个 Java 文件，~11140 行）
 
 ---
 
 ## 一、现有稳定分层与类清单
 
-当前 UI 包已从原始仓库的 27 个文件（PonderDebugScreen 2692 行为核心的泥团结构）重组为 55 个文件、8 个逻辑层。
+当前 UI 包已从原始仓库的 27 个文件（PonderDebugScreen 2692 行为核心的泥团结构）重组为 91 个文件、8 个逻辑层。
 
 ### 1.1 screen/ —— 页面编排层
 
 | 类名 | 行数 | 职责 | 继承/依赖 |
 |------|------|------|-----------|
-| `PonderDebugScreen.java` | 2286 | 调试浏览器：scene 选择、preview 编排、playback 控制、overlay 调度 | 继承 `CompatGuiScreen`，持有 state/controller/renderer 引用 |
+| `PonderDebugScreen.java` | 1437 | 调试浏览器：scene 选择、preview 编排、playback 控制、overlay 调度 | 继承 `CompatGuiScreen`，持有 state/controller/renderer 引用 |
 | `PonderUI.java` | 277 | Showcase 入口：header、backdrop、logo、group popup | 继承 `PonderDebugScreen` |
 | `PonderIndexScreen.java` | 366 | 组件浏览器：标签面板 + 搜索 + 网格布局 | 继承 `AbstractPonderBrowserScreen` |
 | `PonderTagScreen.java` | 174 | 单标签视图：摘要 + 关联组件网格 | 继承 `AbstractPonderBrowserScreen` |
@@ -108,7 +108,7 @@
 
 ## 二、仍然耦合的热点与下一步抽离顺序
 
-### 2.1 热点 1：`PonderDebugScreen.java`（2286 行）—— 核心编排残留
+### 2.1 热点 1：`PonderDebugScreen.java`（1437 行）—— 核心编排残留
 
 **问题：**
 - 仍直接操作 `GlStateManager`（`enablePreviewScissor`、`drawSceneShadow`、`renderScenePreview` 方法）
@@ -137,19 +137,19 @@
 2. 动画常量迁入独立的 `AnimationSpec` / `AnimationController`
 3. `RuntimeBlockState` 改为不可变 record（需先稳定所有写入点）
 
-### 2.3 热点 3：Snapshot 体系接口过薄
+### 2.3 热点 3：Snapshot source / capture 分层
 
-**问题：**
-- `SnapshotProvider.java`（5 行）和 `SnapshotRenderer.java`（5 行）是纯函数接口空壳
-- `Snapshot.java` 仍是传统可变 POJO（`public final` 字段），未升级为 record
-- `PonderGuiSnapshotRegistry` 直接持有 `Map<String, Snapshot>`，无缓存失效策略
-- `EmbeddedReflectiveGuiSnapshot`（292 行）和 `EmbeddedReflectiveTabGuiSnapshot`（387 行）内部反射逻辑重
+**当前状态：**
+- `SnapshotSource` 已升级为 sealed source 入口
+- `ConstantSnapshotSource`、`ProviderSnapshotSource` 已独立为顶层 record
+- `PonderGuiSnapshotRegistry` 已持有 source map 与 cache key map
+- `EmbeddedReflectiveGuiSnapshot` 与 `EmbeddedReflectiveTabGuiSnapshot` 内部反射逻辑仍重
 
 **抽离顺序：**
-1. `Snapshot` → Java 25 record
-2. `SnapshotProvider` → 扩展为 `sealed interface`，列出已知来源类型
-3. `SnapshotRenderer` → 扩展为带 `RenderContext` 的抽象
-4. 反射 snapshot 类统一实现 `SnapshotProvider` + `SnapshotRenderer`
+1. sandbox block GUI 拆成 source 与 capture session
+2. `SnapshotRenderer` 扩展为带 `RenderContext` 的抽象
+3. 反射 snapshot 类继续收敛 cache key 和 renderer state
+4. 资源重载入口接 `PonderGuiSnapshotRegistry.rebuild()`
 
 ### 2.4 热点 4：JEI compat 嵌入 ui 包
 
@@ -162,17 +162,17 @@
 2. 迁移 JEI 三类 + `PlayerInventoryResolver`
 3. 确认 `GuiOverlayRenderer` 对 JEI 的弱依赖通过接口隔离
 
-### 2.5 热点 5：`PonderOverlayHelper.java`（319 行）—— placement 类型内嵌
+### 2.5 热点 5：`PonderOverlayHelper.java`（52 行）—— placement facade
 
-**问题：**
-- `CaptionPlacement`、`GuiOverlayPlacement`、`GuiHighlightPlacement` 作为 package-private 顶层类定义在同一文件
-- 这些类型被 `GuiOverlayRenderer`、`ShowcaseCaptionRenderer`、`PonderDebugScreen` 三处消费
-- 与 `PonderOverlayLayoutHelper.ProjectedBounds`、`SpeechRenderer.SpeechPointing`、`SpeechRenderer.Point` 形成交叉引用网
+**当前状态：**
+- `PonderOverlayHelper` 当前作为兼容 facade 转发到 `OverlayPlacementEngine`
+- `OverlayPlacementEngine` 集中 caption / gui overlay / highlight placement 计算
+- `GuiOverlayRenderer`、`ShowcaseCaptionRenderer` 继续消费 projection record
 
 **抽离顺序：**
-1. `CaptionPlacement`、`GuiOverlayPlacement`、`GuiHighlightPlacement` 提取为独立文件或统一 record
+1. 逐步把直接调用点从 facade 切到 `OverlayPlacementEngine`
 2. `PonderOverlayLayoutHelper.ProjectedBounds` 升级为顶层 record
-3. 统一 `SpeechPointing`（当前 `SpeechRenderer` 内嵌一份，规划文档也提到重复）
+3. 统一 overlay renderer 的 placement 输入模型
 
 ---
 
@@ -180,7 +180,7 @@
 
 ### 3.1 渲染管线：GL 直接操作 → RenderContext 抽象
 
-**当前状态：** 所有 3D 渲染直接调用 `GlStateManager` + `Tessellator` + `GL11`。`DrawContext` 接口（13 行）仅覆盖少数 2D 基元。
+**当前状态：** 3D preview 仍有 `GlStateManager` + `Tessellator` + `GL11` 桥接，2D renderer 已开始接入 `RenderContext`、`GlRenderContext`、`GLStateGuard`、`DrawContext` bridge。
 
 **升级方向：** 建立完整 `RenderContext` 抽象层，参考 GuideNova 的 `MatrixStack` + `ScissorStack` 双栈模型：
 - `RenderContext.push()` / `pop()` 矩阵栈
@@ -249,12 +249,13 @@
 
 **当前状态：**
 - `PonderPalette`（api 层）只有 11 个固定色
-- `ShowcaseRenderer.Theme` 内嵌主题常量，但仅用于 showcase
-- `SpeechRenderer`、`GuiOverlayRenderer`、`ShowcaseCaptionRenderer` 各自硬编码颜色（`0x151A20`、`0xE7E0D0` 等）
+- `PonderTheme`、`PonderThemes`、`SymbolicColor`、`ThemeMetric` 已承接 debug/showcase preset
+- `ThemeResolver` 已读取 `assets/ponder/ponder_themes.json` 并以 Java preset 兜底
+- `SpeechRenderer`、`GuiOverlayRenderer`、`ShowcaseCaptionRenderer` 仍有局部硬编码颜色
 
 **升级方向：**
-- `Theme` 接口 + `SymbolicColor` 枚举（`panel.background`、`timeline.active`、`overlay.caption` 等）
-- 资源文件 `ponder_themes.json` 驱动
+- `PonderTheme` + `SymbolicColor` 枚举（`panel.background`、`timeline.active`、`overlay.caption` 等）
+- 资源文件 `ponder_themes.json` 驱动，并接资源重载
 - 深浅模式切换
 
 **具体收益：**
@@ -306,11 +307,11 @@
 
 | 编号 | 交付物 | 涉及文件 | 验收标准 |
 |------|--------|----------|----------|
-| P1-1 | `SnapshotProvider` + `SnapshotRenderer` 扩展为 sealed 族 | `SnapshotProvider.java`、`SnapshotRenderer.java`、4 个 `Embedded*Snapshot.java` | 反射 snapshot 类统一实现 sealed 接口 |
+| P1-1 | `SnapshotSource` + `SnapshotRenderer` 扩展为 sealed/source 族 | `SnapshotSource.java`、`ConstantSnapshotSource.java`、`ProviderSnapshotSource.java`、4 个 `Embedded*Snapshot.java` | registry 通过 source/cache key 管理 snapshot |
 | P1-2 | 引入 `AnimationSpec` record + `EasingFunction` 接口 | 新建 `foundation/ui/animation/` | section fade / camera rotate 走缓动 |
-| P1-3 | 统一 `SceneProjectionContext`，消除多处重复投影计算 | 新建，整合 `PonderOverlayLayoutHelper` | overlay/renderer 通过注入获得投影上下文 |
+| P1-3 | 统一 `SceneProjectionContext` 与 `OverlayPlacementEngine` | `projection/`、`overlay/OverlayPlacementEngine.java`、`PonderOverlayHelper.java` | overlay/renderer 通过投影上下文和 placement record 协作 |
 | P1-4 | 统一 `SpeechPointing`，删除 `PonderOverlayHelper` 中重复枚举 | `SpeechRenderer.java`、`PonderOverlayHelper.java` | 只有一份 `SpeechPointing` 定义 |
-| P1-5 | `PonderPalette` 扩展为 `Theme` + `SymbolicColor` 语义色系统 | `api/PonderPalette.java`、资源文件 | UI color 全部走语义 key |
+| P1-5 | `PonderTheme` + `SymbolicColor` + `ThemeResolver` 语义色系统 | `PonderTheme.java`、`PonderThemes.java`、`ponder_themes.json` | debug/showcase theme 由 preset 与资源 overlay 共同驱动 |
 
 **P1 完成后 `PonderDebugScreen` 预期行数：< 1000 行**
 
@@ -318,7 +319,7 @@
 
 | 编号 | 交付物 | 涉及文件 | 验收标准 |
 |------|--------|----------|----------|
-| P2-1 | 引入 `RenderContext` 全能力（push/pop、scissor 栈、GLStateGuard） | 新建 `foundation/ui/render/` 子包 | 所有 renderer 只依赖 RenderContext |
+| P2-1 | 引入 `RenderContext` 全能力（push/pop、scissor 栈、GLStateGuard） | `foundation/ui/render/`、`DrawContext.java`、`DebugPanelRenderer.java` | renderer 逐步迁入 RenderContext primitive |
 | P2-2 | `RuntimeBlockState` 改为不可变 record | `PonderSceneRuntimeTypes.java`、`PonderSceneRuntime.java` | 所有写入点收口到 builder |
 | P2-3 | 建立 `PonderLevel` 轻量世界容器 | 新建 `foundation/ui/world/` | Preview 和 snapshot 共用只读世界 |
 | P2-4 | JEI compat 迁移到 `foundation/ui/compat/` 子包 | `JeiScreenCompat.java` 等 4 个文件 | 主渲染链不 import JEI 类型 |
@@ -335,13 +336,17 @@
 - Controller 分离：5 个输入控制器，通过 `Host` 接口与 Screen 通信 ✅
 - Renderer 分离：9 个 renderer 类，职责明确 ✅
 - Java 25 特性启用：`LayoutCache`（record）、`InteractionState`（record）、`TransformStep`（sealed interface）、`RuntimeState`（record）✅
-- `PonderDebugScreen` 从 2692 行缩减至 2286 行（-15%）✅
+- `PonderDebugScreen` 从 2692 行缩减至 1437 行（-47%）✅
+- `OverlayPlacementEngine` 已落地，`PonderOverlayHelper` 已收口为 facade ✅
+- `SnapshotSource` 已 sealed 化，`ConstantSnapshotSource` / `ProviderSnapshotSource` 已独立 ✅
+- `PonderTheme` / `PonderThemes` / `ThemeResolver` 与 `ponder_themes.json` 已落地 ✅
+- `ExternalRegistrationDiagnostic` 已接入 external register 链 ✅
 
 **进行中 / 待完成：**
 - Screen 内 GL 直接操作残留（scissor、shadow 还在 screen 内）⚠️
 - 重复相机字段（`previewYaw/pitch/zoom` 副本）⚠️
 - 12 个 `last*` 字段尚未通过 `LayoutCache` 消除 ⚠️
-- Snapshot 体系接口过薄（5 行函数接口）⚠️
+- Snapshot capture session 与 source 的分离仍需继续深化 ⚠️
 - `PonderSceneRuntime.applyRenderTransforms` 仍直接操作 GL ⚠️
 
-**建议优先进攻 P0-1 到 P0-3**：这三项改动风险最低、收益最大，可直接删除 ~30% 的 `PonderDebugScreen` 冗余代码。
+**建议优先进攻下一批**：preview GL bridge、snapshot capture session、Theme 热重载、diagnostic 汇总 sink。

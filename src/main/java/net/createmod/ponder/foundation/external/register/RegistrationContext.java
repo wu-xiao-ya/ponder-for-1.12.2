@@ -18,11 +18,15 @@ public record RegistrationContext(ExternalDefinitionSet definitions) {
         return new RegistrationContext(definitions);
     }
 
+    public SourceInfo source(SourceInfo source) {
+        return source != null ? source : SourceInfo.EMPTY;
+    }
+
     public String namespace(SourceInfo source) {
-        return source != null ? source.namespace() : "ponder";
+        return source(source).namespace();
     }
 
     public String sourcePath(SourceInfo source) {
-        return source != null ? source.sourcePath() : "(unknown)";
+        return source(source).sourcePath();
     }
 }

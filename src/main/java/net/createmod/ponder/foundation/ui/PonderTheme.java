@@ -26,6 +26,10 @@ final class PonderTheme {
         return new Builder(id);
     }
 
+    static Builder builder(PonderTheme theme) {
+        return new Builder(theme);
+    }
+
     private final String id;
     private final EnumMap<SymbolicColor, Integer> colors;
     private final EnumMap<ThemeMetric, Float> metrics;
@@ -65,6 +69,10 @@ final class PonderTheme {
 
     int metricInt(ThemeMetric metric) {
         return (int) metric(metric);
+    }
+
+    Builder toBuilder() {
+        return new Builder(this);
     }
 
     ShowcaseChromeRenderer.Theme createShowcaseChromeTheme() {
@@ -130,6 +138,14 @@ final class PonderTheme {
 
         private Builder(String id) {
             this.id = Objects.requireNonNull(id, "id");
+        }
+
+        private Builder(PonderTheme theme) {
+            PonderTheme source = Objects.requireNonNull(theme, "theme");
+            this.id = source.id;
+            this.colors.putAll(source.colors);
+            this.metrics.putAll(source.metrics);
+            this.logoTexture = source.logoTexture;
         }
 
         Builder color(SymbolicColor color, int value) {
