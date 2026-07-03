@@ -14,11 +14,11 @@ import javax.annotation.Nullable;
 import net.createmod.ponder.api.registration.StoryBoardEntry;
 import net.createmod.ponder.foundation.PonderIndex;
 import net.createmod.ponder.foundation.PonderTag;
+import net.createmod.ponder.foundation.ui.render.GLStateGuard;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
@@ -116,14 +116,14 @@ abstract class AbstractPonderBrowserScreen extends CompatGuiScreen {
             return;
         }
 
-        RenderHelper.enableGUIStandardItemLighting();
         GlStateManager.enableRescaleNormal();
-        mc.getRenderItem().renderItemAndEffectIntoGUI(stack, x + (size - 16) / 2, y + (size - 16) / 2);
-        mc.getRenderItem().renderItemOverlayIntoGUI(fontRenderer, stack, x + (size - 16) / 2, y + (size - 16) / 2,
-            null);
-        RenderHelper.disableStandardItemLighting();
-        GlStateManager.disableLighting();
-        GlStateManager.disableRescaleNormal();
+        try (GLStateGuard itemLighting = GLStateGuard.itemLighting()) {
+            mc.getRenderItem().renderItemAndEffectIntoGUI(stack, x + (size - 16) / 2, y + (size - 16) / 2);
+            mc.getRenderItem().renderItemOverlayIntoGUI(fontRenderer, stack, x + (size - 16) / 2, y + (size - 16) / 2,
+                null);
+        } finally {
+            GlStateManager.disableRescaleNormal();
+        }
     }
 
     protected void drawTagSlot(PonderTag tag, int x, int y, int size, boolean hovered, boolean selected) {

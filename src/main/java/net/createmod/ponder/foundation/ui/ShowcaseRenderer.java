@@ -5,10 +5,10 @@ import java.util.List;
 
 import javax.annotation.Nullable;
 
+import net.createmod.ponder.foundation.ui.render.GLStateGuard;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
@@ -124,10 +124,9 @@ final class ShowcaseRenderer {
             ((int) (fade * theme.headerSlotInnerAlphaScale) << 24) | theme.headerSlotInnerColor);
 
         if (!componentStack.isEmpty()) {
-            RenderHelper.enableGUIStandardItemLighting();
-            minecraft.getRenderItem().renderItemAndEffectIntoGUI(componentStack, x + 5, y + 11);
-            RenderHelper.disableStandardItemLighting();
-            GlStateManager.disableLighting();
+            try (GLStateGuard itemLighting = GLStateGuard.itemLighting()) {
+                minecraft.getRenderItem().renderItemAndEffectIntoGUI(componentStack, x + 5, y + 11);
+            }
         }
 
         ShowcaseGroupModel groupState = host.getShowcaseGroupState();
@@ -195,10 +194,9 @@ final class ShowcaseRenderer {
             host.drawRect(iconX + 1, iconY + 1, iconX + 19, iconY + 19, fillColor);
 
             if (!stack.isEmpty()) {
-                RenderHelper.enableGUIStandardItemLighting();
-                minecraft.getRenderItem().renderItemAndEffectIntoGUI(stack, iconX + 2, iconY + 2);
-                RenderHelper.disableStandardItemLighting();
-                GlStateManager.disableLighting();
+                try (GLStateGuard itemLighting = GLStateGuard.itemLighting()) {
+                    minecraft.getRenderItem().renderItemAndEffectIntoGUI(stack, iconX + 2, iconY + 2);
+                }
             }
             icons.add(new ShowcaseGroupIconHitBox(componentId, groupState.tag, iconX, iconY, 20, 20));
         }

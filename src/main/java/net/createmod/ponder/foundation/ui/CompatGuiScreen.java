@@ -13,7 +13,6 @@ import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.renderer.RenderItem;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraftforge.client.event.GuiScreenEvent;
@@ -208,12 +207,8 @@ abstract class CompatGuiScreen extends GuiScreen implements DrawContext {
             return;
         }
 
-        RenderHelper.enableGUIStandardItemLighting();
-        try {
+        try (GLStateGuard itemLighting = GLStateGuard.itemLighting()) {
             renderItem.renderItemAndEffectIntoGUI(stack, x, y);
-        } finally {
-            RenderHelper.disableStandardItemLighting();
-            GlStateManager.disableLighting();
         }
     }
 

@@ -129,7 +129,9 @@ public final class GlRenderContext implements RenderContext {
 
     @Override
     public void renderItem(ItemStack stack, int x, int y) {
-        itemRenderer.renderItemAndEffectIntoGUI(stack, x, y);
+        try (GLStateGuard itemLighting = GLStateGuard.itemLighting()) {
+            itemRenderer.renderItemAndEffectIntoGUI(stack, x, y);
+        }
     }
 
     @Override

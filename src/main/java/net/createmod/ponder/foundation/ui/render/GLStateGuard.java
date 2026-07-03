@@ -3,6 +3,7 @@ package net.createmod.ponder.foundation.ui.render;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.renderer.RenderHelper;
 
 import org.lwjgl.opengl.GL11;
 
@@ -79,6 +80,18 @@ public final class GLStateGuard implements AutoCloseable {
         float green = (float) (color >> 8 & 255) / 255.0F;
         float blue = (float) (color & 255) / 255.0F;
         return color(red, green, blue, alpha);
+    }
+
+    public static GLStateGuard guiItemLighting() {
+        RenderHelper.enableGUIStandardItemLighting();
+        return new GLStateGuard(() -> {
+            RenderHelper.disableStandardItemLighting();
+            GlStateManager.disableLighting();
+        });
+    }
+
+    public static GLStateGuard itemLighting() {
+        return guiItemLighting();
     }
 
     @Override

@@ -20,7 +20,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BlockRendererDispatcher;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
@@ -72,6 +71,7 @@ final class ScenePreviewRenderer {
         GlStateManager.enableDepth();
         GlStateManager.depthMask(true);
         GlStateManager.clear(GL11.GL_DEPTH_BUFFER_BIT);
+        GLStateGuard itemLightingGuard = GLStateGuard.guiItemLighting();
         try (GLStateGuard matrixGuard = GLStateGuard.matrix()) {
             GlStateManager.enableRescaleNormal();
             GlStateManager.enableAlpha();
@@ -79,7 +79,6 @@ final class ScenePreviewRenderer {
             GlStateManager.enableBlend();
             GlStateManager.blendFunc(770, 771);
             GlStateManager.shadeModel(GL11.GL_SMOOTH);
-            RenderHelper.enableGUIStandardItemLighting();
             minecraft.getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
 
             if (minecraft.entityRenderer != null) {
@@ -145,7 +144,7 @@ final class ScenePreviewRenderer {
             if (minecraft.gameSettings != null) {
                 minecraft.gameSettings.ambientOcclusion = previousAmbientOcclusion;
             }
-            RenderHelper.disableStandardItemLighting();
+            itemLightingGuard.close();
             GlStateManager.shadeModel(GL11.GL_FLAT);
             GlStateManager.disableBlend();
             GlStateManager.disableAlpha();

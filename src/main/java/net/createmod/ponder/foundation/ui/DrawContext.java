@@ -6,7 +6,6 @@ import net.createmod.ponder.foundation.ui.render.GLStateGuard;
 import net.createmod.ponder.foundation.ui.render.RenderContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.RenderItem;
 import net.minecraft.item.ItemStack;
 
@@ -83,12 +82,8 @@ public interface DrawContext extends DebugDrawContext, RenderContext {
             return;
         }
 
-        RenderHelper.enableGUIStandardItemLighting();
-        try {
+        try (GLStateGuard itemLighting = GLStateGuard.itemLighting()) {
             renderItem.renderItemAndEffectIntoGUI(stack, x, y);
-        } finally {
-            RenderHelper.disableStandardItemLighting();
-            GlStateManager.disableLighting();
         }
     }
 
