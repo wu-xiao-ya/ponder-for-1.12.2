@@ -1,6 +1,5 @@
 package net.createmod.ponder.foundation.ui;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -217,9 +216,9 @@ public final class SandboxTriggeredBlockGuiSnapshot implements SnapshotRenderer.
 
     private void seedSandboxTile(TileEntity tile) {
         ThermalMachinePreviewHelper.prepare(tile);
-        clearInventorySlots(tile, 16);
+        SnapshotTileSeedHelper.clearInventorySlots(tile, 16);
         if (tile.getClass().getName().startsWith("cofh.thermalexpansion.block.machine.")) {
-            seedFields(tile, 0.0F);
+            SnapshotTileSeedHelper.seedThermalMachineFields(tile, 0.0F);
         }
     }
 
@@ -260,46 +259,6 @@ public final class SandboxTriggeredBlockGuiSnapshot implements SnapshotRenderer.
         TileEntity tile = world.getTileEntity(SANDBOX_POS);
         if (tile != null) {
             seedSandboxTile(tile);
-        }
-    }
-
-    private void seedFields(TileEntity tile, float currentTick) {
-        int cycle = ((int) currentTick) % 160;
-        int energy = 16000 - cycle * 50;
-        int progress = cycle % 100;
-        trySetField(tile, 0, Math.max(0, energy));
-        trySetField(tile, 1, 16000);
-        trySetField(tile, 2, progress);
-        trySetField(tile, 3, 100);
-    }
-
-    private void clearInventorySlots(TileEntity tile, int count) {
-        for (int slot = 0; slot < count; slot++) {
-            try {
-                Method setSlot = tile.getClass().getMethod("setInventorySlotContents", int.class, net.minecraft.item.ItemStack.class);
-                setSlot.invoke(tile, Integer.valueOf(slot), net.minecraft.item.ItemStack.EMPTY);
-                continue;
-            } catch (Throwable ignored) {
-            }
-            try {
-                Method setSlot = tile.getClass().getMethod("func_70299_a", int.class, net.minecraft.item.ItemStack.class);
-                setSlot.invoke(tile, Integer.valueOf(slot), net.minecraft.item.ItemStack.EMPTY);
-            } catch (Throwable ignored) {
-            }
-        }
-    }
-
-    private void trySetField(TileEntity tile, int fieldId, int value) {
-        try {
-            Method setField = tile.getClass().getMethod("setField", int.class, int.class);
-            setField.invoke(tile, Integer.valueOf(fieldId), Integer.valueOf(value));
-            return;
-        } catch (Throwable ignored) {
-        }
-        try {
-            Method setField = tile.getClass().getMethod("func_174885_b", int.class, int.class);
-            setField.invoke(tile, Integer.valueOf(fieldId), Integer.valueOf(value));
-        } catch (Throwable ignored) {
         }
     }
 

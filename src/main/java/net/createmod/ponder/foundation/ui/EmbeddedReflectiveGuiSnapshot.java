@@ -11,7 +11,6 @@ import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.IInventory;
-import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import org.lwjgl.opengl.GL11;
@@ -45,8 +44,8 @@ final class EmbeddedReflectiveGuiSnapshot implements SnapshotRenderer.GuiSnapsho
                 return;
             }
             attachWorld(context.tile);
-            seedInventory(context.tile);
-            seedFields(context.tile, currentTick);
+            SnapshotTileSeedHelper.clearInventorySlots(context.tile, 12);
+            SnapshotTileSeedHelper.seedThermalMachineFields(context.tile, currentTick);
             renderGui(mc, context, x, y, width, height, currentTick);
         } catch (Throwable throwable) {
             cachedContext = null;
@@ -77,7 +76,7 @@ final class EmbeddedReflectiveGuiSnapshot implements SnapshotRenderer.GuiSnapsho
 
         attachWorld(tile);
         ThermalMachinePreviewHelper.prepare(tile);
-        seedInventory(tile);
+        SnapshotTileSeedHelper.clearInventorySlots(tile, 12);
 
         GuiScreen gui = createGui(playerInventory, tile);
         if (gui == null) {
@@ -215,12 +214,6 @@ final class EmbeddedReflectiveGuiSnapshot implements SnapshotRenderer.GuiSnapsho
         }
     }
 
-    private void seedInventory(TileEntity tile) {
-        for (int slot = 0; slot < 12; slot++) {
-            clearInventorySlot(tile, slot);
-        }
-    }
-
     private void attachWorld(TileEntity tile) {
         try {
             Minecraft mc = Minecraft.getMinecraft();
@@ -228,44 +221,6 @@ final class EmbeddedReflectiveGuiSnapshot implements SnapshotRenderer.GuiSnapsho
                 tile.setWorld(mc.world);
             }
             tile.setPos(BlockPos.ORIGIN);
-        } catch (Throwable ignored) {
-        }
-    }
-
-    private void seedFields(TileEntity tile, float currentTick) {
-        int cycle = ((int) currentTick) % 160;
-        int energy = 16000 - cycle * 50;
-        int progress = cycle % 100;
-        trySetField(tile, 0, Math.max(0, energy));
-        trySetField(tile, 1, 16000);
-        trySetField(tile, 2, progress);
-        trySetField(tile, 3, 100);
-    }
-
-    private void trySetField(TileEntity tile, int fieldId, int value) {
-        try {
-            Method setField = tile.getClass().getMethod("setField", int.class, int.class);
-            setField.invoke(tile, Integer.valueOf(fieldId), Integer.valueOf(value));
-            return;
-        } catch (Throwable ignored) {
-        }
-        try {
-            Method setField = tile.getClass().getMethod("func_174885_b", int.class, int.class);
-            setField.invoke(tile, Integer.valueOf(fieldId), Integer.valueOf(value));
-        } catch (Throwable ignored) {
-        }
-    }
-
-    private void clearInventorySlot(TileEntity tile, int slot) {
-        try {
-            Method setSlot = tile.getClass().getMethod("setInventorySlotContents", int.class, ItemStack.class);
-            setSlot.invoke(tile, Integer.valueOf(slot), ItemStack.EMPTY);
-            return;
-        } catch (Throwable ignored) {
-        }
-        try {
-            Method setSlot = tile.getClass().getMethod("func_70299_a", int.class, ItemStack.class);
-            setSlot.invoke(tile, Integer.valueOf(slot), ItemStack.EMPTY);
         } catch (Throwable ignored) {
         }
     }
