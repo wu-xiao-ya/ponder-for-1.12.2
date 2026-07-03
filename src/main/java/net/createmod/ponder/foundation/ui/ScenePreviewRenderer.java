@@ -17,7 +17,6 @@ import net.createmod.ponder.foundation.ui.PonderSceneRuntimeTypes.RuntimeBlockSt
 import net.createmod.ponder.foundation.ui.render.GLStateGuard;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.BlockRendererDispatcher;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
@@ -63,13 +62,9 @@ final class ScenePreviewRenderer {
     void renderPreview(PonderScene scene, PreviewBounds bounds, PonderSceneRuntimeTypes.RuntimeState runtimeState,
         PreviewLayout layout, float renderTick, PonderPreviewCameraState cameraState,
         PonderOverlayLayoutHelper overlayLayoutHelper) {
-        ScaledResolution resolution = new ScaledResolution(minecraft);
-        int scaleFactor = resolution.getScaleFactor();
         int previousAmbientOcclusion = minecraft.gameSettings != null ? minecraft.gameSettings.ambientOcclusion : 0;
-        GL11.glEnable(GL11.GL_SCISSOR_TEST);
-        GL11.glScissor(layout.originX * scaleFactor,
-            minecraft.displayHeight - (layout.originY + layout.height) * scaleFactor, layout.width * scaleFactor,
-            layout.height * scaleFactor);
+        GLStateGuard scissorGuard = GLStateGuard.scissor(minecraft, layout.originX, layout.originY, layout.width,
+            layout.height);
         if (minecraft.gameSettings != null) {
             minecraft.gameSettings.ambientOcclusion = 0;
         }
@@ -156,7 +151,7 @@ final class ScenePreviewRenderer {
             GlStateManager.disableAlpha();
             GlStateManager.disableRescaleNormal();
             GlStateManager.disableDepth();
-            GL11.glDisable(GL11.GL_SCISSOR_TEST);
+            scissorGuard.close();
         }
     }
 

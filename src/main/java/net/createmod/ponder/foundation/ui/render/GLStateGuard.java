@@ -1,5 +1,7 @@
 package net.createmod.ponder.foundation.ui.render;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
 
 import org.lwjgl.opengl.GL11;
@@ -16,6 +18,24 @@ public final class GLStateGuard implements AutoCloseable {
     public static GLStateGuard matrix() {
         GlStateManager.pushMatrix();
         return new GLStateGuard(GlStateManager::popMatrix);
+    }
+
+    public static GLStateGuard noop() {
+        return new GLStateGuard(() -> {
+        });
+    }
+
+    public static GLStateGuard scissor(Minecraft minecraft, int x, int y, int width, int height) {
+        if (minecraft == null) {
+            return noop();
+        }
+
+        ScaledResolution resolution = new ScaledResolution(minecraft);
+        int scaleFactor = resolution.getScaleFactor();
+        GL11.glEnable(GL11.GL_SCISSOR_TEST);
+        GL11.glScissor(x * scaleFactor, minecraft.displayHeight - (y + height) * scaleFactor, width * scaleFactor,
+            height * scaleFactor);
+        return new GLStateGuard(() -> GL11.glDisable(GL11.GL_SCISSOR_TEST));
     }
 
     public static GLStateGuard textureDisabled() {

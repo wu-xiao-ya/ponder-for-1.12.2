@@ -5,12 +5,10 @@ import java.util.List;
 import net.createmod.ponder.foundation.ui.render.GLStateGuard;
 import net.createmod.ponder.foundation.ui.render.RenderContext;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.RenderItem;
 import net.minecraft.item.ItemStack;
-import org.lwjgl.opengl.GL11;
 
 interface DebugDrawContext {
     void fillRect(int left, int top, int right, int bottom, int color);
@@ -32,18 +30,7 @@ public interface DrawContext extends DebugDrawContext, RenderContext {
 
     @Override
     default AutoCloseable scissor(int x, int y, int width, int height) {
-        Minecraft minecraft = Minecraft.getMinecraft();
-        if (minecraft == null) {
-            return () -> {
-            };
-        }
-
-        ScaledResolution resolution = new ScaledResolution(minecraft);
-        int scaleFactor = resolution.getScaleFactor();
-        GL11.glEnable(GL11.GL_SCISSOR_TEST);
-        GL11.glScissor(x * scaleFactor, minecraft.displayHeight - (y + height) * scaleFactor, width * scaleFactor,
-            height * scaleFactor);
-        return () -> GL11.glDisable(GL11.GL_SCISSOR_TEST);
+        return GLStateGuard.scissor(Minecraft.getMinecraft(), x, y, width, height);
     }
 
     @Override
