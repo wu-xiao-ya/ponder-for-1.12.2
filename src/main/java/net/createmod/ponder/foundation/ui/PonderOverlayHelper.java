@@ -10,6 +10,7 @@ import net.createmod.ponder.foundation.ui.projection.CaptionPlacement;
 import net.createmod.ponder.foundation.ui.projection.GuiHighlightPlacement;
 import net.createmod.ponder.foundation.ui.projection.GuiOverlayPlacement;
 import net.createmod.ponder.foundation.ui.projection.SceneProjectionContext;
+import net.minecraft.util.math.MathHelper;
 
 public final class PonderOverlayHelper {
 
