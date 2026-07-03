@@ -118,6 +118,8 @@ public class PonderDebugScreen extends CompatGuiScreen {
     @Nullable
     private ShowcaseChromeRenderer fallbackShowcaseChromeRenderer;
     @Nullable
+    private DebugPanelDrawContextAdapter debugDrawContextAdapter;
+    @Nullable
     private DebugPanelRenderer debugPanelRenderer;
     @Nullable
     private GuiOverlayRenderer guiOverlayRenderer;
@@ -620,35 +622,15 @@ public class PonderDebugScreen extends CompatGuiScreen {
             height - SHOWCASE_MARGIN * 2);
     }
 
-private void drawComponentList(int mouseX, int mouseY, int x, int startY, int bottom) {
+    private void drawComponentList(int mouseX, int mouseY, int x, int startY, int bottom) {
         getDebugPanelRenderer().drawComponentList(mouseX, mouseY, x, startY, bottom, LINE_HEIGHT, LEFT_PANEL_WIDTH,
-            new DebugDrawContext() {
-                @Override
-                public void fillRect(int left, int top, int right, int bottom, int color) {
-                    PonderDebugScreen.this.drawRect(left, top, right, bottom, color);
-                }
-
-                @Override
-                public void drawString(String text, int drawX, int drawY, int color) {
-                    PonderDebugScreen.this.drawString(fontRenderer, text, drawX, drawY, color);
-                }
-            });
+            getDebugDrawContextAdapter());
     }
 
     private void drawSceneSummary(int x, int y, int width) {
         PonderScene scene = getSelectedScene();
         getDebugPanelRenderer().drawSceneSummary(x, y, width, playbackState.getPlaybackTick(),
-            playbackState.isPlaying(), scene == null ? 0 : getSceneEndTick(scene), new DebugDrawContext() {
-                @Override
-                public void fillRect(int left, int top, int right, int bottom, int color) {
-                    PonderDebugScreen.this.drawRect(left, top, right, bottom, color);
-                }
-
-                @Override
-                public void drawString(String text, int drawX, int drawY, int color) {
-                    PonderDebugScreen.this.drawString(fontRenderer, text, drawX, drawY, color);
-                }
-            });
+            playbackState.isPlaying(), scene == null ? 0 : getSceneEndTick(scene), getDebugDrawContextAdapter());
     }
 
     protected void drawScenePreview(int x, int y, int width, int height, float partialTicks) {
@@ -1246,17 +1228,7 @@ private void drawComponentList(int mouseX, int mouseY, int x, int startY, int bo
 
     private void drawOperationList(int mouseX, int mouseY, int x, int startY, int width, int bottom) {
         getDebugPanelRenderer().drawOperationList(mouseX, mouseY, x, startY, width, bottom, LINE_HEIGHT,
-            playbackState.getPlaybackTick(), new DebugDrawContext() {
-                @Override
-                public void fillRect(int left, int top, int right, int bottom, int color) {
-                    PonderDebugScreen.this.drawRect(left, top, right, bottom, color);
-                }
-
-                @Override
-                public void drawString(String text, int drawX, int drawY, int color) {
-                    PonderDebugScreen.this.drawString(fontRenderer, text, drawX, drawY, color);
-                }
-            });
+            playbackState.getPlaybackTick(), getDebugDrawContextAdapter());
     }
 
     private void drawTooltips(int mouseX, int mouseY) {
@@ -1333,6 +1305,13 @@ private void drawComponentList(int mouseX, int mouseY, int x, int startY, int bo
     private List<RecordedOperation> getSelectedRecordedOperations() {
         PonderScene scene = getSelectedScene();
         return scene == null ? Collections.<RecordedOperation>emptyList() : scene.getRecordedOperations();
+    }
+
+    private DebugPanelDrawContextAdapter getDebugDrawContextAdapter() {
+        if (debugDrawContextAdapter == null) {
+            debugDrawContextAdapter = new DebugPanelDrawContextAdapter(this, fontRenderer);
+        }
+        return debugDrawContextAdapter;
     }
 
     protected int getSceneEndTick(PonderScene scene) {

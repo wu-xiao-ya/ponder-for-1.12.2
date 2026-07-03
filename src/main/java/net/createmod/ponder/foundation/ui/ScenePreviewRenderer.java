@@ -14,6 +14,7 @@ import net.createmod.ponder.foundation.PonderScene;
 import net.createmod.ponder.foundation.Vec3iAccessor;
 import net.createmod.ponder.foundation.ui.PonderScenePreview.PreviewBounds;
 import net.createmod.ponder.foundation.ui.PonderSceneRuntimeTypes.RuntimeBlockState;
+import net.createmod.ponder.foundation.ui.render.GLStateGuard;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ScaledResolution;
@@ -76,8 +77,7 @@ final class ScenePreviewRenderer {
         GlStateManager.enableDepth();
         GlStateManager.depthMask(true);
         GlStateManager.clear(GL11.GL_DEPTH_BUFFER_BIT);
-        GlStateManager.pushMatrix();
-        try {
+        try (GLStateGuard matrixGuard = GLStateGuard.matrix()) {
             GlStateManager.enableRescaleNormal();
             GlStateManager.enableAlpha();
             GlStateManager.alphaFunc(516, 0.1F);
@@ -155,7 +155,6 @@ final class ScenePreviewRenderer {
             GlStateManager.disableBlend();
             GlStateManager.disableAlpha();
             GlStateManager.disableRescaleNormal();
-            GlStateManager.popMatrix();
             GlStateManager.disableDepth();
             GL11.glDisable(GL11.GL_SCISSOR_TEST);
         }
@@ -175,23 +174,23 @@ final class ScenePreviewRenderer {
             renderState = state;
         }
 
-        GlStateManager.pushMatrix();
-        PonderSceneRuntime.applyRenderTransforms(block);
-        float brightness = Math.min(1.0F, PonderPreviewRenderHelper.computeBlockBrightness(showcaseMode, block));
-        float alpha = MathHelper.clamp(0.28F + block.fade * 0.72F, 0.0F, 1.0F);
-        GlStateManager.color(brightness, brightness, brightness, alpha);
-        setPreviewLightmap();
+        try (GLStateGuard matrixGuard = GLStateGuard.matrix()) {
+            PonderSceneRuntime.applyRenderTransforms(block);
+            float brightness = Math.min(1.0F, PonderPreviewRenderHelper.computeBlockBrightness(showcaseMode, block));
+            float alpha = MathHelper.clamp(0.28F + block.fade * 0.72F, 0.0F, 1.0F);
+            GlStateManager.color(brightness, brightness, brightness, alpha);
+            setPreviewLightmap();
 
-        BufferBuilder buffer = Tessellator.getInstance().getBuffer();
-        buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.BLOCK);
-        try {
-            dispatcher.renderBlock(renderState, block.pos, previewWorld, buffer);
-        } catch (RuntimeException ignored) {
+            BufferBuilder buffer = Tessellator.getInstance().getBuffer();
+            buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.BLOCK);
+            try {
+                dispatcher.renderBlock(renderState, block.pos, previewWorld, buffer);
+            } catch (RuntimeException ignored) {
+            }
+            Tessellator.getInstance().draw();
+
+            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         }
-        Tessellator.getInstance().draw();
-
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-        GlStateManager.popMatrix();
     }
 
     @SuppressWarnings("unchecked")
@@ -213,13 +212,14 @@ final class ScenePreviewRenderer {
                 return;
             }
 
-            GlStateManager.pushMatrix();
-            PonderSceneRuntime.applyRenderTransforms(block);
-            GlStateManager.translate(Vec3iAccessor.x(block.pos), Vec3iAccessor.y(block.pos), Vec3iAccessor.z(block.pos));
-            setPreviewLightmap();
-            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-            renderer.render(tileEntity, 0.0D, 0.0D, 0.0D, 0.0F, -1, 1.0F);
-            GlStateManager.popMatrix();
+            try (GLStateGuard matrixGuard = GLStateGuard.matrix()) {
+                PonderSceneRuntime.applyRenderTransforms(block);
+                GlStateManager.translate(Vec3iAccessor.x(block.pos), Vec3iAccessor.y(block.pos),
+                    Vec3iAccessor.z(block.pos));
+                setPreviewLightmap();
+                GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+                renderer.render(tileEntity, 0.0D, 0.0D, 0.0D, 0.0F, -1, 1.0F);
+            }
         } catch (RuntimeException ignored) {
         }
     }
@@ -303,25 +303,24 @@ final class ScenePreviewRenderer {
         float yaw = actor.kind == PonderScene.ActorKind.CART ? actor.cartYaw : (float) actor.rotation.y;
         yaw += getActorYawOffset(actor, currentTick);
 
-        GlStateManager.pushMatrix();
-        GlStateManager.translate(actor.position.x, actor.position.y + bobOffset, actor.position.z);
-        GlStateManager.rotate(yaw, 0.0F, 1.0F, 0.0F);
-        GlStateManager.rotate((float) actor.rotation.x, 1.0F, 0.0F, 0.0F);
-        GlStateManager.rotate((float) actor.rotation.z, 0.0F, 0.0F, 1.0F);
+        try (GLStateGuard matrixGuard = GLStateGuard.matrix()) {
+            GlStateManager.translate(actor.position.x, actor.position.y + bobOffset, actor.position.z);
+            GlStateManager.rotate(yaw, 0.0F, 1.0F, 0.0F);
+            GlStateManager.rotate((float) actor.rotation.x, 1.0F, 0.0F, 0.0F);
+            GlStateManager.rotate((float) actor.rotation.z, 0.0F, 0.0F, 1.0F);
 
-        if (actor.kind == PonderScene.ActorKind.BIRB) {
-            drawBirbBody(actor, red, green, blue, alpha, currentTick);
-            drawActorHeading(alpha);
-        } else if (actor.kind == PonderScene.ActorKind.ITEM) {
-            drawItemBody(red, green, blue, alpha, currentTick);
-            drawActorHeading(alpha * 0.7F);
-        } else {
-            drawActorPrism(red, green, blue, alpha, 0.30F, 0.16F, 0.18F);
-            drawCartWheels(alpha);
-            drawActorHeading(alpha);
+            if (actor.kind == PonderScene.ActorKind.BIRB) {
+                drawBirbBody(actor, red, green, blue, alpha, currentTick);
+                drawActorHeading(alpha);
+            } else if (actor.kind == PonderScene.ActorKind.ITEM) {
+                drawItemBody(red, green, blue, alpha, currentTick);
+                drawActorHeading(alpha * 0.7F);
+            } else {
+                drawActorPrism(red, green, blue, alpha, 0.30F, 0.16F, 0.18F);
+                drawCartWheels(alpha);
+                drawActorHeading(alpha);
+            }
         }
-
-        GlStateManager.popMatrix();
     }
 
     private void drawActorHeading(float alpha) {
