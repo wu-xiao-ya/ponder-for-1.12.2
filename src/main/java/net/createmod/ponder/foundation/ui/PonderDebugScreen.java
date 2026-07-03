@@ -20,7 +20,6 @@ import net.createmod.ponder.foundation.PonderScene;
 import net.createmod.ponder.foundation.Vec3iAccessor;
 import net.createmod.ponder.foundation.PonderScene.RecordedOperation;
 import net.createmod.ponder.foundation.PonderScene.WorldEvent;
-import net.createmod.ponder.foundation.PonderTag;
 import net.createmod.ponder.foundation.ui.PonderScenePreview.PreviewBounds;
 import net.createmod.ponder.foundation.ui.PonderScenePreview.PreviewState;
 import net.createmod.ponder.api.PonderPalette;
@@ -121,6 +120,8 @@ public class PonderDebugScreen extends CompatGuiScreen {
     private DebugPanelDrawContextAdapter debugDrawContextAdapter;
     @Nullable
     private DebugPanelRenderer debugPanelRenderer;
+    @Nullable
+    private DebugPanelBridge debugPanelBridge;
     @Nullable
     private GuiOverlayRenderer guiOverlayRenderer;
     @Nullable
@@ -908,6 +909,13 @@ public class PonderDebugScreen extends CompatGuiScreen {
         return debugPanelRenderer;
     }
 
+    DebugPanelBridge getDebugPanelBridge() {
+        if (debugPanelBridge == null) {
+            debugPanelBridge = new DebugPanelBridge(this, selectionState);
+        }
+        return debugPanelBridge;
+    }
+
     void clearPreviewCaches() {
         if (scenePreviewRenderer != null) {
             scenePreviewRenderer.clearTileEntityPreviewCache();
@@ -1302,11 +1310,6 @@ public class PonderDebugScreen extends CompatGuiScreen {
         return selectionState.getSelectedScene();
     }
 
-    private List<RecordedOperation> getSelectedRecordedOperations() {
-        PonderScene scene = getSelectedScene();
-        return scene == null ? Collections.<RecordedOperation>emptyList() : scene.getRecordedOperations();
-    }
-
     private DebugPanelDrawContextAdapter getDebugDrawContextAdapter() {
         if (debugDrawContextAdapter == null) {
             debugDrawContextAdapter = new DebugPanelDrawContextAdapter(this, fontRenderer);
@@ -1377,20 +1380,7 @@ public class PonderDebugScreen extends CompatGuiScreen {
     }
 
     void centerOperationsOnActiveLine() {
-        if (getSelectedRecordedOperations().isEmpty()) {
-            getDebugPanelRenderer().resetOperationScroll();
-            return;
-        }
-        getDebugPanelRenderer().setOperationScroll(
-            getDebugPanelRenderer().computeCenteredOperationScroll(playbackState.getPlaybackTick(), height));
-    }
-
-    private int getMaxComponentScroll() {
-        return getDebugPanelRenderer().getMaxComponentScroll(selectionState.getComponentIds(), height);
-    }
-
-    private int getComponentIndexAt(int mouseX, int mouseY) {
-        return getDebugPanelRenderer().getComponentIndexAt(mouseX, mouseY, height);
+        getDebugPanelBridge().centerOperationsOnActiveLine();
     }
 
     protected boolean hasShowcaseGroupChoices() {
@@ -1426,44 +1416,6 @@ public class PonderDebugScreen extends CompatGuiScreen {
         InteractionHitCache.ShowcaseHeaderIconBounds bounds = interactionHitCache.getShowcaseHeaderIconBounds();
         return bounds.size() > 0 && mouseX >= bounds.x() && mouseX <= bounds.x() + bounds.size()
             && mouseY >= bounds.y() && mouseY <= bounds.y() + bounds.size();
-    }
-
-    private int getOperationIndexAt(int mouseX, int mouseY) {
-        return getDebugPanelRenderer().getOperationIndexAt(mouseX, mouseY, height);
-    }
-
-    private boolean isMouseOverComponentList(int mouseX, int mouseY) {
-        return getDebugPanelRenderer().isMouseOverComponentList(mouseX, mouseY, height);
-    }
-
-    private boolean isMouseOverOperations(int mouseX, int mouseY) {
-        return getDebugPanelRenderer().isMouseOverOperations(mouseX, mouseY, height);
-    }
-
-    private boolean isMouseOverPreview(int mouseX, int mouseY) {
-        return interactionHitCache.isMouseOverPreview(mouseX, mouseY);
-    }
-
-    private boolean isWithin(int mouseX, int mouseY, int minX, int minY, int maxX, int maxY) {
-        return mouseX >= minX && mouseX <= maxX && mouseY >= minY && mouseY <= maxY;
-    }
-
-    private String formatTags(Collection<PonderTag> tags) {
-        if (tags.isEmpty()) {
-            return "[]";
-        }
-
-        StringBuilder builder = new StringBuilder("[");
-        boolean first = true;
-        for (PonderTag tag : tags) {
-            if (!first) {
-                builder.append(", ");
-            }
-            first = false;
-            builder.append(tag.getId());
-        }
-        builder.append(']');
-        return builder.toString();
     }
 
     void resetPreviewCamera() {

@@ -67,7 +67,7 @@ final class PonderDebugScreenHostSupport {
     }
 
     int getComponentIndexAt(int mouseX, int mouseY) {
-        return screen.getDebugPanelRenderer().getComponentIndexAt(mouseX, mouseY, screen.height);
+        return screen.getDebugPanelBridge().getComponentIndexAt(mouseX, mouseY);
     }
 
     void selectComponent(int componentIndex) {
@@ -75,7 +75,7 @@ final class PonderDebugScreenHostSupport {
     }
 
     int getOperationIndexAt(int mouseX, int mouseY) {
-        return screen.getDebugPanelRenderer().getOperationIndexAt(mouseX, mouseY, screen.height);
+        return screen.getDebugPanelBridge().getOperationIndexAt(mouseX, mouseY);
     }
 
     List<RecordedOperation> getSelectedRecordedOperations() {
@@ -150,11 +150,11 @@ final class PonderDebugScreenHostSupport {
     }
 
     void resetOperationScroll() {
-        screen.getDebugPanelRenderer().resetOperationScroll();
+        screen.getDebugPanelBridge().resetOperationScroll();
     }
 
     void centerOperationsOnActiveLine() {
-        screen.centerOperationsOnActiveLine();
+        screen.getDebugPanelBridge().centerOperationsOnActiveLine();
     }
 
     boolean allowDebugShortcutFromShowcase() {
@@ -178,19 +178,19 @@ final class PonderDebugScreenHostSupport {
     }
 
     boolean isMouseOverComponentList(int mouseX, int mouseY) {
-        return screen.getDebugPanelRenderer().isMouseOverComponentList(mouseX, mouseY, screen.height);
+        return screen.getDebugPanelBridge().isMouseOverComponentList(mouseX, mouseY);
     }
 
     void scrollComponents(int delta) {
-        screen.getDebugPanelRenderer().scrollComponents(delta, selectionState.getComponentIds(), screen.height);
+        screen.getDebugPanelBridge().scrollComponents(delta);
     }
 
     boolean isMouseOverOperations(int mouseX, int mouseY) {
-        return screen.getDebugPanelRenderer().isMouseOverOperations(mouseX, mouseY, screen.height);
+        return screen.getDebugPanelBridge().isMouseOverOperations(mouseX, mouseY);
     }
 
     void scrollOperations(int delta) {
-        screen.getDebugPanelRenderer().scrollOperations(delta, screen.height);
+        screen.getDebugPanelBridge().scrollOperations(delta);
     }
 
     ShowcaseGroupIconHitBox getShowcaseGroupIconAt(int mouseX, int mouseY) {
@@ -234,11 +234,11 @@ final class PonderDebugScreenHostSupport {
     }
 
     int getMaxComponentScroll() {
-        return screen.getDebugPanelRenderer().getMaxComponentScroll(selectionState.getComponentIds(), screen.height);
+        return screen.getDebugPanelBridge().getMaxComponentScroll();
     }
 
     void setComponentScroll(int componentScroll) {
-        screen.getDebugPanelRenderer().setComponentScroll(componentScroll);
+        screen.getDebugPanelBridge().setComponentScroll(componentScroll);
     }
 
     int getSceneEndTick(PonderScene scene) {
