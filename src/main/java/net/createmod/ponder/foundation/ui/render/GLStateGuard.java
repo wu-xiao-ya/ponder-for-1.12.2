@@ -23,6 +23,11 @@ public final class GLStateGuard implements AutoCloseable {
         return new GLStateGuard(GlStateManager::enableTexture2D);
     }
 
+    public static GLStateGuard cullDisabled() {
+        GlStateManager.disableCull();
+        return new GLStateGuard(GlStateManager::enableCull);
+    }
+
     public static GLStateGuard blendEnabled() {
         GlStateManager.enableBlend();
         return new GLStateGuard(GlStateManager::disableBlend);

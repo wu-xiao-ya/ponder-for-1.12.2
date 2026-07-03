@@ -279,18 +279,17 @@ final class ScenePreviewRenderer {
             return;
         }
 
-        GlStateManager.disableTexture2D();
-        GlStateManager.enableBlend();
-        GlStateManager.disableCull();
-        for (PonderSceneRuntime.ActorRuntimeState actor : actors) {
-            if (!actor.visible || actor.fade <= 0.0F) {
-                continue;
+        try (GLStateGuard textureGuard = GLStateGuard.textureDisabled();
+            GLStateGuard cullGuard = GLStateGuard.cullDisabled();
+            GLStateGuard colorGuard = GLStateGuard.color(1.0F, 1.0F, 1.0F, 1.0F)) {
+            GlStateManager.enableBlend();
+            for (PonderSceneRuntime.ActorRuntimeState actor : actors) {
+                if (!actor.visible || actor.fade <= 0.0F) {
+                    continue;
+                }
+                renderActorPreview(actor, currentTick);
             }
-            renderActorPreview(actor, currentTick);
         }
-        GlStateManager.enableCull();
-        GlStateManager.enableTexture2D();
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
     }
 
     private void renderActorPreview(PonderSceneRuntime.ActorRuntimeState actor, float currentTick) {
@@ -330,13 +329,13 @@ final class ScenePreviewRenderer {
         float blue = (lineColor & 0xFF) / 255.0F;
         float lineAlpha = ((lineColor >>> 24) & 0xFF) / 255.0F;
 
-        GlStateManager.color(red, green, blue, lineAlpha);
-        GL11.glLineWidth(2.0F);
-        GL11.glBegin(GL11.GL_LINES);
-        GL11.glVertex3f(0.0F, 0.05F, 0.0F);
-        GL11.glVertex3f(0.0F, 0.05F, -0.38F);
-        GL11.glEnd();
-        GL11.glLineWidth(1.0F);
+        try (GLStateGuard colorGuard = GLStateGuard.color(red, green, blue, lineAlpha);
+            GLStateGuard lineWidthGuard = GLStateGuard.lineWidth(2.0F)) {
+            GL11.glBegin(GL11.GL_LINES);
+            GL11.glVertex3f(0.0F, 0.05F, 0.0F);
+            GL11.glVertex3f(0.0F, 0.05F, -0.38F);
+            GL11.glEnd();
+        }
     }
 
     private void drawBirbBody(PonderSceneRuntime.ActorRuntimeState actor, float red, float green, float blue, float alpha,
@@ -392,38 +391,39 @@ final class ScenePreviewRenderer {
         float z1 = offsetZ - halfZ;
         float z2 = offsetZ + halfZ;
 
-        GlStateManager.color(red, green, blue, alpha);
-        GL11.glBegin(GL11.GL_QUADS);
-        GL11.glVertex3f(x1, y1, z1);
-        GL11.glVertex3f(x2, y1, z1);
-        GL11.glVertex3f(x2, y2, z1);
-        GL11.glVertex3f(x1, y2, z1);
+        try (GLStateGuard colorGuard = GLStateGuard.color(red, green, blue, alpha)) {
+            GL11.glBegin(GL11.GL_QUADS);
+            GL11.glVertex3f(x1, y1, z1);
+            GL11.glVertex3f(x2, y1, z1);
+            GL11.glVertex3f(x2, y2, z1);
+            GL11.glVertex3f(x1, y2, z1);
 
-        GL11.glVertex3f(x1, y1, z2);
-        GL11.glVertex3f(x2, y1, z2);
-        GL11.glVertex3f(x2, y2, z2);
-        GL11.glVertex3f(x1, y2, z2);
+            GL11.glVertex3f(x1, y1, z2);
+            GL11.glVertex3f(x2, y1, z2);
+            GL11.glVertex3f(x2, y2, z2);
+            GL11.glVertex3f(x1, y2, z2);
 
-        GL11.glVertex3f(x1, y1, z1);
-        GL11.glVertex3f(x1, y1, z2);
-        GL11.glVertex3f(x1, y2, z2);
-        GL11.glVertex3f(x1, y2, z1);
+            GL11.glVertex3f(x1, y1, z1);
+            GL11.glVertex3f(x1, y1, z2);
+            GL11.glVertex3f(x1, y2, z2);
+            GL11.glVertex3f(x1, y2, z1);
 
-        GL11.glVertex3f(x2, y1, z1);
-        GL11.glVertex3f(x2, y1, z2);
-        GL11.glVertex3f(x2, y2, z2);
-        GL11.glVertex3f(x2, y2, z1);
+            GL11.glVertex3f(x2, y1, z1);
+            GL11.glVertex3f(x2, y1, z2);
+            GL11.glVertex3f(x2, y2, z2);
+            GL11.glVertex3f(x2, y2, z1);
 
-        GL11.glVertex3f(x1, y2, z1);
-        GL11.glVertex3f(x2, y2, z1);
-        GL11.glVertex3f(x2, y2, z2);
-        GL11.glVertex3f(x1, y2, z2);
+            GL11.glVertex3f(x1, y2, z1);
+            GL11.glVertex3f(x2, y2, z1);
+            GL11.glVertex3f(x2, y2, z2);
+            GL11.glVertex3f(x1, y2, z2);
 
-        GL11.glVertex3f(x1, y1, z1);
-        GL11.glVertex3f(x2, y1, z1);
-        GL11.glVertex3f(x2, y1, z2);
-        GL11.glVertex3f(x1, y1, z2);
-        GL11.glEnd();
+            GL11.glVertex3f(x1, y1, z1);
+            GL11.glVertex3f(x2, y1, z1);
+            GL11.glVertex3f(x2, y1, z2);
+            GL11.glVertex3f(x1, y1, z2);
+            GL11.glEnd();
+        }
     }
 
     private int getActorBaseColor(PonderSceneRuntime.ActorRuntimeState actor) {
