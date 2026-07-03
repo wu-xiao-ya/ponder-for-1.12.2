@@ -142,6 +142,8 @@ public class PonderDebugScreen extends CompatGuiScreen {
     private ParticleOverlayRenderer particleOverlayRenderer;
     @Nullable
     private PoiOverlayRenderer poiOverlayRenderer;
+    @Nullable
+    private DrawContext overlayDrawContext;
 
     protected GuiButton prevSceneButton;
     protected GuiButton nextSceneButton;
@@ -937,9 +939,9 @@ private void drawComponentList(int mouseX, int mouseY, int x, int startY, int bo
         return guiOverlayRenderer;
     }
 
-    private ActorOverlayRenderer getActorOverlayRenderer() {
-        if (actorOverlayRenderer == null) {
-            actorOverlayRenderer = new ActorOverlayRenderer(new DrawContext() {
+    private DrawContext getOverlayDrawContext() {
+        if (overlayDrawContext == null) {
+            overlayDrawContext = new DrawContext() {
                 @Override
                 public void fillRect(int left, int top, int right, int bottom, int color) {
                     PonderDebugScreen.this.drawRect(left, top, right, bottom, color);
@@ -966,14 +968,6 @@ private void drawComponentList(int mouseX, int mouseY, int x, int startY, int bo
                 }
 
                 @Override
-                public void renderItemStack(ItemStack stack, int x, int y) {
-                    net.minecraft.client.renderer.RenderHelper.enableGUIStandardItemLighting();
-                    mc.getRenderItem().renderItemAndEffectIntoGUI(stack, x, y);
-                    net.minecraft.client.renderer.RenderHelper.disableStandardItemLighting();
-                    GlStateManager.disableLighting();
-                }
-
-                @Override
                 public void drawHoveringText(List<String> textLines, int x, int y) {
                     PonderDebugScreen.this.drawHoveringText(textLines, x, y);
                 }
@@ -987,227 +981,42 @@ private void drawComponentList(int mouseX, int mouseY, int x, int startY, int bo
                 public void drawCenteredString(String text, int centerX, int y, int color) {
                     PonderDebugScreen.this.drawCenteredString(fontRenderer, text, centerX, y, color);
                 }
-            });
+            };
+        }
+        return overlayDrawContext;
+    }
+
+    private ActorOverlayRenderer getActorOverlayRenderer() {
+        if (actorOverlayRenderer == null) {
+            actorOverlayRenderer = new ActorOverlayRenderer(getOverlayDrawContext());
         }
         return actorOverlayRenderer;
     }
 
     private SceneOverlayRenderer getSceneOverlayRenderer() {
         if (sceneOverlayRenderer == null) {
-            sceneOverlayRenderer = new SceneOverlayRenderer(overlayLayoutHelper, new DrawContext() {
-                @Override
-                public void fillRect(int left, int top, int right, int bottom, int color) {
-                    PonderDebugScreen.this.drawRect(left, top, right, bottom, color);
-                }
-
-                @Override
-                public void drawString(String text, int x, int y, int color) {
-                    PonderDebugScreen.this.drawString(fontRenderer, text, x, y, color);
-                }
-
-                @Override
-                public void drawLineSegment(int startX, int startY, int endX, int endY, int color, float width) {
-                    PonderDebugScreen.this.drawLineSegment(startX, startY, endX, endY, color, width);
-                }
-
-                @Override
-                public int withAlpha(int color, float alpha) {
-                    return PonderDebugScreen.this.withAlpha(color, alpha);
-                }
-
-                @Override
-                public int blendColors(int baseColor, int accentColor, float accentWeight) {
-                    return PonderDebugScreen.this.blendColors(baseColor, accentColor, accentWeight);
-                }
-
-                @Override
-                public void renderItemStack(ItemStack stack, int x, int y) {
-                    net.minecraft.client.renderer.RenderHelper.enableGUIStandardItemLighting();
-                    mc.getRenderItem().renderItemAndEffectIntoGUI(stack, x, y);
-                    net.minecraft.client.renderer.RenderHelper.disableStandardItemLighting();
-                    GlStateManager.disableLighting();
-                }
-
-                @Override
-                public void drawHoveringText(List<String> textLines, int x, int y) {
-                    PonderDebugScreen.this.drawHoveringText(textLines, x, y);
-                }
-
-                @Override
-                public int getStringWidth(String text) {
-                    return fontRenderer.getStringWidth(text);
-                }
-
-                @Override
-                public void drawCenteredString(String text, int centerX, int y, int color) {
-                    PonderDebugScreen.this.drawCenteredString(fontRenderer, text, centerX, y, color);
-                }
-            });
+            sceneOverlayRenderer = new SceneOverlayRenderer(overlayLayoutHelper, getOverlayDrawContext());
         }
         return sceneOverlayRenderer;
     }
 
     private ControlsOverlayRenderer getControlsOverlayRenderer() {
         if (controlsOverlayRenderer == null) {
-            controlsOverlayRenderer = new ControlsOverlayRenderer(overlayLayoutHelper, new DrawContext() {
-                @Override
-                public void fillRect(int left, int top, int right, int bottom, int color) {
-                    PonderDebugScreen.this.drawRect(left, top, right, bottom, color);
-                }
-
-                @Override
-                public void drawString(String text, int x, int y, int color) {
-                    PonderDebugScreen.this.drawString(fontRenderer, text, x, y, color);
-                }
-
-                @Override
-                public void drawLineSegment(int startX, int startY, int endX, int endY, int color, float width) {
-                    PonderDebugScreen.this.drawLineSegment(startX, startY, endX, endY, color, width);
-                }
-
-                @Override
-                public int withAlpha(int color, float alpha) {
-                    return PonderDebugScreen.this.withAlpha(color, alpha);
-                }
-
-                @Override
-                public int blendColors(int baseColor, int accentColor, float accentWeight) {
-                    return PonderDebugScreen.this.blendColors(baseColor, accentColor, accentWeight);
-                }
-
-                @Override
-                public void renderItemStack(ItemStack stack, int x, int y) {
-                    net.minecraft.client.renderer.RenderHelper.enableGUIStandardItemLighting();
-                    mc.getRenderItem().renderItemAndEffectIntoGUI(stack, x, y);
-                    net.minecraft.client.renderer.RenderHelper.disableStandardItemLighting();
-                    GlStateManager.disableLighting();
-                }
-
-                @Override
-                public void drawHoveringText(List<String> textLines, int x, int y) {
-                    PonderDebugScreen.this.drawHoveringText(textLines, x, y);
-                }
-
-                @Override
-                public int getStringWidth(String text) {
-                    return fontRenderer.getStringWidth(text);
-                }
-
-                @Override
-                public void drawCenteredString(String text, int centerX, int y, int color) {
-                    PonderDebugScreen.this.drawCenteredString(fontRenderer, text, centerX, y, color);
-                }
-            });
+            controlsOverlayRenderer = new ControlsOverlayRenderer(overlayLayoutHelper, getOverlayDrawContext());
         }
         return controlsOverlayRenderer;
     }
 
     private ParticleOverlayRenderer getParticleOverlayRenderer() {
         if (particleOverlayRenderer == null) {
-            particleOverlayRenderer = new ParticleOverlayRenderer(overlayLayoutHelper, new DrawContext() {
-                @Override
-                public void fillRect(int left, int top, int right, int bottom, int color) {
-                    PonderDebugScreen.this.drawRect(left, top, right, bottom, color);
-                }
-
-                @Override
-                public void drawString(String text, int x, int y, int color) {
-                    PonderDebugScreen.this.drawString(fontRenderer, text, x, y, color);
-                }
-
-                @Override
-                public void drawLineSegment(int startX, int startY, int endX, int endY, int color, float width) {
-                    PonderDebugScreen.this.drawLineSegment(startX, startY, endX, endY, color, width);
-                }
-
-                @Override
-                public int withAlpha(int color, float alpha) {
-                    return PonderDebugScreen.this.withAlpha(color, alpha);
-                }
-
-                @Override
-                public int blendColors(int baseColor, int accentColor, float accentWeight) {
-                    return PonderDebugScreen.this.blendColors(baseColor, accentColor, accentWeight);
-                }
-
-                @Override
-                public void renderItemStack(ItemStack stack, int x, int y) {
-                    net.minecraft.client.renderer.RenderHelper.enableGUIStandardItemLighting();
-                    mc.getRenderItem().renderItemAndEffectIntoGUI(stack, x, y);
-                    net.minecraft.client.renderer.RenderHelper.disableStandardItemLighting();
-                    GlStateManager.disableLighting();
-                }
-
-                @Override
-                public void drawHoveringText(List<String> textLines, int x, int y) {
-                    PonderDebugScreen.this.drawHoveringText(textLines, x, y);
-                }
-
-                @Override
-                public int getStringWidth(String text) {
-                    return fontRenderer.getStringWidth(text);
-                }
-
-                @Override
-                public void drawCenteredString(String text, int centerX, int y, int color) {
-                    PonderDebugScreen.this.drawCenteredString(fontRenderer, text, centerX, y, color);
-                }
-            });
+            particleOverlayRenderer = new ParticleOverlayRenderer(overlayLayoutHelper, getOverlayDrawContext());
         }
         return particleOverlayRenderer;
     }
 
     private PoiOverlayRenderer getPoiOverlayRenderer() {
         if (poiOverlayRenderer == null) {
-            poiOverlayRenderer = new PoiOverlayRenderer(overlayLayoutHelper, new DrawContext() {
-                @Override
-                public void fillRect(int left, int top, int right, int bottom, int color) {
-                    PonderDebugScreen.this.drawRect(left, top, right, bottom, color);
-                }
-
-                @Override
-                public void drawString(String text, int x, int y, int color) {
-                    PonderDebugScreen.this.drawString(fontRenderer, text, x, y, color);
-                }
-
-                @Override
-                public void drawLineSegment(int startX, int startY, int endX, int endY, int color, float width) {
-                    PonderDebugScreen.this.drawLineSegment(startX, startY, endX, endY, color, width);
-                }
-
-                @Override
-                public int withAlpha(int color, float alpha) {
-                    return PonderDebugScreen.this.withAlpha(color, alpha);
-                }
-
-                @Override
-                public int blendColors(int baseColor, int accentColor, float accentWeight) {
-                    return PonderDebugScreen.this.blendColors(baseColor, accentColor, accentWeight);
-                }
-
-                @Override
-                public void renderItemStack(ItemStack stack, int x, int y) {
-                    net.minecraft.client.renderer.RenderHelper.enableGUIStandardItemLighting();
-                    mc.getRenderItem().renderItemAndEffectIntoGUI(stack, x, y);
-                    net.minecraft.client.renderer.RenderHelper.disableStandardItemLighting();
-                    GlStateManager.disableLighting();
-                }
-
-                @Override
-                public void drawHoveringText(List<String> textLines, int x, int y) {
-                    PonderDebugScreen.this.drawHoveringText(textLines, x, y);
-                }
-
-                @Override
-                public int getStringWidth(String text) {
-                    return fontRenderer.getStringWidth(text);
-                }
-
-                @Override
-                public void drawCenteredString(String text, int centerX, int y, int color) {
-                    PonderDebugScreen.this.drawCenteredString(fontRenderer, text, centerX, y, color);
-                }
-            });
+            poiOverlayRenderer = new PoiOverlayRenderer(overlayLayoutHelper, getOverlayDrawContext());
         }
         return poiOverlayRenderer;
     }

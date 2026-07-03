@@ -3,10 +3,10 @@ package net.createmod.ponder.foundation.ui;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.math.MathHelper;
+import net.createmod.ponder.foundation.ui.render.GLStateGuard;
 import org.lwjgl.opengl.GL11;
 
 public final class SpeechRenderer {
@@ -82,19 +82,16 @@ public final class SpeechRenderer {
         float r = ((color >>> 16) & 0xFF) / 255.0F;
         float g = ((color >>> 8) & 0xFF) / 255.0F;
         float b = (color & 0xFF) / 255.0F;
-        GlStateManager.disableTexture2D();
-        GlStateManager.enableBlend();
-        GlStateManager.disableAlpha();
-        GlStateManager.color(r, g, b, a);
-        GL11.glLineWidth(width);
-        GL11.glBegin(GL11.GL_LINES);
-        GL11.glVertex2f(startX + 0.5F, startY + 0.5F);
-        GL11.glVertex2f(endX + 0.5F, endY + 0.5F);
-        GL11.glEnd();
-        GL11.glLineWidth(1.0F);
-        GlStateManager.enableTexture2D();
-        GlStateManager.enableAlpha();
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        try (GLStateGuard textureDisabled = GLStateGuard.textureDisabled();
+             GLStateGuard blendEnabled = GLStateGuard.blendEnabled();
+             GLStateGuard alphaDisabled = GLStateGuard.alphaDisabled();
+             GLStateGuard lineWidth = GLStateGuard.lineWidth(width);
+             GLStateGuard colorGuard = GLStateGuard.color(r, g, b, a)) {
+            GL11.glBegin(GL11.GL_LINES);
+            GL11.glVertex2f(startX + 0.5F, startY + 0.5F);
+            GL11.glVertex2f(endX + 0.5F, endY + 0.5F);
+            GL11.glEnd();
+        }
     }
 
     // --- internal helpers ---
@@ -123,22 +120,20 @@ public final class SpeechRenderer {
         float eg = ((endColor >>> 8) & 0xFF) / 255.0F;
         float eb = (endColor & 0xFF) / 255.0F;
 
-        GlStateManager.disableTexture2D();
-        GlStateManager.enableBlend();
-        GlStateManager.disableAlpha();
-        GlStateManager.shadeModel(GL11.GL_SMOOTH);
         Tessellator t = Tessellator.getInstance();
         BufferBuilder buf = t.getBuffer();
-        buf.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
-        buf.pos(right, top, 0.0D).color(sr, sg, sb, sa).endVertex();
-        buf.pos(left, top, 0.0D).color(sr, sg, sb, sa).endVertex();
-        buf.pos(left, bottom, 0.0D).color(er, eg, eb, ea).endVertex();
-        buf.pos(right, bottom, 0.0D).color(er, eg, eb, ea).endVertex();
-        t.draw();
-        GlStateManager.shadeModel(GL11.GL_FLAT);
-        GlStateManager.enableTexture2D();
-        GlStateManager.enableAlpha();
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        try (GLStateGuard textureDisabled = GLStateGuard.textureDisabled();
+             GLStateGuard blendEnabled = GLStateGuard.blendEnabled();
+             GLStateGuard alphaDisabled = GLStateGuard.alphaDisabled();
+             GLStateGuard smoothShade = GLStateGuard.smoothShade();
+             GLStateGuard colorGuard = GLStateGuard.color(1.0F, 1.0F, 1.0F, 1.0F)) {
+            buf.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
+            buf.pos(right, top, 0.0D).color(sr, sg, sb, sa).endVertex();
+            buf.pos(left, top, 0.0D).color(sr, sg, sb, sa).endVertex();
+            buf.pos(left, bottom, 0.0D).color(er, eg, eb, ea).endVertex();
+            buf.pos(right, bottom, 0.0D).color(er, eg, eb, ea).endVertex();
+            t.draw();
+        }
     }
 
     private static void drawHorizontalGradientRect(int left, int top, int right, int bottom,
@@ -154,20 +149,18 @@ public final class SpeechRenderer {
 
         Tessellator t = Tessellator.getInstance();
         BufferBuilder buf = t.getBuffer();
-        GlStateManager.disableTexture2D();
-        GlStateManager.enableBlend();
-        GlStateManager.disableAlpha();
-        GlStateManager.shadeModel(GL11.GL_SMOOTH);
-        buf.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
-        buf.pos(right, top, 0.0D).color(rr, rg, rb, ra).endVertex();
-        buf.pos(left, top, 0.0D).color(lr, lg, lb, la).endVertex();
-        buf.pos(left, bottom, 0.0D).color(lr, lg, lb, la).endVertex();
-        buf.pos(right, bottom, 0.0D).color(rr, rg, rb, ra).endVertex();
-        t.draw();
-        GlStateManager.shadeModel(GL11.GL_FLAT);
-        GlStateManager.enableTexture2D();
-        GlStateManager.enableAlpha();
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        try (GLStateGuard textureDisabled = GLStateGuard.textureDisabled();
+             GLStateGuard blendEnabled = GLStateGuard.blendEnabled();
+             GLStateGuard alphaDisabled = GLStateGuard.alphaDisabled();
+             GLStateGuard smoothShade = GLStateGuard.smoothShade();
+             GLStateGuard colorGuard = GLStateGuard.color(1.0F, 1.0F, 1.0F, 1.0F)) {
+            buf.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
+            buf.pos(right, top, 0.0D).color(rr, rg, rb, ra).endVertex();
+            buf.pos(left, top, 0.0D).color(lr, lg, lb, la).endVertex();
+            buf.pos(left, bottom, 0.0D).color(lr, lg, lb, la).endVertex();
+            buf.pos(right, bottom, 0.0D).color(rr, rg, rb, ra).endVertex();
+            t.draw();
+        }
     }
 
     private static void drawFilledTriangle(int x1, int y1, int x2, int y2, int x3, int y3, int color) {
@@ -175,18 +168,16 @@ public final class SpeechRenderer {
         float r = ((color >>> 16) & 0xFF) / 255.0F;
         float g = ((color >>> 8) & 0xFF) / 255.0F;
         float b = (color & 0xFF) / 255.0F;
-        GlStateManager.disableTexture2D();
-        GlStateManager.enableBlend();
-        GlStateManager.disableAlpha();
-        GlStateManager.color(r, g, b, a);
-        GL11.glBegin(GL11.GL_TRIANGLES);
-        GL11.glVertex2f(x1 + 0.5F, y1 + 0.5F);
-        GL11.glVertex2f(x2 + 0.5F, y2 + 0.5F);
-        GL11.glVertex2f(x3 + 0.5F, y3 + 0.5F);
-        GL11.glEnd();
-        GlStateManager.enableTexture2D();
-        GlStateManager.enableAlpha();
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        try (GLStateGuard textureDisabled = GLStateGuard.textureDisabled();
+             GLStateGuard blendEnabled = GLStateGuard.blendEnabled();
+             GLStateGuard alphaDisabled = GLStateGuard.alphaDisabled();
+             GLStateGuard colorGuard = GLStateGuard.color(r, g, b, a)) {
+            GL11.glBegin(GL11.GL_TRIANGLES);
+            GL11.glVertex2f(x1 + 0.5F, y1 + 0.5F);
+            GL11.glVertex2f(x2 + 0.5F, y2 + 0.5F);
+            GL11.glVertex2f(x3 + 0.5F, y3 + 0.5F);
+            GL11.glEnd();
+        }
     }
 
     private static void drawSpeechDivot(int x, int y, int rotation, int accentColor, float fade) {

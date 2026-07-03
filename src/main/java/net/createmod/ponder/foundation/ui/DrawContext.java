@@ -7,6 +7,8 @@ import net.createmod.ponder.foundation.ui.render.RenderContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.renderer.RenderHelper;
+import net.minecraft.client.renderer.RenderItem;
 import net.minecraft.item.ItemStack;
 import org.lwjgl.opengl.GL11;
 
@@ -19,7 +21,6 @@ public interface DrawContext extends DebugDrawContext, RenderContext {
     void drawLineSegment(int startX, int startY, int endX, int endY, int color, float width);
     int withAlpha(int color, float alpha);
     int blendColors(int baseColor, int accentColor, float accentWeight);
-    void renderItemStack(ItemStack stack, int x, int y);
     void drawHoveringText(List<String> textLines, int x, int y);
     int getStringWidth(String text);
     void drawCenteredString(String text, int centerX, int y, int color);
@@ -78,6 +79,30 @@ public interface DrawContext extends DebugDrawContext, RenderContext {
     @Override
     default void drawLine(int startX, int startY, int endX, int endY, int color, float width) {
         drawLineSegment(startX, startY, endX, endY, color, width);
+    }
+
+    default void renderItemStack(ItemStack stack, int x, int y) {
+        if (stack == null || stack.isEmpty()) {
+            return;
+        }
+
+        Minecraft minecraft = Minecraft.getMinecraft();
+        if (minecraft == null) {
+            return;
+        }
+
+        RenderItem renderItem = minecraft.getRenderItem();
+        if (renderItem == null) {
+            return;
+        }
+
+        RenderHelper.enableGUIStandardItemLighting();
+        try {
+            renderItem.renderItemAndEffectIntoGUI(stack, x, y);
+        } finally {
+            RenderHelper.disableStandardItemLighting();
+            GlStateManager.disableLighting();
+        }
     }
 
     @Override
