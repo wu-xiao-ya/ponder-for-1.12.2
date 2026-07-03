@@ -10,6 +10,7 @@ import java.util.Map;
 import javax.annotation.Nullable;
 
 import net.createmod.ponder.foundation.PonderIndex;
+import net.createmod.ponder.foundation.PonderReloadReport;
 import net.createmod.ponder.foundation.PonderScene;
 import net.createmod.ponder.foundation.PonderScene.RecordedOperation;
 import net.createmod.ponder.foundation.PonderTag;
@@ -59,8 +60,8 @@ public class PonderCommand extends CommandBase {
         }
 
         if ("reload".equals(subCommand)) {
-            PonderIndex.reload();
-            sendSummary(sender, "Reloaded");
+            PonderReloadReport report = PonderIndex.reloadAndGetReport();
+            sendReloadSummary(sender, report);
             return;
         }
 
@@ -184,6 +185,10 @@ public class PonderCommand extends CommandBase {
         sender.sendMessage(new TextComponentString(prefix + " Ponder state: " + PonderIndex.getPluginCount()
             + " plugin(s), " + sceneEntries + " storyboard entry(ies), " + componentCount + " component(s), "
             + listedTags + " listed tag(s)"));
+    }
+
+    private void sendReloadSummary(ICommandSender sender, PonderReloadReport report) {
+        sender.sendMessage(new TextComponentString("Reloaded Ponder state: " + report.formatCounts()));
     }
 
     private Map<ResourceLocation, Integer> countScenesByComponent() {
