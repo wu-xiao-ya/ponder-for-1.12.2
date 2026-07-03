@@ -33,8 +33,7 @@ import org.lwjgl.opengl.GL11;
 
 public final class SandboxTriggeredBlockGuiSnapshot implements SnapshotRenderer.GuiSnapshotRenderer {
 
-    private static final BlockPos SANDBOX_POS = new BlockPos(1000000, 200, 1000000);
-    private static final int CAPTURE_TIMEOUT_TICKS = 40;
+    static final BlockPos SANDBOX_POS = new BlockPos(1000000, 200, 1000000);
     private static final List<SandboxTriggeredBlockGuiSnapshot> INSTANCES =
         new ArrayList<SandboxTriggeredBlockGuiSnapshot>();
     private static final Map<String, SandboxTriggeredBlockGuiSnapshot> BY_BLOCK =
@@ -48,18 +47,10 @@ public final class SandboxTriggeredBlockGuiSnapshot implements SnapshotRenderer.
     private final ResourceLocation blockId;
     private final int meta;
     private final String cacheKey;
+    private final SandboxGuiCaptureSession captureSession = new SandboxGuiCaptureSession(this);
 
     @Nullable
     private GuiScreen capturedGui;
-    private boolean captureInProgress;
-    private boolean captureArmed;
-    private int captureTimeout;
-    @Nullable
-    private ClientBlockState originalClientState;
-    @Nullable
-    private ServerBlockState originalServerState;
-    @Nullable
-    private NBTTagCompound sandboxTileNbt;
     @Nullable
     private final NBTTagCompound requestedTileNbt;
 
@@ -103,8 +94,8 @@ public final class SandboxTriggeredBlockGuiSnapshot implements SnapshotRenderer.
             return;
         }
 
-        if (capturedGui == null && !captureInProgress) {
-            beginCapture(mc);
+        if (capturedGui == null && !captureSession.isCaptureInProgress()) {
+            captureSession.beginCapture(mc);
         }
 
         if (capturedGui == null) {
@@ -116,78 +107,17 @@ public final class SandboxTriggeredBlockGuiSnapshot implements SnapshotRenderer.
 
     public static void onClientTickAll() {
         for (SandboxTriggeredBlockGuiSnapshot instance : INSTANCES) {
-            instance.onClientTick();
+            instance.captureSession.onClientTick();
         }
     }
 
     public static void onGuiOpenAll(GuiOpenEvent event) {
         for (SandboxTriggeredBlockGuiSnapshot instance : INSTANCES) {
-            instance.onGuiOpen(event);
+            instance.captureSession.onGuiOpen(event);
             if (event.getGui() == null) {
                 return;
             }
         }
-    }
-
-    private void onClientTick() {
-        if (!captureInProgress) {
-            return;
-        }
-
-        Minecraft mc = Minecraft.getMinecraft();
-        if (capturedGui == null && mc != null && mc.currentScreen != null
-            && !(mc.currentScreen instanceof PonderUI)
-            && !(mc.currentScreen instanceof PonderDebugScreen)
-            && !(mc.currentScreen instanceof PonderIndexScreen)
-            && !(mc.currentScreen instanceof PonderTagScreen)) {
-            capturedGui = mc.currentScreen;
-            mc.displayGuiScreen(null);
-            cleanupCapture(mc);
-            return;
-        }
-
-        if (--captureTimeout <= 0) {
-            Ponder.LOGGER.warn("Sandbox gui capture timed out for {}", blockId);
-            cleanupCapture(mc);
-        }
-    }
-
-    private void onGuiOpen(GuiOpenEvent event) {
-        if (!captureInProgress || !captureArmed) {
-            return;
-        }
-
-        GuiScreen gui = event.getGui();
-        if (gui == null) {
-            return;
-        }
-        if (gui instanceof PonderUI || gui instanceof PonderDebugScreen
-            || gui instanceof PonderIndexScreen || gui instanceof PonderTagScreen) {
-            return;
-        }
-
-        capturedGui = gui;
-        captureArmed = false;
-        event.setGui(null);
-        cleanupCapture(Minecraft.getMinecraft());
-    }
-
-    private void beginCapture(Minecraft mc) {
-        IntegratedServer server = mc.getIntegratedServer();
-        if (server == null || mc.player == null || mc.world == null) {
-            return;
-        }
-
-        captureInProgress = true;
-        captureArmed = false;
-        captureTimeout = CAPTURE_TIMEOUT_TICKS;
-        capturedGui = null;
-        sandboxTileNbt = null;
-        originalClientState = rememberClientState(mc);
-        originalServerState = prepareServerSandbox(server, mc.player.getUniqueID());
-        injectClientSandbox(mc);
-        captureArmed = true;
-        triggerServerOpen(server, mc.player.getUniqueID());
     }
 
     private void renderCapturedGui(Minecraft mc, int x, int y, int width, int height, float currentTick) {
@@ -212,14 +142,26 @@ public final class SandboxTriggeredBlockGuiSnapshot implements SnapshotRenderer.
         }
     }
 
-    private ClientBlockState rememberClientState(Minecraft mc) {
+    boolean hasCapturedGui() {
+        return capturedGui != null;
+    }
+
+    void setCapturedGui(@Nullable GuiScreen capturedGui) {
+        this.capturedGui = capturedGui;
+    }
+
+    void logCaptureTimeout() {
+        Ponder.LOGGER.warn("Sandbox gui capture timed out for {}", blockId);
+    }
+
+    ClientBlockState rememberClientState(Minecraft mc) {
         IBlockState state = mc.world.getBlockState(SANDBOX_POS);
         TileEntity tile = mc.world.getTileEntity(SANDBOX_POS);
         NBTTagCompound nbt = tile == null ? null : tile.writeToNBT(new NBTTagCompound());
         return new ClientBlockState(state, nbt);
     }
 
-    private void injectClientSandbox(Minecraft mc) {
+    void injectClientSandbox(Minecraft mc, @Nullable NBTTagCompound sandboxTileNbt) {
         IBlockState state = createSandboxState();
         if (state == null) {
             return;
@@ -229,7 +171,8 @@ public final class SandboxTriggeredBlockGuiSnapshot implements SnapshotRenderer.
     }
 
     @Nullable
-    private ServerBlockState prepareServerSandbox(IntegratedServer server, UUID playerId) {
+    ServerBlockState prepareServerSandbox(IntegratedServer server, UUID playerId,
+        SandboxGuiCaptureSession captureSession) {
         EntityPlayerMP player = server.getPlayerList().getPlayerByUUID(playerId);
         if (player == null) {
             return null;
@@ -247,14 +190,15 @@ public final class SandboxTriggeredBlockGuiSnapshot implements SnapshotRenderer.
         TileEntity sandboxTile = world.getTileEntity(SANDBOX_POS);
         if (sandboxTile != null) {
             seedSandboxTile(sandboxTile);
-            sandboxTileNbt = sandboxTile.writeToNBT(new NBTTagCompound());
+            NBTTagCompound sandboxTileNbt = sandboxTile.writeToNBT(new NBTTagCompound());
+            captureSession.setSandboxTileNbt(sandboxTileNbt);
             if (requestedTileNbt != null) {
                 mergeNbt(sandboxTileNbt, requestedTileNbt);
                 sandboxTile.readFromNBT(sandboxTileNbt);
-                sandboxTileNbt = sandboxTile.writeToNBT(new NBTTagCompound());
+                captureSession.setSandboxTileNbt(sandboxTile.writeToNBT(new NBTTagCompound()));
             }
         } else {
-            sandboxTileNbt = null;
+            captureSession.setSandboxTileNbt(null);
         }
         return new ServerBlockState(world.provider.getDimension(), state, nbt);
     }
@@ -281,7 +225,7 @@ public final class SandboxTriggeredBlockGuiSnapshot implements SnapshotRenderer.
         }
     }
 
-    private void triggerServerOpen(IntegratedServer server, final UUID playerId) {
+    void triggerServerOpen(IntegratedServer server, final UUID playerId) {
         server.addScheduledTask(new Runnable() {
             @Override
             public void run() {
@@ -296,79 +240,6 @@ public final class SandboxTriggeredBlockGuiSnapshot implements SnapshotRenderer.
                         EnumFacing.UP, 0.5F, 0.5F, 0.5F);
                 } catch (Throwable throwable) {
                     Ponder.LOGGER.warn("Sandbox gui trigger failed for {}", blockId, throwable);
-                }
-            }
-        });
-    }
-
-    private void cleanupCapture(@Nullable Minecraft mc) {
-        captureInProgress = false;
-        captureArmed = false;
-        captureTimeout = 0;
-
-        if (mc != null && mc.player != null) {
-            try {
-                mc.player.closeScreen();
-            } catch (Throwable ignored) {
-            }
-        }
-
-        restoreClientSandbox(mc);
-        restoreServerSandbox(mc == null ? null : mc.getIntegratedServer(),
-            mc == null || mc.player == null ? null : mc.player.getUniqueID());
-    }
-
-    private void restoreClientSandbox(@Nullable Minecraft mc) {
-        if (mc == null || mc.world == null || originalClientState == null) {
-            return;
-        }
-        mc.world.setBlockState(SANDBOX_POS, originalClientState.state(), 3);
-        if (originalClientState.nbt() == null) {
-            mc.world.removeTileEntity(SANDBOX_POS);
-        } else {
-            TileEntity tile = TileEntity.create(mc.world, originalClientState.nbt());
-            if (tile != null) {
-                tile.setPos(SANDBOX_POS);
-                tile.setWorld(mc.world);
-                mc.world.setTileEntity(SANDBOX_POS, tile);
-            }
-        }
-        originalClientState = null;
-        sandboxTileNbt = null;
-    }
-
-    private void restoreServerSandbox(@Nullable IntegratedServer server, @Nullable UUID playerId) {
-        if (server == null || playerId == null || originalServerState == null) {
-            return;
-        }
-        var restore = originalServerState;
-        originalServerState = null;
-        server.addScheduledTask(new Runnable() {
-            @Override
-            public void run() {
-                EntityPlayerMP player = server.getPlayerList().getPlayerByUUID(playerId);
-                if (player == null) {
-                    return;
-                }
-                try {
-                    player.closeScreen();
-                    player.closeContainer();
-                } catch (Throwable ignored) {
-                }
-                WorldServer world = server.getWorld(restore.dimension());
-                if (world == null) {
-                    return;
-                }
-                world.setBlockState(SANDBOX_POS, restore.state(), 3);
-                if (restore.nbt() == null) {
-                    world.removeTileEntity(SANDBOX_POS);
-                } else {
-                    TileEntity tile = TileEntity.create(world, restore.nbt());
-                    if (tile != null) {
-                        tile.setPos(SANDBOX_POS);
-                        tile.setWorld(world);
-                        world.setTileEntity(SANDBOX_POS, tile);
-                    }
                 }
             }
         });
