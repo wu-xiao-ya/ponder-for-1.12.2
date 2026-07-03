@@ -1,7 +1,6 @@
 package net.createmod.ponder.foundation.ui;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -9,7 +8,6 @@ import java.util.List;
 import net.createmod.ponder.Ponder;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.IInventory;
@@ -205,20 +203,20 @@ final class EmbeddedReflectiveTabGuiSnapshot implements SnapshotRenderer.GuiSnap
             context.screenWidth = guiWidth;
             context.screenHeight = guiHeight;
         } else {
-            refreshGuiReferences(gui, mc, guiWidth, guiHeight);
+            SnapshotGuiLayoutHelper.refreshGuiReferences(gui, mc, guiWidth, guiHeight);
         }
 
-        Object tab = getFieldValue(gui, tabFieldName);
+        Object tab = SnapshotGuiReflectionHelper.getFieldValue(gui, tabFieldName);
         if (tab == null) {
             disabled = true;
             return;
         }
-        invokeBoolean(tab, "setVisible", true);
-        invokeNoArg(tab, "setFullyOpen");
-        invokeNoArg(tab, "update");
+        SnapshotGuiReflectionHelper.invokeBoolean(tab, "setVisible", true);
+        SnapshotGuiReflectionHelper.invokeNoArg(tab, "setFullyOpen");
+        SnapshotGuiReflectionHelper.invokeNoArg(tab, "update");
 
-        int guiLeft = getIntField(gui, "guiLeft", "field_147003_i");
-        int guiTop = getIntField(gui, "guiTop", "field_147009_r");
+        int guiLeft = SnapshotGuiReflectionHelper.getIntField(gui, "guiLeft", "field_147003_i");
+        int guiTop = SnapshotGuiReflectionHelper.getIntField(gui, "guiTop", "field_147009_r");
         Rect tabBounds = getTabBounds(tab);
         if (tabBounds == null) {
             disabled = true;
@@ -227,16 +225,16 @@ final class EmbeddedReflectiveTabGuiSnapshot implements SnapshotRenderer.GuiSnap
 
         int tabOffsetX = tabBounds.x() - guiLeft;
         int tabOffsetY = tabBounds.y() - guiTop;
-        setGuiContainerPosition(gui, x - tabOffsetX, y - tabOffsetY);
-        invokeBoolean(tab, "setVisible", true);
-        invokeNoArg(tab, "setFullyOpen");
-        invokeNoArg(tab, "update");
+        SnapshotGuiLayoutHelper.setGuiContainerPosition(gui, x - tabOffsetX, y - tabOffsetY);
+        SnapshotGuiReflectionHelper.invokeBoolean(tab, "setVisible", true);
+        SnapshotGuiReflectionHelper.invokeNoArg(tab, "setFullyOpen");
+        SnapshotGuiReflectionHelper.invokeNoArg(tab, "update");
 
         GlStateManager.pushMatrix();
         GlStateManager.enableBlend();
         GlStateManager.enableAlpha();
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-        enableSnapshotScissor(mc, x, y, width, height);
+        SnapshotGuiLayoutHelper.enableSnapshotScissor(mc, x, y, width, height);
         try {
             gui.drawScreen(-1000, -1000, currentTick);
             GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
@@ -253,44 +251,16 @@ final class EmbeddedReflectiveTabGuiSnapshot implements SnapshotRenderer.GuiSnap
             if (bounds == null) {
                 return null;
             }
-            Object x = getFieldValue(bounds, "x");
-            Object y = getFieldValue(bounds, "y");
-            Object w = getFieldValue(bounds, "w");
-            Object h = getFieldValue(bounds, "h");
+            Object x = SnapshotGuiReflectionHelper.getFieldValue(bounds, "x");
+            Object y = SnapshotGuiReflectionHelper.getFieldValue(bounds, "y");
+            Object w = SnapshotGuiReflectionHelper.getFieldValue(bounds, "w");
+            Object h = SnapshotGuiReflectionHelper.getFieldValue(bounds, "h");
             if (x instanceof Integer xi && y instanceof Integer yi && w instanceof Integer wi && h instanceof Integer hi) {
                 return new Rect(xi, yi, wi, hi);
             }
         } catch (Throwable ignored) {
         }
         return null;
-    }
-
-    private void refreshGuiReferences(GuiScreen gui, Minecraft mc, int width, int height) {
-        setPossibleField(gui, "mc", mc);
-        setPossibleField(gui, "field_146297_k", mc);
-        setPossibleField(gui, "fontRenderer", mc.fontRenderer);
-        setPossibleField(gui, "field_146289_q", mc.fontRenderer);
-        setPossibleField(gui, "itemRender", mc.getRenderItem());
-        setPossibleField(gui, "field_146296_j", mc.getRenderItem());
-        setPossibleField(gui, "width", Integer.valueOf(width));
-        setPossibleField(gui, "field_146294_l", Integer.valueOf(width));
-        setPossibleField(gui, "height", Integer.valueOf(height));
-        setPossibleField(gui, "field_146295_m", Integer.valueOf(height));
-    }
-
-    private void setGuiContainerPosition(GuiScreen gui, int x, int y) {
-        setPossibleField(gui, "guiLeft", Integer.valueOf(x));
-        setPossibleField(gui, "field_147003_i", Integer.valueOf(x));
-        setPossibleField(gui, "guiTop", Integer.valueOf(y));
-        setPossibleField(gui, "field_147009_r", Integer.valueOf(y));
-    }
-
-    private void enableSnapshotScissor(Minecraft mc, int x, int y, int width, int height) {
-        ScaledResolution resolution = new ScaledResolution(mc);
-        int scaleFactor = resolution.getScaleFactor();
-        GL11.glEnable(GL11.GL_SCISSOR_TEST);
-        GL11.glScissor(x * scaleFactor, mc.displayHeight - (y + height) * scaleFactor, width * scaleFactor,
-            height * scaleFactor);
     }
 
     private void seedInventory(TileEntity tile) {
@@ -345,63 +315,6 @@ final class EmbeddedReflectiveTabGuiSnapshot implements SnapshotRenderer.GuiSnap
             Method setSlot = tile.getClass().getMethod("func_70299_a", int.class, ItemStack.class);
             setSlot.invoke(tile, Integer.valueOf(slot), ItemStack.EMPTY);
         } catch (Throwable ignored) {
-        }
-    }
-
-    private Object getFieldValue(Object target, String fieldName) {
-        Class<?> current = target.getClass();
-        while (current != null) {
-            try {
-                Field field = current.getDeclaredField(fieldName);
-                field.setAccessible(true);
-                return field.get(target);
-            } catch (NoSuchFieldException ignored) {
-                current = current.getSuperclass();
-            } catch (Throwable ignored) {
-                return null;
-            }
-        }
-        return null;
-    }
-
-    private int getIntField(Object target, String primaryField, String secondaryField) {
-        Object primary = getFieldValue(target, primaryField);
-        if (primary instanceof Integer pi) {
-            return pi;
-        }
-        Object secondary = getFieldValue(target, secondaryField);
-        return secondary instanceof Integer si ? si : 0;
-    }
-
-    private void invokeNoArg(Object target, String methodName) {
-        try {
-            Method method = target.getClass().getMethod(methodName);
-            method.invoke(target);
-        } catch (Throwable ignored) {
-        }
-    }
-
-    private void invokeBoolean(Object target, String methodName, boolean value) {
-        try {
-            Method method = target.getClass().getMethod(methodName, boolean.class);
-            method.invoke(target, Boolean.valueOf(value));
-        } catch (Throwable ignored) {
-        }
-    }
-
-    private void setPossibleField(Object target, String fieldName, Object value) {
-        Class<?> current = target.getClass();
-        while (current != null) {
-            try {
-                Field field = current.getDeclaredField(fieldName);
-                field.setAccessible(true);
-                field.set(target, value);
-                return;
-            } catch (NoSuchFieldException ignored) {
-                current = current.getSuperclass();
-            } catch (Throwable ignored) {
-                return;
-            }
         }
     }
 

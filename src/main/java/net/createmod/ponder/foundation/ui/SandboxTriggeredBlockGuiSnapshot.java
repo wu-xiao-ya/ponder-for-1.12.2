@@ -1,12 +1,12 @@
 package net.createmod.ponder.foundation.ui;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.lang.reflect.Method;
 
 import javax.annotation.Nullable;
 
@@ -15,7 +15,6 @@ import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
@@ -29,7 +28,6 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.client.event.GuiOpenEvent;
-import org.lwjgl.opengl.GL11;
 
 public final class SandboxTriggeredBlockGuiSnapshot implements SnapshotRenderer.GuiSnapshotRenderer {
 
@@ -125,19 +123,19 @@ public final class SandboxTriggeredBlockGuiSnapshot implements SnapshotRenderer.
         int guiWidth = x * 2 + width;
         int guiHeight = y * 2 + height;
         gui.setWorldAndResolution(mc, guiWidth, guiHeight);
-        refreshGuiReferences(gui, mc, guiWidth, guiHeight);
-        setGuiContainerPosition(gui, x, y);
+        SnapshotGuiLayoutHelper.refreshGuiReferences(gui, mc, guiWidth, guiHeight);
+        SnapshotGuiLayoutHelper.setGuiContainerPosition(gui, x, y);
 
         net.minecraft.client.renderer.GlStateManager.pushMatrix();
         net.minecraft.client.renderer.GlStateManager.enableBlend();
         net.minecraft.client.renderer.GlStateManager.enableAlpha();
         net.minecraft.client.renderer.GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-        enableSnapshotScissor(mc, x, y, width, height);
+        SnapshotGuiLayoutHelper.enableSnapshotScissor(mc, x, y, width, height);
         try {
             gui.drawScreen(-1000, -1000, currentTick);
             net.minecraft.client.renderer.GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         } finally {
-            GL11.glDisable(GL11.GL_SCISSOR_TEST);
+            org.lwjgl.opengl.GL11.glDisable(org.lwjgl.opengl.GL11.GL_SCISSOR_TEST);
             net.minecraft.client.renderer.GlStateManager.popMatrix();
         }
     }
@@ -302,50 +300,6 @@ public final class SandboxTriggeredBlockGuiSnapshot implements SnapshotRenderer.
             Method setField = tile.getClass().getMethod("func_174885_b", int.class, int.class);
             setField.invoke(tile, Integer.valueOf(fieldId), Integer.valueOf(value));
         } catch (Throwable ignored) {
-        }
-    }
-
-    private void refreshGuiReferences(GuiScreen gui, Minecraft mc, int width, int height) {
-        setPossibleField(gui, "mc", mc);
-        setPossibleField(gui, "field_146297_k", mc);
-        setPossibleField(gui, "fontRenderer", mc.fontRenderer);
-        setPossibleField(gui, "field_146289_q", mc.fontRenderer);
-        setPossibleField(gui, "itemRender", mc.getRenderItem());
-        setPossibleField(gui, "field_146296_j", mc.getRenderItem());
-        setPossibleField(gui, "width", Integer.valueOf(width));
-        setPossibleField(gui, "field_146294_l", Integer.valueOf(width));
-        setPossibleField(gui, "height", Integer.valueOf(height));
-        setPossibleField(gui, "field_146295_m", Integer.valueOf(height));
-    }
-
-    private void setGuiContainerPosition(GuiScreen gui, int x, int y) {
-        setPossibleField(gui, "guiLeft", Integer.valueOf(x));
-        setPossibleField(gui, "field_147003_i", Integer.valueOf(x));
-        setPossibleField(gui, "guiTop", Integer.valueOf(y));
-        setPossibleField(gui, "field_147009_r", Integer.valueOf(y));
-    }
-
-    private void enableSnapshotScissor(Minecraft mc, int x, int y, int width, int height) {
-        ScaledResolution resolution = new ScaledResolution(mc);
-        int scaleFactor = resolution.getScaleFactor();
-        GL11.glEnable(GL11.GL_SCISSOR_TEST);
-        GL11.glScissor(x * scaleFactor, mc.displayHeight - (y + height) * scaleFactor, width * scaleFactor,
-            height * scaleFactor);
-    }
-
-    private void setPossibleField(Object target, String fieldName, Object value) {
-        Class<?> current = target.getClass();
-        while (current != null) {
-            try {
-                java.lang.reflect.Field field = current.getDeclaredField(fieldName);
-                field.setAccessible(true);
-                field.set(target, value);
-                return;
-            } catch (NoSuchFieldException ignored) {
-                current = current.getSuperclass();
-            } catch (Throwable ignored) {
-                return;
-            }
         }
     }
 
