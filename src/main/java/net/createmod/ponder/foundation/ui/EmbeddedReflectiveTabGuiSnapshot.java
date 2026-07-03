@@ -8,12 +8,10 @@ import java.util.List;
 import net.createmod.ponder.Ponder;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
-import org.lwjgl.opengl.GL11;
 
 final class EmbeddedReflectiveTabGuiSnapshot implements SnapshotRenderer.GuiSnapshotRenderer {
 
@@ -229,18 +227,9 @@ final class EmbeddedReflectiveTabGuiSnapshot implements SnapshotRenderer.GuiSnap
         SnapshotGuiReflectionHelper.invokeNoArg(tab, "setFullyOpen");
         SnapshotGuiReflectionHelper.invokeNoArg(tab, "update");
 
-        GlStateManager.pushMatrix();
-        GlStateManager.enableBlend();
-        GlStateManager.enableAlpha();
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-        SnapshotGuiLayoutHelper.enableSnapshotScissor(mc, x, y, width, height);
-        try {
+        SnapshotGuiLayoutHelper.renderSnapshotFrame(mc, x, y, width, height, () -> {
             gui.drawScreen(-1000, -1000, currentTick);
-            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-        } finally {
-            GL11.glDisable(GL11.GL_SCISSOR_TEST);
-            GlStateManager.popMatrix();
-        }
+        });
     }
 
     private Rect getTabBounds(Object tab) {

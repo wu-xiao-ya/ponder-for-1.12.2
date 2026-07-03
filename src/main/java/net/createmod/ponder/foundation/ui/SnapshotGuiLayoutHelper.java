@@ -1,9 +1,9 @@
 package net.createmod.ponder.foundation.ui;
 
+import net.createmod.ponder.foundation.ui.render.GLStateGuard;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.gui.ScaledResolution;
-import org.lwjgl.opengl.GL11;
+import net.minecraft.client.renderer.GlStateManager;
 
 final class SnapshotGuiLayoutHelper {
 
@@ -30,11 +30,15 @@ final class SnapshotGuiLayoutHelper {
         SnapshotGuiReflectionHelper.setPossibleField(gui, "field_147009_r", Integer.valueOf(y));
     }
 
-    static void enableSnapshotScissor(Minecraft mc, int x, int y, int width, int height) {
-        ScaledResolution resolution = new ScaledResolution(mc);
-        int scaleFactor = resolution.getScaleFactor();
-        GL11.glEnable(GL11.GL_SCISSOR_TEST);
-        GL11.glScissor(x * scaleFactor, mc.displayHeight - (y + height) * scaleFactor, width * scaleFactor,
-            height * scaleFactor);
+    static void renderSnapshotFrame(Minecraft mc, int x, int y, int width, int height, Runnable drawAction) {
+        try (GLStateGuard matrixGuard = GLStateGuard.matrix()) {
+            GlStateManager.enableBlend();
+            GlStateManager.enableAlpha();
+            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+            try (GLStateGuard scissorGuard = GLStateGuard.scissor(mc, x, y, width, height)) {
+                drawAction.run();
+                GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+            }
+        }
     }
 }

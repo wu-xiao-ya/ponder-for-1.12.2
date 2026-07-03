@@ -125,18 +125,9 @@ public final class SandboxTriggeredBlockGuiSnapshot implements SnapshotRenderer.
         SnapshotGuiLayoutHelper.refreshGuiReferences(gui, mc, guiWidth, guiHeight);
         SnapshotGuiLayoutHelper.setGuiContainerPosition(gui, x, y);
 
-        net.minecraft.client.renderer.GlStateManager.pushMatrix();
-        net.minecraft.client.renderer.GlStateManager.enableBlend();
-        net.minecraft.client.renderer.GlStateManager.enableAlpha();
-        net.minecraft.client.renderer.GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-        SnapshotGuiLayoutHelper.enableSnapshotScissor(mc, x, y, width, height);
-        try {
+        SnapshotGuiLayoutHelper.renderSnapshotFrame(mc, x, y, width, height, () -> {
             gui.drawScreen(-1000, -1000, currentTick);
-            net.minecraft.client.renderer.GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-        } finally {
-            org.lwjgl.opengl.GL11.glDisable(org.lwjgl.opengl.GL11.GL_SCISSOR_TEST);
-            net.minecraft.client.renderer.GlStateManager.popMatrix();
-        }
+        });
     }
 
     boolean hasCapturedGui() {

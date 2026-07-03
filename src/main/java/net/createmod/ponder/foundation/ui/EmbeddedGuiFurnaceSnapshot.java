@@ -3,10 +3,8 @@ package net.createmod.ponder.foundation.ui;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.inventory.GuiFurnace;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.tileentity.TileEntityFurnace;
-import org.lwjgl.opengl.GL11;
 
 final class EmbeddedGuiFurnaceSnapshot implements SnapshotRenderer.GuiSnapshotRenderer {
 
@@ -89,20 +87,9 @@ final class EmbeddedGuiFurnaceSnapshot implements SnapshotRenderer.GuiSnapshotRe
             this.height = mc.displayHeight;
             this.guiLeft = x;
             this.guiTop = y;
-            enableSnapshotScissor(mc, x, y, this.xSize, this.ySize);
-            try {
+            SnapshotGuiLayoutHelper.renderSnapshotFrame(mc, x, y, this.xSize, this.ySize, () -> {
                 this.drawScreen(-1000, -1000, partialTicks);
-            } finally {
-                GL11.glDisable(GL11.GL_SCISSOR_TEST);
-            }
-        }
-
-        private void enableSnapshotScissor(Minecraft mc, int x, int y, int width, int height) {
-            ScaledResolution resolution = new ScaledResolution(mc);
-            int scaleFactor = resolution.getScaleFactor();
-            GL11.glEnable(GL11.GL_SCISSOR_TEST);
-            GL11.glScissor(x * scaleFactor, mc.displayHeight - (y + height) * scaleFactor, width * scaleFactor,
-                height * scaleFactor);
+            });
         }
     }
 }
