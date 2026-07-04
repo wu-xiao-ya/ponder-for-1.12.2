@@ -38,49 +38,57 @@ public final class GuiOverlayRenderer {
             SceneProjectionContext.of(scene, sceneBounds, layout, currentTick, projector);
         List<GuiOverlayPlacement> guiPlacements = PonderOverlayHelper.computeActiveGuiOverlayPlacements(context);
         for (GuiOverlayPlacement placement : guiPlacements) {
-            PonderScene.OverlayEvent overlayEvent = placement.overlayEvent();
-            float overlayFade = PonderOverlayHelper.computeOverlayFade(
-                overlayEvent.getTick(), overlayEvent.getDuration(), currentTick) * fade;
-            if (overlayFade <= 0.0F) {
-                continue;
-            }
-
-            if (overlayEvent.isFramed()) {
-                drawGuiTexturePanel(placement.panelX(), placement.panelY(), placement.panelWidth(), placement.panelHeight(),
-                    overlayEvent.getColor(), overlayFade);
-            }
-
-            if (overlayEvent.isFramed() && overlayEvent.isConnectorVisible() && placement.targetPoint() != null) {
-                int startX = placement.panelX() + placement.panelWidth() / 2;
-                int startY = placement.aboveTarget() ? placement.panelY() + placement.panelHeight() : placement.panelY();
-                drawCaptionConnector(startX, startY, placement.targetPoint().x, placement.targetPoint().y,
-                    overlayEvent.getColor(), overlayFade * 0.85F);
-            }
-
-            Snapshot snapshot = overlayEvent.getGuiSnapshotId() == null ? null
-                : PonderGuiSnapshotRegistry.get(overlayEvent.getGuiSnapshotId(), currentTick);
-            if (snapshot != null && snapshot.renderer != null) {
-                renderSnapshotOverlay(snapshot, placement, currentTick, overlayFade);
-            } else {
-                renderTextureOverlay(placement, overlayEvent, overlayFade);
-            }
+            renderGuiOverlayPlacement(placement, currentTick, fade);
         }
 
         List<GuiHighlightPlacement> highlightPlacements =
             PonderOverlayHelper.computeActiveGuiHighlightPlacements(context, guiPlacements);
         for (GuiHighlightPlacement placement : highlightPlacements) {
-            PonderScene.OverlayEvent overlayEvent = placement.overlayEvent();
-            float overlayFade = PonderOverlayHelper.computeOverlayFade(
-                overlayEvent.getTick(), overlayEvent.getDuration(), currentTick) * fade;
-            if (overlayFade <= 0.0F) {
-                continue;
-            }
-            drawGuiHighlight(placement.rectX(), placement.rectY(), placement.rectWidth(), placement.rectHeight(),
-                overlayEvent.getColor(), overlayFade);
+            renderGuiHighlightPlacement(placement, currentTick, fade);
         }
     }
 
     // -- overlay drawing primitives -- //
+
+    private void renderGuiOverlayPlacement(GuiOverlayPlacement placement, float currentTick, float fade) {
+        PonderScene.OverlayEvent overlayEvent = placement.overlayEvent();
+        float overlayFade = PonderOverlayHelper.computeOverlayFade(
+            overlayEvent.getTick(), overlayEvent.getDuration(), currentTick) * fade;
+        if (overlayFade <= 0.0F) {
+            return;
+        }
+
+        if (overlayEvent.isFramed()) {
+            drawGuiTexturePanel(placement.panelX(), placement.panelY(), placement.panelWidth(), placement.panelHeight(),
+                overlayEvent.getColor(), overlayFade);
+        }
+
+        if (overlayEvent.isFramed() && overlayEvent.isConnectorVisible() && placement.targetPoint() != null) {
+            int startX = placement.panelX() + placement.panelWidth() / 2;
+            int startY = placement.aboveTarget() ? placement.panelY() + placement.panelHeight() : placement.panelY();
+            drawCaptionConnector(startX, startY, placement.targetPoint().x, placement.targetPoint().y,
+                overlayEvent.getColor(), overlayFade * 0.85F);
+        }
+
+        Snapshot snapshot = overlayEvent.getGuiSnapshotId() == null ? null
+            : PonderGuiSnapshotRegistry.get(overlayEvent.getGuiSnapshotId(), currentTick);
+        if (snapshot != null && snapshot.renderer != null) {
+            renderSnapshotOverlay(snapshot, placement, currentTick, overlayFade);
+        } else {
+            renderTextureOverlay(placement, overlayEvent, overlayFade);
+        }
+    }
+
+    private void renderGuiHighlightPlacement(GuiHighlightPlacement placement, float currentTick, float fade) {
+        PonderScene.OverlayEvent overlayEvent = placement.overlayEvent();
+        float overlayFade = PonderOverlayHelper.computeOverlayFade(
+            overlayEvent.getTick(), overlayEvent.getDuration(), currentTick) * fade;
+        if (overlayFade <= 0.0F) {
+            return;
+        }
+        drawGuiHighlight(placement.rectX(), placement.rectY(), placement.rectWidth(), placement.rectHeight(),
+            overlayEvent.getColor(), overlayFade);
+    }
 
     private void renderSnapshotOverlay(Snapshot snapshot, GuiOverlayPlacement placement, float currentTick,
         float overlayFade) {
