@@ -60,28 +60,9 @@ public final class GuiOverlayRenderer {
             Snapshot snapshot = overlayEvent.getGuiSnapshotId() == null ? null
                 : PonderGuiSnapshotRegistry.get(overlayEvent.getGuiSnapshotId(), currentTick);
             if (snapshot != null && snapshot.renderer != null) {
-                GlStateManager.enableTexture2D();
-                GlStateManager.enableBlend();
-                GlStateManager.enableAlpha();
-                try (GLStateGuard colorGuard = GLStateGuard.color(1.0F, 1.0F, 1.0F, overlayFade)) {
-                    snapshot.renderer.render(placement.drawX(), placement.drawY(), placement.drawWidth(), placement.drawHeight(),
-                        currentTick, overlayFade);
-                }
+                renderSnapshotOverlay(snapshot, placement, currentTick, overlayFade);
             } else {
-                mc.getTextureManager().bindTexture(overlayEvent.getTextureLocation());
-                GlStateManager.enableBlend();
-                GlStateManager.enableAlpha();
-                try (GLStateGuard colorGuard = GLStateGuard.color(1.0F, 1.0F, 1.0F, overlayFade)) {
-                    if (overlayEvent.isStretchTexture()) {
-                        drawStretchGuiTexture(placement, overlayEvent);
-                    } else {
-                        CompatGuiScreen.drawScaledCustomSizeModalRect(placement.drawX(), placement.drawY(),
-                            overlayEvent.getTextureU(), overlayEvent.getTextureV(),
-                            overlayEvent.getRegionWidth(), overlayEvent.getRegionHeight(),
-                            placement.drawWidth(), placement.drawHeight(),
-                            overlayEvent.getTextureWidth(), overlayEvent.getTextureHeight());
-                    }
-                }
+                renderTextureOverlay(placement, overlayEvent, overlayFade);
             }
         }
 
@@ -100,6 +81,35 @@ public final class GuiOverlayRenderer {
     }
 
     // -- overlay drawing primitives -- //
+
+    private void renderSnapshotOverlay(Snapshot snapshot, GuiOverlayPlacement placement, float currentTick,
+        float overlayFade) {
+        GlStateManager.enableTexture2D();
+        GlStateManager.enableBlend();
+        GlStateManager.enableAlpha();
+        try (GLStateGuard colorGuard = GLStateGuard.color(1.0F, 1.0F, 1.0F, overlayFade)) {
+            snapshot.renderer.render(placement.drawX(), placement.drawY(), placement.drawWidth(), placement.drawHeight(),
+                currentTick, overlayFade);
+        }
+    }
+
+    private void renderTextureOverlay(GuiOverlayPlacement placement, PonderScene.OverlayEvent overlayEvent,
+        float overlayFade) {
+        mc.getTextureManager().bindTexture(overlayEvent.getTextureLocation());
+        GlStateManager.enableBlend();
+        GlStateManager.enableAlpha();
+        try (GLStateGuard colorGuard = GLStateGuard.color(1.0F, 1.0F, 1.0F, overlayFade)) {
+            if (overlayEvent.isStretchTexture()) {
+                drawStretchGuiTexture(placement, overlayEvent);
+            } else {
+                CompatGuiScreen.drawScaledCustomSizeModalRect(placement.drawX(), placement.drawY(),
+                    overlayEvent.getTextureU(), overlayEvent.getTextureV(),
+                    overlayEvent.getRegionWidth(), overlayEvent.getRegionHeight(),
+                    placement.drawWidth(), placement.drawHeight(),
+                    overlayEvent.getTextureWidth(), overlayEvent.getTextureHeight());
+            }
+        }
+    }
 
     private void drawStretchGuiTexture(GuiOverlayPlacement placement, PonderScene.OverlayEvent overlayEvent) {
         int logicalWidth = Math.max(1, overlayEvent.getRegionWidth());
