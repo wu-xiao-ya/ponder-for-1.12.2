@@ -52,8 +52,7 @@ public final class GuiOverlayRenderer {
 
     private void renderGuiOverlayPlacement(GuiOverlayPlacement placement, float currentTick, float fade) {
         PonderScene.OverlayEvent overlayEvent = placement.overlayEvent();
-        float overlayFade = PonderOverlayHelper.computeOverlayFade(
-            overlayEvent.getTick(), overlayEvent.getDuration(), currentTick) * fade;
+        float overlayFade = computeOverlayFade(overlayEvent, currentTick, fade);
         if (overlayFade <= 0.0F) {
             return;
         }
@@ -72,8 +71,7 @@ public final class GuiOverlayRenderer {
 
     private void renderGuiHighlightPlacement(GuiHighlightPlacement placement, float currentTick, float fade) {
         PonderScene.OverlayEvent overlayEvent = placement.overlayEvent();
-        float overlayFade = PonderOverlayHelper.computeOverlayFade(
-            overlayEvent.getTick(), overlayEvent.getDuration(), currentTick) * fade;
+        float overlayFade = computeOverlayFade(overlayEvent, currentTick, fade);
         if (overlayFade <= 0.0F) {
             return;
         }
@@ -279,5 +277,10 @@ public final class GuiOverlayRenderer {
     private static int withAlpha(int color, float alpha) {
         int alphaChannel = MathHelper.clamp((int) alpha, 0, 255);
         return alphaChannel << 24 | (color & 0x00FFFFFF);
+    }
+
+    private static float computeOverlayFade(PonderScene.OverlayEvent overlayEvent, float currentTick, float fade) {
+        return PonderOverlayHelper.computeOverlayFade(overlayEvent.getTick(), overlayEvent.getDuration(), currentTick)
+            * fade;
     }
 }
