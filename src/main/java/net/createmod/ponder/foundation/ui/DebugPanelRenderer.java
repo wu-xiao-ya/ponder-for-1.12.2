@@ -17,7 +17,6 @@ import net.createmod.ponder.foundation.ui.PonderScenePreview.PreviewBounds;
 import net.createmod.ponder.foundation.ui.PonderScenePreview.PreviewState;
 import net.createmod.ponder.foundation.ui.render.RenderContext;
 import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
 
@@ -37,76 +36,6 @@ class DebugPanelRenderer {
     @FunctionalInterface
     interface HoverTextRenderer {
         void render(List<String> textLines, int x, int y);
-    }
-
-    private final class DebugPanelRenderContext implements RenderContext {
-
-        private final DebugDrawContext drawContext;
-
-        private DebugPanelRenderContext(DebugDrawContext drawContext) {
-            this.drawContext = drawContext;
-        }
-
-        @Override
-        public AutoCloseable push() {
-            return () -> {
-            };
-        }
-
-        @Override
-        public AutoCloseable scissor(int x, int y, int width, int height) {
-            return () -> {
-            };
-        }
-
-        @Override
-        public void translate(float x, float y, float z) {
-        }
-
-        @Override
-        public void scale(float x, float y, float z) {
-        }
-
-        @Override
-        public void rotate(float angle, float x, float y, float z) {
-        }
-
-        @Override
-        public void fillRect(int left, int top, int right, int bottom, int color) {
-            drawContext.fillRect(left, top, right, bottom, color);
-        }
-
-        @Override
-        public void fillGradientRect(int left, int top, int right, int bottom, int startColor, int endColor) {
-            drawContext.fillRect(left, top, right, bottom, startColor);
-        }
-
-        @Override
-        public void fillTexturedRect(int x, int y, int textureX, int textureY, int width, int height) {
-        }
-
-        @Override
-        public void drawLine(int startX, int startY, int endX, int endY, int color, float width) {
-        }
-
-        @Override
-        public void renderItem(ItemStack stack, int x, int y) {
-        }
-
-        @Override
-        public void renderText(String text, int x, int y, int color) {
-            drawContext.drawString(text, x, y, color);
-        }
-
-        @Override
-        public void renderCenteredText(String text, int centerX, int y, int color) {
-            int drawX = centerX - fontRenderer.getStringWidth(text) / 2;
-            drawContext.drawString(text, drawX, y, color);
-        }
-
-        @Override
-        public void drawHoveringText(List<String> textLines, int x, int y) {
-        }
     }
 
     DebugPanelRenderer(FontRenderer fontRenderer, PonderSceneSelectionState selectionState,
@@ -158,8 +87,7 @@ class DebugPanelRenderer {
     }
 
     void drawComponentList(int mouseX, int mouseY, int x, int startY, int bottom,
-        int lineHeight, int leftPanelWidth, DebugDrawContext ctx) {
-        RenderContext render = bridge(ctx);
+        int lineHeight, int leftPanelWidth, RenderContext render) {
         List<ResourceLocation> componentIds = selectionState.getComponentIds();
         int visibleLines = Math.max(1, (bottom - startY - 6) / lineHeight);
         int maxIndex = Math.min(componentIds.size(), componentScroll + visibleLines);
@@ -175,8 +103,7 @@ class DebugPanelRenderer {
     }
 
     void drawSceneSummary(int x, int y, int width, int playbackTick, boolean playing, int sceneEndTick,
-        DebugDrawContext ctx) {
-        RenderContext render = bridge(ctx);
+        RenderContext render) {
         PonderScene scene = selectionState.getSelectedScene();
         ResourceLocation componentId = selectionState.getSelectedComponentId();
 
@@ -223,8 +150,7 @@ class DebugPanelRenderer {
     }
 
     void drawOperationList(int mouseX, int mouseY, int x, int startY, int width, int bottom,
-        int lineHeight, int playbackTick, DebugDrawContext ctx) {
-        RenderContext render = bridge(ctx);
+        int lineHeight, int playbackTick, RenderContext render) {
         List<RecordedOperation> operations = getSelectedRecordedOperations();
         render.renderText("Timeline", x + 6, startY - 14, 0xFFEEDD);
 
@@ -389,9 +315,5 @@ class DebugPanelRenderer {
         String label, int color) {
         ctx.drawBorderedRect(x + 4, y - 1, x + width - 4, y + lineHeight - 1, background, background);
         ctx.renderText(fontRenderer.trimStringToWidth(label, width - 12), x + 8, y + 1, color);
-    }
-
-    private RenderContext bridge(DebugDrawContext drawContext) {
-        return new DebugPanelRenderContext(drawContext);
     }
 }
