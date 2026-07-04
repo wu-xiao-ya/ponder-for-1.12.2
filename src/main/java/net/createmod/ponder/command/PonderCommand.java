@@ -116,7 +116,7 @@ public class PonderCommand extends CommandBase {
     }
 
     private void listRegistryState(ICommandSender sender) {
-        sendSummary(sender, "Registry");
+        sendSummary(sender, "Registry", PonderIndex.getCurrentReloadReport());
 
         Map<ResourceLocation, Integer> counts = countScenesByComponent();
         if (counts.isEmpty()) {
@@ -178,13 +178,8 @@ public class PonderCommand extends CommandBase {
         }
     }
 
-    private void sendSummary(ICommandSender sender, String prefix) {
-        int sceneEntries = PonderIndex.getSceneAccess().getRegisteredEntries().size();
-        int componentCount = countScenesByComponent().size();
-        int listedTags = PonderIndex.getTagAccess().getListedTags().size();
-        sender.sendMessage(new TextComponentString(prefix + " Ponder state: " + PonderIndex.getPluginCount()
-            + " plugin(s), " + sceneEntries + " storyboard entry(ies), " + componentCount + " component(s), "
-            + listedTags + " listed tag(s)"));
+    private void sendSummary(ICommandSender sender, String prefix, PonderReloadReport report) {
+        sender.sendMessage(new TextComponentString(prefix + " Ponder state: " + report.formatCounts()));
     }
 
     private void sendReloadSummary(ICommandSender sender, PonderReloadReport report) {

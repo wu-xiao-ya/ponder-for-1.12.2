@@ -41,6 +41,10 @@ public class PonderLocalization implements LangRegistryAccess {
         RegistrationCommandService.execute(RegistrationCommands.registerSpecificText(this, sceneId, key, enUs));
     }
 
+    public int getSharedTextCount() {
+        return catalog.getSharedEntries().size();
+    }
+
     @Override
     public void provideLang(String modId, BiConsumer<String, String> consumer) {
         for (Entry<ResourceLocation, String> entry : catalog.getSharedEntries().entrySet()) {

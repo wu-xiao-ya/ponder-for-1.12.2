@@ -25,7 +25,7 @@ public final class PonderIndex {
     private static final List<PonderPlugin> PLUGINS = new ArrayList<PonderPlugin>();
     private static final PonderReloadOrchestrator RELOAD_ORCHESTRATOR =
         new PonderReloadOrchestrator(LOCALIZATION, SCENES, TAGS, PLUGINS);
-    private static volatile PonderReloadReport lastReloadReport = new PonderReloadReport(0, 0, 0, 0);
+    private static volatile PonderReloadReport lastReloadReport = new PonderReloadReport(0, 0, 0, 0, 0);
     private static final Comparator<PonderPlugin> PLUGIN_COMPARATOR = new Comparator<PonderPlugin>() {
         @Override
         public int compare(PonderPlugin left, PonderPlugin right) {
@@ -63,6 +63,11 @@ public final class PonderIndex {
         PonderReloadReport report = RELOAD_ORCHESTRATOR.reload();
         lastReloadReport = report;
         return report;
+    }
+
+    public static PonderReloadReport getCurrentReloadReport() {
+        return new PonderReloadReport(SCENES.getRegisteredEntryCount(), SCENES.getRegisteredComponentCount(),
+            TAGS.getListedTagCount(), PLUGINS.size(), LOCALIZATION.getSharedTextCount());
     }
 
     public static void registerAll() {

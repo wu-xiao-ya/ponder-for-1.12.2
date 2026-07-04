@@ -56,6 +56,16 @@ public class PonderSceneRegistry extends AbstractPonderRegistry implements Scene
         return count;
     }
 
+    public int getRegisteredComponentCount() {
+        int count = 0;
+        for (ResourceLocation componentId : scenes.keySet()) {
+            if (!isExcluded(componentId)) {
+                count++;
+            }
+        }
+        return count;
+    }
+
     @Override
     public boolean doScenesExistForId(ResourceLocation id) {
         if (id == null || isExcluded(id)) {

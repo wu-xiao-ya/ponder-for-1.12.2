@@ -38,13 +38,11 @@ final class PonderReloadOrchestrator {
         tags.finishRegistration();
         int sharedTextCount = gatherSharedText();
         localization.generateSceneLang(scenes);
+        int componentCount = scenes.getRegisteredComponentCount();
 
-        PonderReloadReport report = new PonderReloadReport(scenes.getRegisteredEntryCount(), tags.getListedTagCount(),
-            plugins.size(), sharedTextCount);
-        Ponder.LOGGER.info(
-            "Ponder registry now contains {} scene entries, {} listed tags, {} plugins, and {} shared text entries",
-            Integer.valueOf(report.sceneEntryCount()), Integer.valueOf(report.listedTagCount()),
-            Integer.valueOf(report.pluginCount()), Integer.valueOf(report.sharedTextCount()));
+        PonderReloadReport report = new PonderReloadReport(scenes.getRegisteredEntryCount(), componentCount,
+            tags.getListedTagCount(), plugins.size(), sharedTextCount);
+        Ponder.LOGGER.info("Ponder registry now contains {}", report.formatCounts());
         return report;
     }
 
