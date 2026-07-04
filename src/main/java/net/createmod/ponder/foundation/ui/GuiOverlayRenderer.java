@@ -8,6 +8,7 @@ import net.createmod.ponder.foundation.ui.projection.GuiHighlightPlacement;
 import net.createmod.ponder.foundation.ui.projection.GuiOverlayPlacement;
 import net.createmod.ponder.foundation.ui.projection.ScenePointProjector;
 import net.createmod.ponder.foundation.ui.projection.SceneProjectionContext;
+import net.createmod.ponder.foundation.ui.render.GLStateGuard;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
@@ -201,19 +202,16 @@ public final class GuiOverlayRenderer {
         float green = ((color >>> 8) & 0xFF) / 255.0F;
         float blue = (color & 0xFF) / 255.0F;
 
-        GlStateManager.disableTexture2D();
         GlStateManager.enableBlend();
-        GlStateManager.disableAlpha();
-        GlStateManager.color(red, green, blue, alpha);
-        GL11.glLineWidth(width);
-        GL11.glBegin(GL11.GL_LINES);
-        GL11.glVertex2f(startX + 0.5F, startY + 0.5F);
-        GL11.glVertex2f(endX + 0.5F, endY + 0.5F);
-        GL11.glEnd();
-        GL11.glLineWidth(1.0F);
-        GlStateManager.enableTexture2D();
-        GlStateManager.enableAlpha();
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        try (GLStateGuard textureDisabled = GLStateGuard.textureDisabled();
+             GLStateGuard alphaDisabled = GLStateGuard.alphaDisabled();
+             GLStateGuard lineWidth = GLStateGuard.lineWidth(width);
+             GLStateGuard colorGuard = GLStateGuard.color(red, green, blue, alpha)) {
+            GL11.glBegin(GL11.GL_LINES);
+            GL11.glVertex2f(startX + 0.5F, startY + 0.5F);
+            GL11.glVertex2f(endX + 0.5F, endY + 0.5F);
+            GL11.glEnd();
+        }
     }
 
     private void drawHorizontalGradientRect(int left, int top, int right, int bottom, int leftColor, int rightColor) {
@@ -228,20 +226,18 @@ public final class GuiOverlayRenderer {
 
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder buffer = tessellator.getBuffer();
-        GlStateManager.disableTexture2D();
         GlStateManager.enableBlend();
-        GlStateManager.disableAlpha();
-        GlStateManager.shadeModel(GL11.GL_SMOOTH);
-        buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
-        buffer.pos(right, top, 0.0D).color(rightRed, rightGreen, rightBlue, rightAlpha).endVertex();
-        buffer.pos(left, top, 0.0D).color(leftRed, leftGreen, leftBlue, leftAlpha).endVertex();
-        buffer.pos(left, bottom, 0.0D).color(leftRed, leftGreen, leftBlue, leftAlpha).endVertex();
-        buffer.pos(right, bottom, 0.0D).color(rightRed, rightGreen, rightBlue, rightAlpha).endVertex();
-        tessellator.draw();
-        GlStateManager.shadeModel(GL11.GL_FLAT);
-        GlStateManager.enableTexture2D();
-        GlStateManager.enableAlpha();
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        try (GLStateGuard textureDisabled = GLStateGuard.textureDisabled();
+             GLStateGuard alphaDisabled = GLStateGuard.alphaDisabled();
+             GLStateGuard smoothShade = GLStateGuard.smoothShade();
+             GLStateGuard colorGuard = GLStateGuard.color(1.0F, 1.0F, 1.0F, 1.0F)) {
+            buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
+            buffer.pos(right, top, 0.0D).color(rightRed, rightGreen, rightBlue, rightAlpha).endVertex();
+            buffer.pos(left, top, 0.0D).color(leftRed, leftGreen, leftBlue, leftAlpha).endVertex();
+            buffer.pos(left, bottom, 0.0D).color(leftRed, leftGreen, leftBlue, leftAlpha).endVertex();
+            buffer.pos(right, bottom, 0.0D).color(rightRed, rightGreen, rightBlue, rightAlpha).endVertex();
+            tessellator.draw();
+        }
     }
 
     private static int blendColors(int baseColor, int accentColor, float accentWeight) {
