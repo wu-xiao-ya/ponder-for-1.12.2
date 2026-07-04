@@ -63,25 +63,25 @@ public final class GuiOverlayRenderer {
                 GlStateManager.enableTexture2D();
                 GlStateManager.enableBlend();
                 GlStateManager.enableAlpha();
-                GlStateManager.color(1.0F, 1.0F, 1.0F, overlayFade);
-                snapshot.renderer.render(placement.drawX(), placement.drawY(), placement.drawWidth(), placement.drawHeight(),
-                    currentTick, overlayFade);
-                GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+                try (GLStateGuard colorGuard = GLStateGuard.color(1.0F, 1.0F, 1.0F, overlayFade)) {
+                    snapshot.renderer.render(placement.drawX(), placement.drawY(), placement.drawWidth(), placement.drawHeight(),
+                        currentTick, overlayFade);
+                }
             } else {
                 mc.getTextureManager().bindTexture(overlayEvent.getTextureLocation());
                 GlStateManager.enableBlend();
                 GlStateManager.enableAlpha();
-                GlStateManager.color(1.0F, 1.0F, 1.0F, overlayFade);
-                if (overlayEvent.isStretchTexture()) {
-                    drawStretchGuiTexture(placement, overlayEvent);
-                } else {
-                    CompatGuiScreen.drawScaledCustomSizeModalRect(placement.drawX(), placement.drawY(),
-                        overlayEvent.getTextureU(), overlayEvent.getTextureV(),
-                        overlayEvent.getRegionWidth(), overlayEvent.getRegionHeight(),
-                        placement.drawWidth(), placement.drawHeight(),
-                        overlayEvent.getTextureWidth(), overlayEvent.getTextureHeight());
+                try (GLStateGuard colorGuard = GLStateGuard.color(1.0F, 1.0F, 1.0F, overlayFade)) {
+                    if (overlayEvent.isStretchTexture()) {
+                        drawStretchGuiTexture(placement, overlayEvent);
+                    } else {
+                        CompatGuiScreen.drawScaledCustomSizeModalRect(placement.drawX(), placement.drawY(),
+                            overlayEvent.getTextureU(), overlayEvent.getTextureV(),
+                            overlayEvent.getRegionWidth(), overlayEvent.getRegionHeight(),
+                            placement.drawWidth(), placement.drawHeight(),
+                            overlayEvent.getTextureWidth(), overlayEvent.getTextureHeight());
+                    }
                 }
-                GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
             }
         }
 
