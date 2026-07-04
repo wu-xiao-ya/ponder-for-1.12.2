@@ -58,17 +58,8 @@ public final class GuiOverlayRenderer {
             return;
         }
 
-        if (overlayEvent.isFramed()) {
-            drawGuiTexturePanel(placement.panelX(), placement.panelY(), placement.panelWidth(), placement.panelHeight(),
-                overlayEvent.getColor(), overlayFade);
-        }
-
-        if (overlayEvent.isFramed() && overlayEvent.isConnectorVisible() && placement.targetPoint() != null) {
-            int startX = placement.panelX() + placement.panelWidth() / 2;
-            int startY = placement.aboveTarget() ? placement.panelY() + placement.panelHeight() : placement.panelY();
-            drawCaptionConnector(startX, startY, placement.targetPoint().x, placement.targetPoint().y,
-                overlayEvent.getColor(), overlayFade * 0.85F);
-        }
+        renderGuiOverlayFrame(placement, overlayEvent, overlayFade);
+        renderGuiOverlayConnector(placement, overlayEvent, overlayFade);
 
         Snapshot snapshot = overlayEvent.getGuiSnapshotId() == null ? null
             : PonderGuiSnapshotRegistry.get(overlayEvent.getGuiSnapshotId(), currentTick);
@@ -88,6 +79,24 @@ public final class GuiOverlayRenderer {
         }
         drawGuiHighlight(placement.rectX(), placement.rectY(), placement.rectWidth(), placement.rectHeight(),
             overlayEvent.getColor(), overlayFade);
+    }
+
+    private void renderGuiOverlayFrame(GuiOverlayPlacement placement, PonderScene.OverlayEvent overlayEvent,
+        float overlayFade) {
+        if (overlayEvent.isFramed()) {
+            drawGuiTexturePanel(placement.panelX(), placement.panelY(), placement.panelWidth(), placement.panelHeight(),
+                overlayEvent.getColor(), overlayFade);
+        }
+    }
+
+    private void renderGuiOverlayConnector(GuiOverlayPlacement placement, PonderScene.OverlayEvent overlayEvent,
+        float overlayFade) {
+        if (overlayEvent.isFramed() && overlayEvent.isConnectorVisible() && placement.targetPoint() != null) {
+            int startX = placement.panelX() + placement.panelWidth() / 2;
+            int startY = placement.aboveTarget() ? placement.panelY() + placement.panelHeight() : placement.panelY();
+            drawCaptionConnector(startX, startY, placement.targetPoint().x, placement.targetPoint().y,
+                overlayEvent.getColor(), overlayFade * 0.85F);
+        }
     }
 
     private void renderSnapshotOverlay(Snapshot snapshot, GuiOverlayPlacement placement, float currentTick,
