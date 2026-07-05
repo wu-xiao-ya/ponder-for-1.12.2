@@ -272,12 +272,7 @@ public class PonderDebugScreen extends CompatGuiScreen {
         }
 
         List<ResourceLocation> list = new ArrayList<ResourceLocation>(components);
-        Collections.sort(list, new Comparator<ResourceLocation>() {
-            @Override
-            public int compare(ResourceLocation left, ResourceLocation right) {
-                return left.toString().compareTo(right.toString());
-            }
-        });
+        Collections.sort(list, Comparator.comparing(ResourceLocation::toString));
         return list;
     }
 
