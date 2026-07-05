@@ -1,16 +1,12 @@
 package net.createmod.ponder.foundation.ui;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
 
 public final class PonderGuiSnapshotRegistry {
 
-    private static final Map<ResourceLocation, SnapshotSource> SNAPSHOT_SOURCES = new LinkedHashMap<>();
-    private static final Map<SnapshotCacheKey, Snapshot> SNAPSHOT_CACHE = new LinkedHashMap<>();
+    private static final SnapshotRegistryStore STORE = new SnapshotRegistryStore();
 
     static {
         registerDefaults();
@@ -35,64 +31,23 @@ public final class PonderGuiSnapshotRegistry {
     }
 
     public static Snapshot get(ResourceLocation id, SnapshotContext context) {
-        if (id == null) {
-            return null;
-        }
-
-        SnapshotSource source;
-        SnapshotContext resolvedContext;
-        SnapshotCacheKey cacheKey;
-        synchronized (PonderGuiSnapshotRegistry.class) {
-            source = SNAPSHOT_SOURCES.get(id);
-            if (source == null) {
-                return null;
-            }
-            resolvedContext = context == null ? SnapshotContext.of(0.0F) : context;
-            cacheKey = source.cacheKey(id, resolvedContext);
-            Snapshot cached = SNAPSHOT_CACHE.get(cacheKey);
-            if (cached != null) {
-                return cached;
-            }
-        }
-
-        Snapshot resolved = source.resolve(resolvedContext);
-        if (resolved == null) {
-            return null;
-        }
-
-        synchronized (PonderGuiSnapshotRegistry.class) {
-            if (SNAPSHOT_SOURCES.get(id) != source) {
-                return null;
-            }
-            Snapshot cached = SNAPSHOT_CACHE.get(cacheKey);
-            if (cached != null) {
-                return cached;
-            }
-            SNAPSHOT_CACHE.put(cacheKey, resolved);
-            return resolved;
-        }
+        return STORE.get(id, context);
     }
 
-    public static synchronized void registerSource(ResourceLocation id, SnapshotSource source) {
-        if (id == null || source == null) {
-            return;
-        }
-        SNAPSHOT_SOURCES.put(id, source);
-        SNAPSHOT_CACHE.entrySet().removeIf(entry -> id.equals(entry.getKey().id()));
+    public static void registerSource(ResourceLocation id, SnapshotSource source) {
+        STORE.registerSource(id, source);
     }
 
-    public static synchronized void clearCache() {
-        SNAPSHOT_CACHE.clear();
+    public static void clearCache() {
+        STORE.clearCache();
     }
 
-    public static synchronized void clear() {
-        SNAPSHOT_SOURCES.clear();
-        SNAPSHOT_CACHE.clear();
+    public static void clear() {
+        STORE.clear();
     }
 
-    public static synchronized void rebuild() {
-        clear();
-        registerDefaults();
+    public static void rebuild() {
+        STORE.rebuild(PonderGuiSnapshotRegistry::registerDefaults);
     }
 
     public static ResourceLocation registerBlockGuiSnapshot(ResourceLocation blockId, int meta, int width, int height) {
