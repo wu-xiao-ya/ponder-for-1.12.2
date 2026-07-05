@@ -94,6 +94,18 @@ jobs:
           Set-StrictMode -Version Latest
           Add-Type -AssemblyName System.IO.Compression.FileSystem
 
+          function Get-GradleProperty {
+            param(
+              [Parameter(Mandatory = $true)][string] $Name
+            )
+            foreach ($line in Get-Content -LiteralPath "gradle.properties") {
+              if ($line -match "^\s*$([regex]::Escape($Name))\s*=\s*(.*?)\s*$") {
+                return $Matches[1].Trim()
+              }
+            }
+            throw "Missing Gradle property '$Name'."
+          }
+
           function Assert-ZipEntryExact {
             param(
               [Parameter(Mandatory = $true)][string] $JarPath,
@@ -124,13 +136,10 @@ jobs:
             }
           }
 
-          $runtimeJar = Get-Item -LiteralPath "build\libs\ponder-0.1.0-beta.jar"
-          $shimJar = Get-ChildItem -LiteralPath "build\libs" -File -Filter "*forge-server-shim*.jar" |
-            Sort-Object Name |
-            Select-Object -First 1
-          if ($null -eq $shimJar) {
-            throw "Forge server shim jar was not produced."
-          }
+          $modId = Get-GradleProperty -Name "mod_id"
+          $modVersion = Get-GradleProperty -Name "mod_version"
+          $runtimeJar = Get-Item -LiteralPath (Join-Path "build\libs" "$modId-$modVersion.jar")
+          $shimJar = Get-Item -LiteralPath (Join-Path "build\libs" "$modId-$modVersion-forge-server-shim.jar")
 
           Write-Host "Verified artifact candidate: $($runtimeJar.Name) ($($runtimeJar.Length) bytes)"
           Write-Host "Verified artifact candidate: $($shimJar.Name) ($($shimJar.Length) bytes)"

@@ -995,6 +995,7 @@ CI 在上传前执行 beta 产物内容门，并上传两个 beta 验证产物�
 
 - `ponder-client-runtime`：Cleanroom / CRL 客户端运行时 jar
 - `forge-server-shim`：stock Forge 1.12.2 专用服务端兼容 shim
+- artifact verifier 从 `gradle.properties` 读取 `mod_id` 与 `mod_version`，复核随 beta 版本号演进
 - CI 内置 artifact verifier 复核 runtime jar 的 `net/createmod/ponder/` 前缀与 `mixins.ponder.json`
 - CI 内置 artifact verifier 复核 shim jar 的 `net/createmod/ponder/Reference.class` 与 `mcmod.info`
 
@@ -1178,6 +1179,7 @@ gh run watch <run_id> --exit-status
 
 - `ponder-client-runtime`
 - `forge-server-shim`
+- 上传前从 `gradle.properties` 推导 runtime/shim jar 文件名
 - 上传前固定检查 runtime jar 内容：`net/createmod/ponder/` 前缀、`mixins.ponder.json`
 - 上传前固定检查 shim jar 内容：`net/createmod/ponder/Reference.class`、`mcmod.info`
 
