@@ -2,17 +2,18 @@ package net.createmod.ponder.foundation.ui;
 
 import net.createmod.ponder.foundation.PonderScene;
 import net.createmod.ponder.foundation.ui.PonderScenePreview.PreviewBounds;
+import net.createmod.ponder.foundation.ui.render.RenderContext;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 
 final class ParticleOverlayRenderer {
 
     private final PonderOverlayLayoutHelper overlayLayoutHelper;
-    private final DrawContext draw;
+    private final RenderContext render;
 
-    ParticleOverlayRenderer(PonderOverlayLayoutHelper overlayLayoutHelper, DrawContext draw) {
+    ParticleOverlayRenderer(PonderOverlayLayoutHelper overlayLayoutHelper, RenderContext render) {
         this.overlayLayoutHelper = overlayLayoutHelper;
-        this.draw = draw;
+        this.render = render;
     }
 
     void drawParticleEffects(PonderScene scene, PreviewBounds bounds, PreviewLayout layout,
@@ -31,7 +32,7 @@ final class ParticleOverlayRenderer {
             float progress = Math.max(0.0F, currentTick - event.getTick());
             int particleCount = MathHelper.clamp(Math.round(event.getAmountPerCycle()), 1, 12);
             int color = getParticleColor(event.getParticleName());
-            int alphaColor = draw.withAlpha(color, eventFade * 220.0F);
+            int alphaColor = withAlpha(color, eventFade * 220.0F);
             double spread = event.isWithinBlockSpace() ? 0.55D : 0.28D;
 
             for (int i = 0; i < particleCount; i++) {
@@ -48,10 +49,15 @@ final class ParticleOverlayRenderer {
                 }
 
                 int size = i % 3 == 0 ? 2 : 1;
-                draw.fillRect(projected.x - size, projected.y - size, projected.x + size + 1, projected.y + size + 1,
+                render.fillRect(projected.x - size, projected.y - size, projected.x + size + 1, projected.y + size + 1,
                     alphaColor);
             }
         }
+    }
+
+    private static int withAlpha(int color, float alpha) {
+        int appliedAlpha = MathHelper.clamp((int) alpha, 0, 255);
+        return (color & 0x00FFFFFF) | (appliedAlpha << 24);
     }
 
     private static int getParticleColor(String particleName) {
