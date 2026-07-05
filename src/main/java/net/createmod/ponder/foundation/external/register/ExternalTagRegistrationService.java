@@ -19,10 +19,8 @@ public final class ExternalTagRegistrationService {
     private static RegistrationOutcome registerTags(RegistrationContext ctx,
         PonderTagRegistrationHelper<ResourceLocation> helper,
         Consumer<ExternalRegistrationDiagnostic> diagnosticSink) {
-        ExternalTagDefinitionRegistrar.Result tagResult = ExternalTagDefinitionRegistrar.register(ctx, helper,
-            diagnosticSink);
+        RegistrationOutcome tagResult = ExternalTagDefinitionRegistrar.register(ctx, helper, diagnosticSink);
         int assignmentCount = ExternalComponentTagRegistrar.register(ctx.definitions(), helper);
-        return new RegistrationOutcome(tagResult.registered() + assignmentCount, tagResult.skipped(),
-            tagResult.failed());
+        return tagResult.merge(new RegistrationOutcome(assignmentCount, 0, 0));
     }
 }

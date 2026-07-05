@@ -14,11 +14,11 @@ final class ExternalTagDefinitionRegistrar {
     private ExternalTagDefinitionRegistrar() {
     }
 
-    static Result register(RegistrationContext ctx, PonderTagRegistrationHelper<ResourceLocation> helper) {
+    static RegistrationOutcome register(RegistrationContext ctx, PonderTagRegistrationHelper<ResourceLocation> helper) {
         return register(ctx, helper, ExternalRegistrationDiagnostics.logger());
     }
 
-    static Result register(RegistrationContext ctx, PonderTagRegistrationHelper<ResourceLocation> helper,
+    static RegistrationOutcome register(RegistrationContext ctx, PonderTagRegistrationHelper<ResourceLocation> helper,
         Consumer<ExternalRegistrationDiagnostic> diagnosticSink) {
         Consumer<ExternalRegistrationDiagnostic> sink = diagnosticSink != null ? diagnosticSink
             : ExternalRegistrationDiagnostics.logger();
@@ -44,7 +44,7 @@ final class ExternalTagDefinitionRegistrar {
                 failed++;
             }
         }
-        return new Result(registered, skipped, failed);
+        return new RegistrationOutcome(registered, skipped, failed);
     }
 
     private static void registerOne(PonderTagRegistrationHelper<ResourceLocation> helper,
@@ -62,8 +62,5 @@ final class ExternalTagDefinitionRegistrar {
             builder.addToIndex();
         }
         builder.register();
-    }
-
-    record Result(int registered, int skipped, int failed) {
     }
 }
