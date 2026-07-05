@@ -11,6 +11,7 @@ import net.createmod.ponder.foundation.external.definition.ExternalDefinitionSet
 import net.createmod.ponder.foundation.external.parse.ExternalPonderSceneParser;
 import net.createmod.ponder.foundation.external.parse.ExternalParseResult;
 import net.createmod.ponder.foundation.external.register.ExternalPonderRegistrationService;
+import net.createmod.ponder.foundation.external.register.ExternalSceneRegistrationResult;
 import net.createmod.ponder.foundation.external.register.ExternalSharedTextRegistrationService;
 import net.createmod.ponder.foundation.external.register.RegistrationOutcome;
 import net.createmod.ponder.foundation.external.validate.ExternalValidationDiagnostics;
@@ -32,15 +33,17 @@ public class ExternalPonderPlugin implements PonderPlugin, PonderReloadDetailsPr
     public void registerScenes(PonderSceneRegistrationHelper<ResourceLocation> helper) {
         resetReloadDetails();
         clearCachedParseResult();
-        RegistrationOutcome outcome = ExternalPonderRegistrationService.registerLoadedScenes(loadDefinitions(), helper);
-        reloadDetails = reloadDetails.merge(new PonderReloadDetails(null, outcome, null, null));
-        logOutcome("scenes", outcome);
+        ExternalSceneRegistrationResult result =
+            ExternalPonderRegistrationService.registerLoadedScenesResult(loadDefinitions(), helper);
+        reloadDetails = reloadDetails.merge(new PonderReloadDetails(null, result.compileSummary(),
+            result.registrationOutcome(), null, null));
+        logOutcome("scenes", result.registrationOutcome());
     }
 
     @Override
     public void registerTags(PonderTagRegistrationHelper<ResourceLocation> helper) {
         RegistrationOutcome outcome = ExternalPonderRegistrationService.registerLoadedTags(loadDefinitions(), helper);
-        reloadDetails = reloadDetails.merge(new PonderReloadDetails(null, null, outcome, null));
+        reloadDetails = reloadDetails.merge(new PonderReloadDetails(null, null, null, outcome, null));
         logOutcome("tags", outcome);
     }
 
@@ -49,7 +52,7 @@ public class ExternalPonderPlugin implements PonderPlugin, PonderReloadDetailsPr
         try {
             RegistrationOutcome outcome =
                 ExternalSharedTextRegistrationService.registerLoadedSharedText(loadDefinitions(), helper);
-            reloadDetails = reloadDetails.merge(new PonderReloadDetails(null, null, null, outcome));
+            reloadDetails = reloadDetails.merge(new PonderReloadDetails(null, null, null, null, outcome));
             logOutcome("shared text", outcome);
         } finally {
             clearCachedParseResult();
@@ -76,7 +79,7 @@ public class ExternalPonderPlugin implements PonderPlugin, PonderReloadDetailsPr
     }
 
     private void recordValidationReport(ValidationReport validationReport) {
-        reloadDetails = reloadDetails.merge(new PonderReloadDetails(validationReport, null, null, null));
+        reloadDetails = reloadDetails.merge(new PonderReloadDetails(validationReport, null, null, null, null));
     }
 
     private void resetReloadDetails() {

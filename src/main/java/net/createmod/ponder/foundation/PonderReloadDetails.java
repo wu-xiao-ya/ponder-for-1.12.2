@@ -1,17 +1,20 @@
 package net.createmod.ponder.foundation;
 
 import net.createmod.ponder.foundation.external.register.RegistrationOutcome;
+import net.createmod.ponder.foundation.external.register.ExternalSceneCompileSummary;
 import net.createmod.ponder.foundation.external.validate.ValidationReport;
 
-public record PonderReloadDetails(ValidationReport validationReport, RegistrationOutcome sceneOutcome,
-    RegistrationOutcome tagOutcome, RegistrationOutcome sharedTextOutcome) {
+public record PonderReloadDetails(ValidationReport validationReport, ExternalSceneCompileSummary sceneCompileSummary,
+    RegistrationOutcome sceneOutcome, RegistrationOutcome tagOutcome, RegistrationOutcome sharedTextOutcome) {
 
     public static final PonderReloadDetails EMPTY =
-        new PonderReloadDetails(ValidationReport.EMPTY, RegistrationOutcome.EMPTY, RegistrationOutcome.EMPTY,
-            RegistrationOutcome.EMPTY);
+        new PonderReloadDetails(ValidationReport.EMPTY, ExternalSceneCompileSummary.EMPTY, RegistrationOutcome.EMPTY,
+            RegistrationOutcome.EMPTY, RegistrationOutcome.EMPTY);
 
     public PonderReloadDetails {
         validationReport = validationReport == null ? ValidationReport.EMPTY : validationReport;
+        sceneCompileSummary =
+            sceneCompileSummary == null ? ExternalSceneCompileSummary.EMPTY : sceneCompileSummary;
         sceneOutcome = sceneOutcome == null ? RegistrationOutcome.EMPTY : sceneOutcome;
         tagOutcome = tagOutcome == null ? RegistrationOutcome.EMPTY : tagOutcome;
         sharedTextOutcome = sharedTextOutcome == null ? RegistrationOutcome.EMPTY : sharedTextOutcome;
@@ -22,12 +25,26 @@ public record PonderReloadDetails(ValidationReport validationReport, Registratio
             return this;
         }
         return new PonderReloadDetails(validationReport.merge(other.validationReport),
-            sceneOutcome.merge(other.sceneOutcome), tagOutcome.merge(other.tagOutcome),
+            sceneCompileSummary.merge(other.sceneCompileSummary), sceneOutcome.merge(other.sceneOutcome),
+            tagOutcome.merge(other.tagOutcome),
             sharedTextOutcome.merge(other.sharedTextOutcome));
     }
 
     public boolean hasDetails() {
-        return !equals(EMPTY);
+        return hasCompileSummary() || hasExternalDetails();
+    }
+
+    public boolean hasCompileSummary() {
+        return sceneCompileSummary.hasSummary();
+    }
+
+    public boolean hasExternalDetails() {
+        return !validationReport.equals(ValidationReport.EMPTY) || !sceneOutcome.equals(RegistrationOutcome.EMPTY)
+            || !tagOutcome.equals(RegistrationOutcome.EMPTY) || !sharedTextOutcome.equals(RegistrationOutcome.EMPTY);
+    }
+
+    public String formatCompileSummary() {
+        return sceneCompileSummary.formatSummary();
     }
 
     public String formatSummary() {

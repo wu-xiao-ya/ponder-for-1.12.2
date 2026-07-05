@@ -177,8 +177,11 @@ public class PonderCommand extends CommandBase {
 
     private void sendReloadSummary(ICommandSender sender, PonderReloadReport report) {
         sendLine(sender, "Reload result: " + report.formatCounts());
-        if (report.details().hasDetails()) {
-            sendLine(sender, "External reload details: " + report.details().formatSummary());
+        if (report.details().hasCompileSummary()) {
+            sendLine(sender, "Compile result: " + report.details().formatCompileSummary());
+        }
+        if (report.details().hasExternalDetails()) {
+            sendLine(sender, "External details: " + report.details().formatSummary());
         }
     }
 

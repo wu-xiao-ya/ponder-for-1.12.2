@@ -14,7 +14,12 @@ public final class ExternalPonderRegistrationService {
 
     public static RegistrationOutcome registerLoadedScenes(ExternalDefinitionSet definitions,
         PonderSceneRegistrationHelper<ResourceLocation> helper) {
-        return ExternalSceneRegistrationService.registerLoadedScenes(definitions, helper);
+        return registerLoadedScenesResult(definitions, helper).registrationOutcome();
+    }
+
+    public static ExternalSceneRegistrationResult registerLoadedScenesResult(ExternalDefinitionSet definitions,
+        PonderSceneRegistrationHelper<ResourceLocation> helper) {
+        return ExternalSceneRegistrationService.registerLoadedScenesResult(definitions, helper);
     }
 
     public static RegistrationOutcome registerLoadedTags(ExternalDefinitionSet definitions,
