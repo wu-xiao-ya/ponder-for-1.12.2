@@ -14,7 +14,6 @@ import net.createmod.ponder.foundation.PonderReloadReport;
 import net.createmod.ponder.foundation.PonderScene;
 import net.createmod.ponder.foundation.PonderScene.RecordedOperation;
 import net.createmod.ponder.foundation.PonderTag;
-import net.createmod.ponder.foundation.external.register.ExternalRegistrationDiagnostic;
 import net.createmod.ponder.foundation.external.register.ExternalRegistrationFailureReport;
 import net.createmod.ponder.foundation.external.register.ExternalSceneCompileFailureDiagnostic;
 import net.minecraft.command.CommandBase;
@@ -195,7 +194,7 @@ public class PonderCommand extends CommandBase {
             sendRegistrationFailureDiagnostics(sender, report.details().formatSharedTextFailureSummary(),
                 report.details().sharedTextFailureReport());
         }
-        if (report.details().hasExternalDetails()) {
+        if (report.details().hasExternalSummary()) {
             sendLine(sender, "External details: " + report.details().formatSummary());
         }
     }
@@ -220,11 +219,11 @@ public class PonderCommand extends CommandBase {
         ExternalRegistrationFailureReport failureReport) {
         sendLine(sender, title);
         int emitted = 0;
-        for (ExternalRegistrationDiagnostic diagnostic : failureReport.failures()) {
+        for (String failure : failureReport.failures()) {
             if (emitted >= MAX_RELOAD_DIAGNOSTIC_LINES) {
                 break;
             }
-            sendLine(sender, diagnostic.render());
+            sendLine(sender, failure);
             emitted++;
         }
 

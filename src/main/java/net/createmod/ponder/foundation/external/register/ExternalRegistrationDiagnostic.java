@@ -2,7 +2,7 @@ package net.createmod.ponder.foundation.external.register;
 
 import net.createmod.ponder.foundation.external.definition.SourceInfo;
 
-public record ExternalRegistrationDiagnostic(
+record ExternalRegistrationDiagnostic(
     Severity severity,
     String channel,
     String subject,
@@ -10,13 +10,13 @@ public record ExternalRegistrationDiagnostic(
     String detail,
     Throwable cause
 ) {
-    public enum Severity {
+    enum Severity {
         INFO,
         WARN,
         ERROR
     }
 
-    public ExternalRegistrationDiagnostic {
+    ExternalRegistrationDiagnostic {
         if (severity == null) {
             throw new IllegalArgumentException("severity must not be null");
         }
@@ -34,20 +34,20 @@ public record ExternalRegistrationDiagnostic(
         }
     }
 
-    public static ExternalRegistrationDiagnostic info(String channel, String subject, SourceInfo source, String detail) {
+    static ExternalRegistrationDiagnostic info(String channel, String subject, SourceInfo source, String detail) {
         return new ExternalRegistrationDiagnostic(Severity.INFO, channel, subject, source, detail, null);
     }
 
-    public static ExternalRegistrationDiagnostic warn(String channel, String subject, SourceInfo source, String detail) {
+    static ExternalRegistrationDiagnostic warn(String channel, String subject, SourceInfo source, String detail) {
         return new ExternalRegistrationDiagnostic(Severity.WARN, channel, subject, source, detail, null);
     }
 
-    public static ExternalRegistrationDiagnostic error(String channel, String subject, SourceInfo source, String detail,
+    static ExternalRegistrationDiagnostic error(String channel, String subject, SourceInfo source, String detail,
         Throwable cause) {
         return new ExternalRegistrationDiagnostic(Severity.ERROR, channel, subject, source, detail, cause);
     }
 
-    public String render() {
+    String render() {
         StringBuilder builder = new StringBuilder();
         switch (severity) {
             case INFO:

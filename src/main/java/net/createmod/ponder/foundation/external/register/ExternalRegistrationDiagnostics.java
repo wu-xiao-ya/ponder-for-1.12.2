@@ -54,7 +54,11 @@ final class ExternalRegistrationDiagnostics implements Consumer<ExternalRegistra
         if (errors.isEmpty()) {
             return ExternalRegistrationFailureReport.EMPTY;
         }
-        return new ExternalRegistrationFailureReport(errors);
+        List<String> failures = new ArrayList<String>();
+        for (ExternalRegistrationDiagnostic diagnostic : errors) {
+            failures.add(diagnostic.render());
+        }
+        return new ExternalRegistrationFailureReport(failures);
     }
 
     static Consumer<ExternalRegistrationDiagnostic> logger() {

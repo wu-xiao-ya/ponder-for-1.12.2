@@ -4,7 +4,6 @@ import net.createmod.ponder.foundation.external.register.RegistrationOutcome;
 import net.createmod.ponder.foundation.external.register.ExternalSceneCompileSummary;
 import net.createmod.ponder.foundation.external.register.ExternalSceneCompileFailureDiagnostic;
 import net.createmod.ponder.foundation.external.register.ExternalSceneCompileFailureReport;
-import net.createmod.ponder.foundation.external.register.ExternalRegistrationDiagnostic;
 import net.createmod.ponder.foundation.external.register.ExternalRegistrationFailureReport;
 import net.createmod.ponder.foundation.external.register.RegistrationDiagnosticReport;
 import net.createmod.ponder.foundation.external.validate.ValidationReport;
@@ -64,10 +63,13 @@ public record PonderReloadDetails(ValidationReport validationReport, ExternalSce
     }
 
     public boolean hasExternalDetails() {
+        return hasExternalSummary() || tagFailureReport.hasFailures() || sharedTextFailureReport.hasFailures();
+    }
+
+    public boolean hasExternalSummary() {
         return !validationReport.equals(ValidationReport.EMPTY) || registrationDiagnostics.hasDiagnostics()
-            || tagFailureReport.hasFailures() || sharedTextFailureReport.hasFailures()
-            || !sceneOutcome.equals(RegistrationOutcome.EMPTY)
-            || !tagOutcome.equals(RegistrationOutcome.EMPTY) || !sharedTextOutcome.equals(RegistrationOutcome.EMPTY);
+            || !sceneOutcome.equals(RegistrationOutcome.EMPTY) || !tagOutcome.equals(RegistrationOutcome.EMPTY)
+            || !sharedTextOutcome.equals(RegistrationOutcome.EMPTY);
     }
 
     public String formatCompileSummary() {
@@ -98,20 +100,10 @@ public record PonderReloadDetails(ValidationReport validationReport, ExternalSce
         return "Shared text registration failures (" + sharedTextFailureReport.failureCount() + "):";
     }
 
-    public Iterable<ExternalRegistrationDiagnostic> tagFailureDiagnostics() {
-        return tagFailureReport.failures();
-    }
-
-    public Iterable<ExternalRegistrationDiagnostic> sharedTextFailureDiagnostics() {
-        return sharedTextFailureReport.failures();
-    }
-
     public String formatSummary() {
         StringBuilder builder = new StringBuilder();
         appendValidationSummary(builder);
         appendRegistrationDiagnosticSummary(builder);
-        appendFailureSummary(builder, "tag registration failures", tagFailureReport);
-        appendFailureSummary(builder, "shared text registration failures", sharedTextFailureReport);
         appendOutcomeSummary(builder, "external scene registration", sceneOutcome);
         appendOutcomeSummary(builder, "external tag registration", tagOutcome);
         appendOutcomeSummary(builder, "external shared text registration", sharedTextOutcome);
@@ -132,14 +124,6 @@ public record PonderReloadDetails(ValidationReport validationReport, ExternalSce
             return;
         }
         appendPart(builder, "registration diagnostics: " + registrationDiagnostics.formatSummary());
-    }
-
-    private void appendFailureSummary(StringBuilder builder, String label,
-        ExternalRegistrationFailureReport failureReport) {
-        if (!failureReport.hasFailures()) {
-            return;
-        }
-        appendPart(builder, label + ": " + failureReport.failureCount() + " error(s)");
     }
 
     private void appendOutcomeSummary(StringBuilder builder, String label, RegistrationOutcome outcome) {

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public record ExternalRegistrationFailureReport(List<ExternalRegistrationDiagnostic> failures) {
+public record ExternalRegistrationFailureReport(List<String> failures) {
 
     public static final ExternalRegistrationFailureReport EMPTY =
         new ExternalRegistrationFailureReport(Collections.emptyList());
@@ -13,7 +13,7 @@ public record ExternalRegistrationFailureReport(List<ExternalRegistrationDiagnos
         if (failures == null || failures.isEmpty()) {
             failures = Collections.emptyList();
         } else {
-            failures = Collections.unmodifiableList(new ArrayList<ExternalRegistrationDiagnostic>(failures));
+            failures = Collections.unmodifiableList(new ArrayList<String>(failures));
         }
     }
 
@@ -25,8 +25,7 @@ public record ExternalRegistrationFailureReport(List<ExternalRegistrationDiagnos
             return other;
         }
 
-        List<ExternalRegistrationDiagnostic> merged =
-            new ArrayList<ExternalRegistrationDiagnostic>(failures);
+        List<String> merged = new ArrayList<String>(failures);
         merged.addAll(other.failures);
         return new ExternalRegistrationFailureReport(merged);
     }
