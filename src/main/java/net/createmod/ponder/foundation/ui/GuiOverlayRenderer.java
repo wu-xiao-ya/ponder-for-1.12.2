@@ -127,61 +127,106 @@ public final class GuiOverlayRenderer {
     }
 
     private void drawStretchGuiTexture(GuiOverlayPlacement placement, PonderScene.OverlayEvent overlayEvent) {
-        int logicalWidth = Math.max(1, overlayEvent.getRegionWidth());
-        int logicalHeight = Math.max(1, overlayEvent.getRegionHeight());
-        int textureWidth = Math.max(1, overlayEvent.getTextureWidth());
-        int textureHeight = Math.max(1, overlayEvent.getTextureHeight());
-        int border = Math.min(overlayEvent.getStretchBorder(), Math.min(textureWidth / 2, textureHeight / 2));
-        border = Math.max(1, border);
+        StretchGuiTextureLayout layout = StretchGuiTextureLayout.compute(placement, overlayEvent);
+        drawStretchGuiTextureCorners(layout);
+        drawStretchGuiTextureHorizontalEdges(layout);
+        drawStretchGuiTextureVerticalEdges(layout);
+        drawStretchGuiTextureCenter(layout);
+    }
 
-        int drawBorderX = Math.max(1, Math.round(border * (placement.drawWidth() / (float) logicalWidth)));
-        int drawBorderY = Math.max(1, Math.round(border * (placement.drawHeight() / (float) logicalHeight)));
-        drawBorderX = Math.min(drawBorderX, Math.max(1, placement.drawWidth() / 2));
-        drawBorderY = Math.min(drawBorderY, Math.max(1, placement.drawHeight() / 2));
+    private void drawStretchGuiTextureCorners(StretchGuiTextureLayout layout) {
+        CompatGuiScreen.drawScaledCustomSizeModalRect(layout.drawX, layout.drawY, layout.sourceLeftU,
+            layout.sourceTopV, layout.border, layout.border, layout.drawBorderX, layout.drawBorderY,
+            layout.textureWidth, layout.textureHeight);
+        CompatGuiScreen.drawScaledCustomSizeModalRect(layout.drawRightX, layout.drawY, layout.sourceRightU,
+            layout.sourceTopV, layout.border, layout.border, layout.drawBorderX, layout.drawBorderY,
+            layout.textureWidth, layout.textureHeight);
+        CompatGuiScreen.drawScaledCustomSizeModalRect(layout.drawX, layout.drawBottomY, layout.sourceLeftU,
+            layout.sourceBottomV, layout.border, layout.border, layout.drawBorderX, layout.drawBorderY,
+            layout.textureWidth, layout.textureHeight);
+        CompatGuiScreen.drawScaledCustomSizeModalRect(layout.drawRightX, layout.drawBottomY, layout.sourceRightU,
+            layout.sourceBottomV, layout.border, layout.border, layout.drawBorderX, layout.drawBorderY,
+            layout.textureWidth, layout.textureHeight);
+    }
 
-        int centerSourceWidth = Math.max(1, textureWidth - border * 2);
-        int centerSourceHeight = Math.max(1, textureHeight - border * 2);
-        int centerDrawWidth = Math.max(0, placement.drawWidth() - drawBorderX * 2);
-        int centerDrawHeight = Math.max(0, placement.drawHeight() - drawBorderY * 2);
-        int sourceRightU = overlayEvent.getTextureU() + textureWidth - border;
-        int sourceBottomV = overlayEvent.getTextureV() + textureHeight - border;
-
-        CompatGuiScreen.drawScaledCustomSizeModalRect(placement.drawX(), placement.drawY(),
-            overlayEvent.getTextureU(), overlayEvent.getTextureV(), border, border,
-            drawBorderX, drawBorderY, textureWidth, textureHeight);
-        CompatGuiScreen.drawScaledCustomSizeModalRect(placement.drawX() + placement.drawWidth() - drawBorderX, placement.drawY(),
-            sourceRightU, overlayEvent.getTextureV(), border, border,
-            drawBorderX, drawBorderY, textureWidth, textureHeight);
-        CompatGuiScreen.drawScaledCustomSizeModalRect(placement.drawX(), placement.drawY() + placement.drawHeight() - drawBorderY,
-            overlayEvent.getTextureU(), sourceBottomV, border, border,
-            drawBorderX, drawBorderY, textureWidth, textureHeight);
-        CompatGuiScreen.drawScaledCustomSizeModalRect(placement.drawX() + placement.drawWidth() - drawBorderX,
-            placement.drawY() + placement.drawHeight() - drawBorderY,
-            sourceRightU, sourceBottomV, border, border,
-            drawBorderX, drawBorderY, textureWidth, textureHeight);
-
-        if (centerDrawWidth > 0) {
-            CompatGuiScreen.drawScaledCustomSizeModalRect(placement.drawX() + drawBorderX, placement.drawY(),
-                overlayEvent.getTextureU() + border, overlayEvent.getTextureV(),
-                centerSourceWidth, border, centerDrawWidth, drawBorderY, textureWidth, textureHeight);
-            CompatGuiScreen.drawScaledCustomSizeModalRect(placement.drawX() + drawBorderX,
-                placement.drawY() + placement.drawHeight() - drawBorderY,
-                overlayEvent.getTextureU() + border, sourceBottomV,
-                centerSourceWidth, border, centerDrawWidth, drawBorderY, textureWidth, textureHeight);
+    private void drawStretchGuiTextureHorizontalEdges(StretchGuiTextureLayout layout) {
+        if (layout.centerDrawWidth <= 0) {
+            return;
         }
-        if (centerDrawHeight > 0) {
-            CompatGuiScreen.drawScaledCustomSizeModalRect(placement.drawX(), placement.drawY() + drawBorderY,
-                overlayEvent.getTextureU(), overlayEvent.getTextureV() + border,
-                border, centerSourceHeight, drawBorderX, centerDrawHeight, textureWidth, textureHeight);
-            CompatGuiScreen.drawScaledCustomSizeModalRect(placement.drawX() + placement.drawWidth() - drawBorderX,
-                placement.drawY() + drawBorderY,
-                sourceRightU, overlayEvent.getTextureV() + border,
-                border, centerSourceHeight, drawBorderX, centerDrawHeight, textureWidth, textureHeight);
+        CompatGuiScreen.drawScaledCustomSizeModalRect(layout.drawInnerLeftX, layout.drawY, layout.sourceCenterLeftU,
+            layout.sourceTopV, layout.centerSourceWidth, layout.border, layout.centerDrawWidth, layout.drawBorderY,
+            layout.textureWidth, layout.textureHeight);
+        CompatGuiScreen.drawScaledCustomSizeModalRect(layout.drawInnerLeftX, layout.drawBottomY, layout.sourceCenterLeftU,
+            layout.sourceBottomV, layout.centerSourceWidth, layout.border, layout.centerDrawWidth, layout.drawBorderY,
+            layout.textureWidth, layout.textureHeight);
+    }
+
+    private void drawStretchGuiTextureVerticalEdges(StretchGuiTextureLayout layout) {
+        if (layout.centerDrawHeight <= 0) {
+            return;
         }
-        if (centerDrawWidth > 0 && centerDrawHeight > 0) {
-            CompatGuiScreen.drawScaledCustomSizeModalRect(placement.drawX() + drawBorderX, placement.drawY() + drawBorderY,
-                overlayEvent.getTextureU() + border, overlayEvent.getTextureV() + border,
-                centerSourceWidth, centerSourceHeight, centerDrawWidth, centerDrawHeight, textureWidth, textureHeight);
+        CompatGuiScreen.drawScaledCustomSizeModalRect(layout.drawX, layout.drawInnerTopY, layout.sourceLeftU,
+            layout.sourceCenterTopV, layout.border, layout.centerSourceHeight, layout.drawBorderX,
+            layout.centerDrawHeight, layout.textureWidth, layout.textureHeight);
+        CompatGuiScreen.drawScaledCustomSizeModalRect(layout.drawRightX, layout.drawInnerTopY, layout.sourceRightU,
+            layout.sourceCenterTopV, layout.border, layout.centerSourceHeight, layout.drawBorderX,
+            layout.centerDrawHeight, layout.textureWidth, layout.textureHeight);
+    }
+
+    private void drawStretchGuiTextureCenter(StretchGuiTextureLayout layout) {
+        if (layout.centerDrawWidth > 0 && layout.centerDrawHeight > 0) {
+            CompatGuiScreen.drawScaledCustomSizeModalRect(layout.drawInnerLeftX, layout.drawInnerTopY,
+                layout.sourceCenterLeftU, layout.sourceCenterTopV, layout.centerSourceWidth,
+                layout.centerSourceHeight, layout.centerDrawWidth, layout.centerDrawHeight, layout.textureWidth,
+                layout.textureHeight);
+        }
+    }
+
+    private record StretchGuiTextureLayout(int drawX, int drawY, int drawRightX, int drawBottomY,
+        int drawInnerLeftX, int drawInnerTopY, int sourceLeftU, int sourceTopV, int sourceCenterLeftU,
+        int sourceCenterTopV, int sourceRightU, int sourceBottomV, int border, int drawBorderX, int drawBorderY,
+        int centerSourceWidth, int centerSourceHeight, int centerDrawWidth, int centerDrawHeight, int textureWidth,
+        int textureHeight) {
+
+        private static StretchGuiTextureLayout compute(GuiOverlayPlacement placement,
+            PonderScene.OverlayEvent overlayEvent) {
+            int logicalWidth = Math.max(1, overlayEvent.getRegionWidth());
+            int logicalHeight = Math.max(1, overlayEvent.getRegionHeight());
+            int textureWidth = Math.max(1, overlayEvent.getTextureWidth());
+            int textureHeight = Math.max(1, overlayEvent.getTextureHeight());
+            int border = Math.min(overlayEvent.getStretchBorder(), Math.min(textureWidth / 2, textureHeight / 2));
+            border = Math.max(1, border);
+
+            int drawWidth = placement.drawWidth();
+            int drawHeight = placement.drawHeight();
+            int drawBorderX = Math.max(1, Math.round(border * (drawWidth / (float) logicalWidth)));
+            int drawBorderY = Math.max(1, Math.round(border * (drawHeight / (float) logicalHeight)));
+            drawBorderX = Math.min(drawBorderX, Math.max(1, drawWidth / 2));
+            drawBorderY = Math.min(drawBorderY, Math.max(1, drawHeight / 2));
+
+            int textureU = overlayEvent.getTextureU();
+            int textureV = overlayEvent.getTextureV();
+            int drawX = placement.drawX();
+            int drawY = placement.drawY();
+            int drawRightX = drawX + drawWidth - drawBorderX;
+            int drawBottomY = drawY + drawHeight - drawBorderY;
+            int drawInnerLeftX = drawX + drawBorderX;
+            int drawInnerTopY = drawY + drawBorderY;
+            int sourceLeftU = textureU;
+            int sourceTopV = textureV;
+            int sourceCenterLeftU = textureU + border;
+            int sourceCenterTopV = textureV + border;
+            int centerSourceWidth = Math.max(1, textureWidth - border * 2);
+            int centerSourceHeight = Math.max(1, textureHeight - border * 2);
+            int centerDrawWidth = Math.max(0, drawWidth - drawBorderX * 2);
+            int centerDrawHeight = Math.max(0, drawHeight - drawBorderY * 2);
+            int sourceRightU = textureU + textureWidth - border;
+            int sourceBottomV = textureV + textureHeight - border;
+
+            return new StretchGuiTextureLayout(drawX, drawY, drawRightX, drawBottomY, drawInnerLeftX, drawInnerTopY,
+                sourceLeftU, sourceTopV, sourceCenterLeftU, sourceCenterTopV, sourceRightU, sourceBottomV, border,
+                drawBorderX, drawBorderY, centerSourceWidth, centerSourceHeight, centerDrawWidth, centerDrawHeight,
+                textureWidth, textureHeight);
         }
     }
 

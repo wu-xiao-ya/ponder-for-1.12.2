@@ -22,7 +22,7 @@
 
 - `937a362 Refactor ponder foundation architecture` 已推送
 - `d661bbc Retry remote CI Gradle build` 已推送
-- `29d6ba7fef03813b3d86c279021595037bd9ff43` 已通过远程 CI
+- `1dd7cf8762bd4f050e12b7a2cbdb0fde1426becc` 是当前记录的远端可编译基线，Build `28734567954` 成功
 - `patch1.patch` 是未跟踪文件，暂存前需要确认用途
 - 第二批 UI adapter、RenderContext bridge、projection 预铺处于本地整合阶段
 
@@ -86,7 +86,7 @@ Unimined
 
 关键结论：
 
-- `PonderDebugScreen` 当前约 `2065` 行，主职责继续向页面协调器收口
+- `PonderDebugScreen` 当前约 `1433` 行，主职责继续向页面协调器收口
 - `PonderSceneController`、`DebugMouseController`、`ShowcaseMouseController` 已承担输入和编排的一部分
 - `LayoutCache`、`InteractionState`、`Snapshot.RenderCapability`、`PonderSceneRuntimeTypes.TransformStep` 已开始吃到 `record` 与 `sealed interface`
 - `ScenePreviewRenderer`、`ShowcaseRenderer`、`ShowcaseHudRenderer`、`DebugPanelRenderer`、`SceneOverlayRenderer`、`GuiOverlayRenderer` 已形成 renderer 分层
@@ -606,8 +606,8 @@ CI 整改候选：
 - 保留 JDK 25、Gradle cache、三次 Gradle retry
 - `gradle/scripts/dependencies.gradle` 在 CI 中优先使用 `mavenLocal()`
 - 远程 Gradle 首轮失败后会尝试从 Unimined cache 的 Cleanroom MCP jar 生成 `net.minecraft:minecraft:1.12.2` 的本地 Maven 条目，再进入下一轮 retry
-- 远程验证：`https://github.com/wu-xiao-ya/ponder-for-1.12.2/actions/runs/28585921669`
-- 通过提交：`29d6ba7fef03813b3d86c279021595037bd9ff43`
+- 远程验证：`Build 28734567954 success`，对应当前记录的远端可编译基线 `1dd7cf8762bd4f050e12b7a2cbdb0fde1426becc`
+- 通过提交：`1dd7cf8762bd4f050e12b7a2cbdb0fde1426becc`
 
 优先整改：
 

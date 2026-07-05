@@ -272,15 +272,22 @@ final class ScenePreviewRenderer {
             return;
         }
 
+        boolean blendInitiallyEnabled = GL11.glIsEnabled(GL11.GL_BLEND);
         try (GLStateGuard textureGuard = GLStateGuard.textureDisabled();
             GLStateGuard cullGuard = GLStateGuard.cullDisabled();
-            GLStateGuard colorGuard = GLStateGuard.color(1.0F, 1.0F, 1.0F, 1.0F)) {
-            GlStateManager.enableBlend();
+            GLStateGuard colorGuard = GLStateGuard.color(1.0F, 1.0F, 1.0F, 1.0F);
+            GLStateGuard blendGuard = GLStateGuard.blendEnabled()) {
             for (PonderSceneRuntime.ActorRuntimeState actor : actors) {
                 if (!actor.visible || actor.fade <= 0.0F) {
                     continue;
                 }
                 renderActorPreview(actor, currentTick);
+            }
+        } finally {
+            if (blendInitiallyEnabled) {
+                GlStateManager.enableBlend();
+            } else {
+                GlStateManager.disableBlend();
             }
         }
     }

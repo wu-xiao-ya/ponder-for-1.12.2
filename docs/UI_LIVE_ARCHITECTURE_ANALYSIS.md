@@ -2,19 +2,19 @@
 
 日期：2026-06-28
 来源工作区：E:\mc_modding\Ponder_refactor_plan
-分析目标：src/main/java/net/createmod/ponder/foundation/ui（91 个 Java 文件，~11140 行）
+分析目标：src/main/java/net/createmod/ponder/foundation/ui（101 个 Java 文件，~13103 行）
 
 ---
 
 ## 一、现有稳定分层与类清单
 
-当前 UI 包已从原始仓库的 27 个文件（PonderDebugScreen 2692 行为核心的泥团结构）重组为 91 个文件、8 个逻辑层。
+当前 UI 包已从原始仓库的 27 个文件（PonderDebugScreen 2692 行为核心的泥团结构）重组为 101 个文件、8 个逻辑层。
 
 ### 1.1 screen/ —— 页面编排层
 
 | 类名 | 行数 | 职责 | 继承/依赖 |
 |------|------|------|-----------|
-| `PonderDebugScreen.java` | 1437 | 调试浏览器：scene 选择、preview 编排、playback 控制、overlay 调度 | 继承 `CompatGuiScreen`，持有 state/controller/renderer 引用 |
+| `PonderDebugScreen.java` | 1433 | 调试浏览器：scene 选择、preview 编排、playback 控制、overlay 调度 | 继承 `CompatGuiScreen`，持有 state/controller/renderer 引用 |
 | `PonderUI.java` | 277 | Showcase 入口：header、backdrop、logo、group popup | 继承 `PonderDebugScreen` |
 | `PonderIndexScreen.java` | 366 | 组件浏览器：标签面板 + 搜索 + 网格布局 | 继承 `AbstractPonderBrowserScreen` |
 | `PonderTagScreen.java` | 174 | 单标签视图：摘要 + 关联组件网格 | 继承 `AbstractPonderBrowserScreen` |
@@ -47,22 +47,22 @@
 
 | 类名 | 行数 | 职责 |
 |------|------|------|
-| `ScenePreviewRenderer.java` | 406 | 3D 方块/tile/actor 场景预览：BlockRendererDispatcher 调度、TE 缓存、actor 几何绘制 |
-| `GuiOverlayRenderer.java` | 223 | GUI 纹理 overlay：framed panel、connector、highlight、stretch texture |
+| `ScenePreviewRenderer.java` | 490 | 3D 方块/tile/actor 场景预览：scissor/lighting guard、TE 缓存、actor 几何绘制 |
+| `GuiOverlayRenderer.java` | 331 | 基于 `SceneProjectionContext` 的 GUI overlay / highlight：framed panel、connector、stretch texture layout、snapshot overlay |
 | `ActorOverlayRenderer.java` | 38 | Actor 俯视标记：方块指示、朝向线、标签文字 |
 | `ShowcaseRenderer.java` | 213 | Showcase header 渲染：渐变背景、logo、标题、group 图标条 |
 | `ShowcaseCaptionRenderer.java` | 129 | Showcase 字幕气泡：speech box 定位、connector、fade 计算 |
 | `ShowcaseChromeRenderer.java` | 72 | Showcase 装饰元素：prev/next 卡片、进度指示 |
 | `ShowcaseHudRenderer.java` | 128 | Showcase HUD：playback bar、时间标签、回放控制图标 |
 | `SpeechRenderer.java` | 199 | 通用 speech box 基元：渐变框、connector、highlight、`SpeechPointing` 枚举、`Point` |
-| `DebugPanelRenderer.java` | 247 | 调试面板：component 列表、operation 列表、world event 详情、scroll 计算 |
+| `DebugPanelRenderer.java` | 319 | 调试面板：component 列表、operation 列表、world event 详情、scroll 计算 |
 
 ### 1.5 helper/ —— 布局与几何辅助层
 
 | 类名 | 行数 | 职责 | 特性 |
 |------|------|------|------|
 | `PonderOverlayLayoutHelper.java` | 120 | 投影数学：`projectScenePoint()`、`projectSceneBounds()`、preview scale/anchor 计算 | 内嵌 `ProjectedBounds` |
-| `PonderOverlayHelper.java` | 319 | Overlay 布局计算：`CaptionPlacement`、`GuiOverlayPlacement`、`GuiHighlightPlacement`、fade 计算 | 产出 placement 对象 |
+| `PonderOverlayHelper.java` | 73 | Overlay facade：fade 计算、projection placement 兼容入口 | 委托 `OverlayPlacementEngine` |
 | `PonderPreviewRenderHelper.java` | 62 | `getActualState` 兼容反射 + tile NBT 应用 |
 | `PonderSceneRuntimeTypes.java` | 44 | **sealed interface** `TransformStep` + `MoveStep`/`RotateStep` record + `RuntimeBlockState` + `RuntimeState` record | Java 25 sealed |
 | `ThermalMachinePreviewHelper.java` | 67 | 热力机器温度条 preview 渲染 |
@@ -108,18 +108,16 @@
 
 ## 二、仍然耦合的热点与下一步抽离顺序
 
-### 2.1 热点 1：`PonderDebugScreen.java`（1437 行）—— 核心编排残留
+### 2.1 热点 1：`PonderDebugScreen.java`（1433 行）—— 核心编排残留
 
 **问题：**
-- 仍直接操作 `GlStateManager`（`enablePreviewScissor`、`drawSceneShadow`、`renderScenePreview` 方法）
+- Preview GL 生命周期已经迁入 `ScenePreviewRenderer`，`PonderDebugScreen` 主要残留在页面编排、布局缓存接线与 overlay 调度
 - 仍持有与 `PonderPreviewCameraState` 重复的字段 `previewYaw`、`previewPitch`、`previewZoom`（通过 `resetPreviewCamera()` 同步但保留副本）
-- `renderScenePreview()` 方法（~120 行）直接混合了 GL 状态管理、方块遍历、actor 投影、shadow 绘制——应完全委托给 `ScenePreviewRenderer`
-- `drawSceenShadow` / `enablePreviewScissor` 应迁入 `ScenePreviewRenderer`
 - 大量 `last*` 字段（`lastPlaybackBarX/Y`、`lastNextUpCardX/Y` 等）已可通过 `LayoutCache` 替代，但仍保留
 
 **抽离顺序：**
 1. 删除 `previewYaw`/`previewPitch`/`previewZoom` 副本，全部走 `PonderPreviewCameraState`
-2. `drawSceneShadow` → 迁入 `ScenePreviewRenderer`
+2. 继续把 preview layout、overlay 调度与 debug/showcase chrome 接线拆成更小的 renderer adapter
 3. `enablePreviewScissor`/`disablePreviewScissor` → 迁入 `ScenePreviewRenderer`
 4. `renderScenePreview` 主体逻辑 → 迁入 `ScenePreviewRenderer.renderFull()`
 5. 删除所有 `last*` 字段，走 `InteractionHitCache.getLayout()`
@@ -188,7 +186,7 @@
 - `GLStateGuard`（`AutoCloseable`）守卫 GL 状态恢复
 
 **具体收益：**
-- `ScenePreviewRenderer`（406 行）中 ~50 行 GL 状态管理代码可压缩为守卫模式
+- `ScenePreviewRenderer`（490 行）中 GL 状态管理已经集中到 `GLStateGuard`，后续继续收口矩阵与深度分支
 - 后续离屏渲染、snapshot 缓存绘制可共用同一抽象
 - `PonderDebugScreen` 中残留的 GL 操作可彻底消除
 
@@ -336,7 +334,7 @@
 - Controller 分离：5 个输入控制器，通过 `Host` 接口与 Screen 通信 ✅
 - Renderer 分离：9 个 renderer 类，职责明确 ✅
 - Java 25 特性启用：`LayoutCache`（record）、`InteractionState`（record）、`TransformStep`（sealed interface）、`RuntimeState`（record）✅
-- `PonderDebugScreen` 从 2692 行缩减至 1437 行（-47%）✅
+- `PonderDebugScreen` 从 2692 行缩减至 1433 行（-47%）✅
 - `OverlayPlacementEngine` 已落地，`PonderOverlayHelper` 已收口为 facade ✅
 - `SnapshotSource` 已 sealed 化，`ConstantSnapshotSource` / `ProviderSnapshotSource` 已独立 ✅
 - `PonderTheme` / `PonderThemes` / `ThemeResolver` 与 `ponder_themes.json` 已落地 ✅
