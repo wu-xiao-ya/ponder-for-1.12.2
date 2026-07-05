@@ -3,7 +3,9 @@
 ## Platform choice
 
 - Runtime target: Minecraft 1.12.2 on Cleanroom / CRL
-- Build template: CleanroomMC ForgeDevEnv
+- Build chain: Unimined 1.4.16-kappa
+- Java toolchain: JDK 25
+- Historical bootstrap reference: CleanroomMC ForgeDevEnv
 - Upstream reference: `Creators-of-Create/Ponder` branch `mc1.20.1/dev`
 
 ## Why `mc1.20.1/dev`

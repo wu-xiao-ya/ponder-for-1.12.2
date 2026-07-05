@@ -21,7 +21,7 @@ Recommended reading order:
 
 ## Build Outputs
 
-- Full client/runtime jar: `gradlew.bat reobfJar`
+- Full client/runtime jar: `gradlew.bat remapJar`
 - Forge server shim jar: `gradlew.bat forgeServerShimJar`
 
 Use the full jar on clients and the shim jar on stock Forge dedicated servers.

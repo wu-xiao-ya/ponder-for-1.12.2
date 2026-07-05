@@ -37,7 +37,7 @@ jobs:
         shell: bash
         run: chmod +x ./gradlew
 
-      - name: Compile and build server shim
+      - name: Compile runtime jar and server shim
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -73,8 +73,11 @@ jobs:
           Repair-MinecraftMavenLocal
           for ($attempt = 1; $attempt -le 3; $attempt++) {
             Write-Host "Gradle attempt $attempt/3"
-            & .\gradlew.bat compileJava forgeServerShimJar --stacktrace
+            & .\gradlew.bat compileJava remapJar forgeServerShimJar -Pdeploy_test_mods_dir= --stacktrace
             if ($LASTEXITCODE -eq 0) {
+              Get-ChildItem -LiteralPath "build\libs" -File |
+                Sort-Object Name |
+                ForEach-Object { Write-Host "Built artifact: $($_.Name) ($($_.Length) bytes)" }
               exit 0
             }
             Repair-MinecraftMavenLocal
@@ -84,9 +87,18 @@ jobs:
           }
           exit $LASTEXITCODE
 
+      - name: Upload Ponder runtime jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: ponder-client-runtime
+          path: build/libs/ponder-0.1.0-beta.jar
+          if-no-files-found: error
+          retention-days: 30
+
       - name: Upload Forge server shim
         uses: actions/upload-artifact@v4
         with:
           name: forge-server-shim
           path: build/libs/*forge-server-shim*.jar
           if-no-files-found: error
+          retention-days: 30

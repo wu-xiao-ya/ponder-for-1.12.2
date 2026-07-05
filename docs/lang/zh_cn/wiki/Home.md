@@ -21,7 +21,7 @@ Ponder for 1.12.2 是 Ponder 教程系统面向 Cleanroom / CRL 的回移版本�
 
 ## 构建产物
 
-- 完整客户端/运行时 jar：`gradlew.bat reobfJar`
+- 完整客户端/运行时 jar：`gradlew.bat remapJar`
 - Forge 服务端 shim jar：`gradlew.bat forgeServerShimJar`
 
 客户端使用完整 jar，stock Forge 专用服务端使用 shim jar。

@@ -56,8 +56,12 @@ Typical commands:
 
 ```bat
 gradlew.bat compileJava
-gradlew.bat reobfJar
+gradlew.bat remapJar
+gradlew.bat forgeServerShimJar
 ```
+
+`remapJar` builds the Cleanroom / CRL client runtime jar. `forgeServerShimJar`
+builds the stock Forge 1.12.2 dedicated-server compatibility shim.
 
 If your machine still defaults to Java 8, see:
 

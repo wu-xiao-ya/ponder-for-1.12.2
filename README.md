@@ -2,7 +2,7 @@
 
 Minecraft `1.12.2` backport of
 [Ponder](https://github.com/Creators-of-Create/Ponder),
-targeting **Cleanroom / CRL**.
+built on **Unimined** and targeting **Cleanroom / CRL**.
 
 This branch is not a straight upstream recompile. It is a practical backport
 with rewritten UI, rendering, runtime, and compatibility layers for the 1.12.2
@@ -71,10 +71,11 @@ Typical commands:
 
 ```bat
 gradlew.bat compileJava
-gradlew.bat reobfJar
+gradlew.bat remapJar
 gradlew.bat forgeServerShimJar
 ```
 
+`remapJar` builds the full Cleanroom / CRL client runtime jar under `build/libs`.
 `forgeServerShimJar` builds a stock Forge 1.12.2 dedicated-server compatibility jar.
 See [Forge server shim](docs/forge_server_shim.md).
 

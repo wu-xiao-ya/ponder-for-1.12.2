@@ -22,7 +22,7 @@
 
 - `937a362 Refactor ponder foundation architecture` 已推送
 - `d661bbc Retry remote CI Gradle build` 已推送
-- `1dd7cf8762bd4f050e12b7a2cbdb0fde1426becc` 是当前记录的远端可编译基线，Build `28734567954` 成功
+- `4fa20aab18668991a596809432375699392813f4` 是当前记录的远端可编译基线，Build `28735055457` 成功
 - `patch1.patch` 是未跟踪文件，暂存前需要确认用途
 - 第二批 UI adapter、RenderContext bridge、projection 预铺处于本地整合阶段
 
@@ -606,8 +606,8 @@ CI 整改候选：
 - 保留 JDK 25、Gradle cache、三次 Gradle retry
 - `gradle/scripts/dependencies.gradle` 在 CI 中优先使用 `mavenLocal()`
 - 远程 Gradle 首轮失败后会尝试从 Unimined cache 的 Cleanroom MCP jar 生成 `net.minecraft:minecraft:1.12.2` 的本地 Maven 条目，再进入下一轮 retry
-- 远程验证：`Build 28734567954 success`，对应当前记录的远端可编译基线 `1dd7cf8762bd4f050e12b7a2cbdb0fde1426becc`
-- 通过提交：`1dd7cf8762bd4f050e12b7a2cbdb0fde1426becc`
+- 远程验证：`Build 28735055457 success`，对应当前记录的远端可编译基线 `4fa20aab18668991a596809432375699392813f4`
+- 通过提交：`4fa20aab18668991a596809432375699392813f4`
 
 优先整改：
 
@@ -925,8 +925,13 @@ CI 整改候选：
 CI 覆盖命令：
 
 ```powershell
-.\gradlew.bat compileJava forgeServerShimJar --stacktrace
+.\gradlew.bat compileJava remapJar forgeServerShimJar -Pdeploy_test_mods_dir= --stacktrace
 ```
+
+CI 上传两个 beta 验证产物：
+
+- `ponder-client-runtime`：Cleanroom / CRL 客户端运行时 jar
+- `forge-server-shim`：stock Forge 1.12.2 专用服务端兼容 shim
 
 本地只做静态检查，例如 `git diff --check`、`rg`、结构性文件审计。
 
@@ -1098,6 +1103,11 @@ rg -n "<<<<<<<|=======|>>>>>>>" .
 gh workflow run Build --ref codex/ponder-refactor-plan-20260624
 gh run watch <run_id> --exit-status
 ```
+
+远程 beta 产物门固定上传：
+
+- `ponder-client-runtime`
+- `forge-server-shim`
 
 构建层目标：
 

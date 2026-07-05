@@ -55,8 +55,12 @@
 
 ```bat
 gradlew.bat compileJava
-gradlew.bat reobfJar
+gradlew.bat remapJar
+gradlew.bat forgeServerShimJar
 ```
+
+`remapJar` 会生成 Cleanroom / CRL 客户端运行时 jar。`forgeServerShimJar`
+会生成 stock Forge 1.12.2 专用服务端兼容 shim。
 
 如果你的机器默认仍然是 Java 8，请看：
 
