@@ -28,7 +28,7 @@
 - `SnapshotSource` / `ConstantSnapshotSource` / `ProviderSnapshotSource` / `SnapshotRegistryStore` 已完成
 - `PonderTheme` / `PonderThemes` / `ThemeResolver` / `ponder_themes.json` 已完成
 - `ExternalRegistrationDiagnostic(s)` 已完成
-- `RenderContext` bridge 已完成，Actor / Scene / Particle / POI / Controls overlay 已迁入 `RenderContext`，`OverlayDrawContextAdapter` 已抽出
+- `RenderContext` 2D bridge 已完成，Actor / Scene / Particle / POI / Controls overlay 已迁入 `RenderContext`，`OverlayDrawContextAdapter` 已抽出
 - `ScenePreviewRenderer.renderPreviewScenePass(...)` 与 `ScenePreviewStateScope` 已抽出，preview 帧生命周期、主场景 pass、preview state scope 已分层
 - `PonderDebugScreen` adapter 切片已完成，HUD host、renderer host、caption host 已收口，showcase HUD 文案提供器已内联
 - `ShowcaseHudHoverLabelHostAdapter` 已退场，`PonderDebugScreenHostSupport` 直接实现 `ShowcaseHudRenderer.HoverLabelHost`
@@ -344,11 +344,12 @@ plugin input
 
 - `GlRenderContext`
 - `GLStateGuard`
-- `SnapshotRenderContext`
+- `DebugPanelDrawContextAdapter`
+- `OverlayDrawContextAdapter`
 
 状态：
 
-- `RenderContext` bridge 已完成
+- `RenderContext` 2D bridge 已完成，preview / snapshot 继续通过各自 state scope 收口
 - Actor / Scene / Particle / POI / Controls overlay 已迁入 `RenderContext`
 - `OverlayDrawContextAdapter` 已抽出
 
@@ -823,10 +824,10 @@ CI 整改候选：
 - `foundation/ui/render/ScissorStack.java` 已落地
 - `CompatGuiScreen` 已实现 `DrawContext`
 - `RenderContext` 已补 `drawBorderedRect` / `drawCrossMarker` 等通用 primitive
-- `GLStateGuard` 已补 color restore guard，`GlRenderContext.drawLine()` 已收束颜色恢复
+- `GLStateGuard` 已补 scissor / color 入场快照恢复，`GlRenderContext.drawLine()` 已收束颜色恢复
 - `DebugPanelRenderer` 已接入 local `RenderContext` bridge 复用 entry chrome
 - `DrawContext` 已继承 `RenderContext` 并提供 1.12.2 GUI bridge
-- `RenderContext` bridge 已完成，Actor / Scene / Particle / POI / Controls overlay 已迁入 `RenderContext`
+- `RenderContext` 2D bridge 已完成，Actor / Scene / Particle / POI / Controls overlay 已迁入 `RenderContext`，preview / snapshot 继续通过各自 state scope 收口
 
 #### P1-2：建立 `SceneProjectionContext + OverlayPlacementEngine`
 
@@ -1030,7 +1031,7 @@ CI 在上传前执行 beta 产物内容门，并上传两个 beta 验证产物�
 2. 收口 CraftTweaker / shim 边界
 3. 视需要补齐 `PonderDebugScreen` 残余 host adapter
 4. 继续把 tag / shared text 的逐条失败明细扩展成可截断输出
-5. 继续推进 `ScenePreviewRenderer` 的 scissor stack 与 GLStateGuard 单项能力
+5. 继续推进 `ScenePreviewRenderer` 的 GLStateGuard 单项能力，优先补 lighting / texture / alpha / blend 入场快照恢复
 
 这条顺序能先消灭当前最高频的耦合点，再推进更深层的现代化改造。
 
@@ -1044,7 +1045,7 @@ CI 在上传前执行 beta 产物内容门，并上传两个 beta 验证产物�
 2. Showcase hover-label：维持 `ShowcaseHudRenderer.computeHoverLabel(...)` 单入口，继续压缩 screen 侧接线
 3. CI / artifact verifier 门：围绕当前 `build.gradle + gradle/scripts/*` 验证路径继续补远程门禁
 4. CraftTweaker / shim：收口边界和发布语义
-5. ScenePreviewRenderer：继续推进 scissor stack 与 GLStateGuard 单项能力
+5. ScenePreviewRenderer：继续推进 GLStateGuard 单项能力，优先补 lighting / texture / alpha / blend 入场快照恢复
 
 主代理负责范围控制、冲突处理、文档同步、远程 CI 验证。
 

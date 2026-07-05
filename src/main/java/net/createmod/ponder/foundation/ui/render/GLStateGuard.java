@@ -1,5 +1,6 @@
 package net.createmod.ponder.foundation.ui.render;
 
+import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
 import net.minecraft.client.Minecraft;
@@ -83,8 +84,14 @@ public final class GLStateGuard implements AutoCloseable {
     }
 
     public static GLStateGuard color(float red, float green, float blue, float alpha) {
+        FloatBuffer previousColor = BufferUtils.createFloatBuffer(4);
+        GL11.glGetFloat(GL11.GL_CURRENT_COLOR, previousColor);
         GlStateManager.color(red, green, blue, alpha);
-        return new GLStateGuard(() -> GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F));
+        return new GLStateGuard(() -> GlStateManager.color(
+                previousColor.get(0),
+                previousColor.get(1),
+                previousColor.get(2),
+                previousColor.get(3)));
     }
 
     public static GLStateGuard color(int color) {
