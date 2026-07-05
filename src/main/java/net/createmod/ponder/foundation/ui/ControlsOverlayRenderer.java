@@ -7,15 +7,17 @@ import java.util.List;
 import net.createmod.catnip.math.Pointing;
 import net.createmod.ponder.foundation.PonderScene;
 import net.createmod.ponder.foundation.ui.PonderScenePreview.PreviewBounds;
+import net.createmod.ponder.foundation.ui.render.RenderContext;
+import net.minecraft.client.Minecraft;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.MathHelper;
 
 final class ControlsOverlayRenderer {
 
     private final PonderOverlayLayoutHelper overlayLayoutHelper;
-    private final DrawContext draw;
+    private final RenderContext draw;
 
-    ControlsOverlayRenderer(PonderOverlayLayoutHelper overlayLayoutHelper, DrawContext draw) {
+    ControlsOverlayRenderer(PonderOverlayLayoutHelper overlayLayoutHelper, RenderContext draw) {
         this.overlayLayoutHelper = overlayLayoutHelper;
         this.draw = draw;
     }
@@ -75,7 +77,7 @@ final class ControlsOverlayRenderer {
 
         int rowX = boxX + 7;
         if (!stack.isEmpty()) {
-            draw.renderItemStack(stack, boxX + 6, boxY + 4);
+            draw.renderItem(stack, boxX + 6, boxY + 4);
             rowX += 20;
         }
 
@@ -94,7 +96,7 @@ final class ControlsOverlayRenderer {
         }
         int width = 0;
         for (String token : tokens) {
-            width += Math.max(16, draw.getStringWidth(token) + 8);
+            width += Math.max(16, getStringWidth(token) + 8);
         }
         width += Math.max(0, tokens.size() - 1) * 4;
         return width;
@@ -103,15 +105,33 @@ final class ControlsOverlayRenderer {
     private void drawTokenRow(List<String> tokens, int x, int y, int accentColor, float fade, boolean emphasized) {
         int cursor = x;
         for (String token : tokens) {
-            int chipWidth = Math.max(16, draw.getStringWidth(token) + 8);
-            int fill = draw.withAlpha(emphasized ? draw.blendColors(0x18212B, accentColor, 0.66F) : 0x18212B,
+            int chipWidth = Math.max(16, getStringWidth(token) + 8);
+            int fill = withAlpha(emphasized ? blendColors(0x18212B, accentColor, 0.66F) : 0x18212B,
                 fade * (emphasized ? 126.0F : 96.0F));
-            int edge = draw.withAlpha(draw.blendColors(0xEDE4D4, accentColor, emphasized ? 0.85F : 0.45F),
+            int edge = withAlpha(blendColors(0xEDE4D4, accentColor, emphasized ? 0.85F : 0.45F),
                 fade * (emphasized ? 220.0F : 164.0F));
             draw.drawBorderedRect(cursor, y, cursor + chipWidth, y + 10, fill, edge);
-            draw.drawCenteredString(token, cursor + chipWidth / 2, y + 1, 0xF2F5F8);
+            draw.renderCenteredText(token, cursor + chipWidth / 2, y + 1, 0xF2F5F8);
             cursor += chipWidth + 4;
         }
+    }
+
+    private int getStringWidth(String text) {
+        return Minecraft.getMinecraft().fontRenderer.getStringWidth(text);
+    }
+
+    private static int blendColors(int baseColor, int accentColor, float accentWeight) {
+        float clampedWeight = MathHelper.clamp(accentWeight, 0.0F, 1.0F);
+        float baseWeight = 1.0F - clampedWeight;
+        int red = Math.round(((baseColor >> 16) & 0xFF) * baseWeight + ((accentColor >> 16) & 0xFF) * clampedWeight);
+        int green = Math.round(((baseColor >> 8) & 0xFF) * baseWeight + ((accentColor >> 8) & 0xFF) * clampedWeight);
+        int blue = Math.round((baseColor & 0xFF) * baseWeight + (accentColor & 0xFF) * clampedWeight);
+        return red << 16 | green << 8 | blue;
+    }
+
+    private static int withAlpha(int color, float alpha) {
+        int clampedAlpha = Math.min(255, Math.max(0, (int) alpha));
+        return (clampedAlpha << 24) | (color & 0x00FFFFFF);
     }
 
     private String getPointingLabel(Pointing pointing) {
