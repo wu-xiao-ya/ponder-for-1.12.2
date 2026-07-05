@@ -33,6 +33,7 @@
 - `PonderDebugScreen` adapter 切片已完成，HUD host、renderer host、caption host、HUD text provider 已收口
 - tag 注册结果已统一到 `RegistrationOutcome`，`ExternalTagDefinitionRegistrar.Result` 已退场
 - external scan 已产出 `ExternalScanResult`，files / scannedRoots / skippedRoots 进入结构化结果
+- external validate 已产出 `ValidationReport` 与 `ExternalValidationDiagnostic(s)`，文件级加载失败和重复 interaction warning 进入诊断汇总
 - `PonderReloadOrchestrator` 已落地，scan / parse / validate / compile / register 结果继续结构化
 
 ## 1. 目标
@@ -110,6 +111,7 @@ Unimined
 - registration 内部写入已通过 `RegistrationCommands` 与 `RegistrationCommandService` 收口
 - tag definition 注册与 component-tag assignment 已统一用 `RegistrationOutcome` 汇总
 - external scan 阶段已通过 `ExternalScanResult` 暴露扫描文件与根路径统计
+- external validate 阶段已通过 `ValidationReport` 汇总 filesScanned / filesLoaded / filesFailed / warnings / errors
 - `RenderContext` bridge 已完成，Actor / Scene / Particle / POI / Controls overlay 已迁入 `RenderContext`
 - `ScenePreviewRenderer` 已把 preview frame lifecycle 与 scene pass 分开，下一步收口 scoped preview state guard
 - `PonderReloadOrchestrator` 已落地，scan / parse / validate / compile / register 结果继续结构化
@@ -932,7 +934,7 @@ CI 整改候选：
 状态：已落地，继续拆分
 
 - `PonderReloadOrchestrator` 已落地
-- scan 与 register 结果口径已先统一，reload 结果继续拆成 parse / validate / compile / register
+- scan / validate / register 结果口径已先统一，reload 结果继续拆成 parse / compile / register
 - 每个阶段继续返回结构化结果
 - 失败信息统一进入 diagnostic sink
 
@@ -1007,7 +1009,7 @@ CI 上传两个 beta 验证产物：
 
 真正开工时按下面顺序最稳：
 
-1. 把 `PonderReloadOrchestrator` 的 parse / validate / compile / register 结果继续结构化
+1. 把 `PonderReloadOrchestrator` 的 parse / compile / register 结果继续结构化
 2. 收口 showcase hover-label 的命中判定与文案拼接路径
 3. 推进 CI / test 门，固定当前 `build.gradle + gradle/scripts/*` 构建路径
 4. 收口 CraftTweaker / shim 边界
@@ -1021,7 +1023,7 @@ CI 上传两个 beta 验证产物：
 
 建议并行切片：
 
-1. Reload 编排：继续拆 validate 报告与 parse 阶段结果对象
+1. Reload 编排：继续拆 parse 阶段结果对象并接入 reload 汇总
 2. Showcase hover-label：统一命中判定与文案拼接路径
 3. CI / test 门：围绕当前 `build.gradle + gradle/scripts/*` 验证路径补门禁
 4. CraftTweaker / shim：收口边界和发布语义
