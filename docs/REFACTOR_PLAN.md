@@ -31,6 +31,7 @@
 - `RenderContext` bridge 已完成，Actor / Scene / Particle / POI / Controls overlay 已迁入 `RenderContext`，`OverlayDrawContextAdapter` 已抽出
 - `ScenePreviewRenderer.renderPreviewScenePass(...)` 与 `ScenePreviewStateScope` 已抽出，preview 帧生命周期、主场景 pass、preview state scope 已分层
 - `PonderDebugScreen` adapter 切片已完成，HUD host、renderer host、caption host 已收口，showcase HUD 文案提供器已内联
+- `ShowcaseHudHoverLabelHostAdapter` 已退场，`PonderDebugScreenHostSupport` 直接实现 `ShowcaseHudRenderer.HoverLabelHost`
 - tag 注册结果已统一到 `RegistrationOutcome`，`ExternalTagDefinitionRegistrar.Result` 已退场
 - external scan 已产出 `ExternalScanResult`，files / scannedRoots / skippedRoots 进入结构化结果
 - external validate 已产出 `ValidationReport` 与 `ExternalValidationDiagnostic(s)`，文件级加载失败和重复 interaction warning 进入诊断汇总
@@ -1024,11 +1025,11 @@ CI 上传两个 beta 验证产物：
 
 真正开工时按下面顺序最稳：
 
-1. 收口 showcase hover-label 的命中判定与文案拼接路径，保留 `ShowcaseHudRenderer.computeHoverLabel(...)` 作为唯一运行时入口
-2. 推进 CI / test 门，固定当前 `build.gradle + gradle/scripts/*` 构建路径
-3. 收口 CraftTweaker / shim 边界
-4. 视需要补齐 `PonderDebugScreen` 残余 host adapter
-5. 继续把 tag / shared text 的逐条失败明细扩展成可截断输出
+1. 推进 CI / test 门，固定当前 `build.gradle + gradle/scripts/*` 构建路径
+2. 收口 CraftTweaker / shim 边界
+3. 视需要补齐 `PonderDebugScreen` 残余 host adapter
+4. 继续把 tag / shared text 的逐条失败明细扩展成可截断输出
+5. 继续推进 `ScenePreviewRenderer` 的 scissor stack 与 GLStateGuard 单项能力
 
 这条顺序能先消灭当前最高频的耦合点，再推进更深层的现代化改造。
 
@@ -1039,7 +1040,7 @@ CI 上传两个 beta 验证产物：
 建议并行切片：
 
 1. Reload 编排：继续把 tag / shared text 的逐条失败明细接入 reload 汇总
-2. Showcase hover-label：维持 `ShowcaseHudRenderer.computeHoverLabel(...)` 单入口，继续清理残余重复实现
+2. Showcase hover-label：维持 `ShowcaseHudRenderer.computeHoverLabel(...)` 单入口，继续压缩 screen 侧接线
 3. CI / test 门：围绕当前 `build.gradle + gradle/scripts/*` 验证路径补远程门禁
 4. CraftTweaker / shim：收口边界和发布语义
 5. ScenePreviewRenderer：继续推进 scissor stack 与 GLStateGuard 单项能力

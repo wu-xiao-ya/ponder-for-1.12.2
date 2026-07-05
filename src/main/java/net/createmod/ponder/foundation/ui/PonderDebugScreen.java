@@ -127,8 +127,6 @@ public class PonderDebugScreen extends CompatGuiScreen {
     @Nullable
     private ActorOverlayRenderer actorOverlayRenderer;
     @Nullable
-    private ShowcaseHudRenderer.HoverLabelHost showcaseHoverLabelHost;
-    @Nullable
     private ShowcaseHudRenderer.Theme showcaseHudTheme;
 
     private ShowcaseHudRenderer.Theme getShowcaseHudTheme() {
@@ -874,13 +872,6 @@ public class PonderDebugScreen extends CompatGuiScreen {
         return poiOverlayRenderer;
     }
 
-    private ShowcaseHudRenderer.HoverLabelHost getShowcaseHoverLabelHost() {
-        if (showcaseHoverLabelHost == null) {
-            showcaseHoverLabelHost = new ShowcaseHudHoverLabelHostAdapter(hostSupport);
-        }
-        return showcaseHoverLabelHost;
-    }
-
     protected void drawShowcaseGroupPopup(int x, int y, int maxWidth, float fade) {
         ShowcaseRenderer.GroupPopupResult popup = getFallbackShowcaseRenderer().drawGroupPopup(x, y, maxWidth,
             interactionHitCache.getShowcaseHeaderIconX(), fade, interactionHitCache.isShowcaseGroupSelectorOpen(),
@@ -982,7 +973,7 @@ public class PonderDebugScreen extends CompatGuiScreen {
 
     @Nullable
     protected String computeShowcaseHoverLabel(int mouseX, int mouseY) {
-        return ShowcaseHudRenderer.computeHoverLabel(mouseX, mouseY, getShowcaseHoverLabelHost(), getShowcaseHudTheme());
+        return ShowcaseHudRenderer.computeHoverLabel(mouseX, mouseY, hostSupport, getShowcaseHudTheme());
     }
 
     private void drawSpeechBox(int boxX, int boxY, int boxWidth, int boxHeight,

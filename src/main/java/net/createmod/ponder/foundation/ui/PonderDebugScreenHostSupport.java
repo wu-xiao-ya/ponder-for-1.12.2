@@ -11,7 +11,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
 
-final class PonderDebugScreenHostSupport {
+final class PonderDebugScreenHostSupport implements ShowcaseHudRenderer.HoverLabelHost {
 
     private final PonderDebugScreen screen;
     private final PonderSceneSelectionState selectionState;
@@ -44,19 +44,23 @@ final class PonderDebugScreenHostSupport {
         screen.clearPreviewCaches();
     }
 
-    boolean isMouseOverPlaybackBar(int mouseX, int mouseY) {
+    @Override
+    public boolean isMouseOverPlaybackBar(int mouseX, int mouseY) {
         return screen.isMouseOverPlaybackBar(mouseX, mouseY);
     }
 
-    int estimatePlaybackTickForMouse(int mouseX) {
+    @Override
+    public int estimatePlaybackTickForMouse(int mouseX) {
         return screen.estimatePlaybackTickForMouse(mouseX);
     }
 
-    PonderScene getSelectedScene() {
+    @Override
+    public PonderScene getSelectedScene() {
         return screen.getSelectedScene();
     }
 
-    ItemStack createComponentStack(ResourceLocation componentId) {
+    @Override
+    public ItemStack createComponentStack(ResourceLocation componentId) {
         return screen.createComponentStack(componentId);
     }
 
@@ -211,7 +215,8 @@ final class PonderDebugScreenHostSupport {
         screen.getDebugPanelBridge().scrollOperations(delta);
     }
 
-    ShowcaseGroupIconHitBox getShowcaseGroupIconAt(int mouseX, int mouseY) {
+    @Override
+    public ShowcaseGroupIconHitBox getShowcaseGroupIconAt(int mouseX, int mouseY) {
         return interactionHitCache.getShowcaseGroupIconAt(mouseX, mouseY);
     }
 
@@ -223,7 +228,8 @@ final class PonderDebugScreenHostSupport {
         screen.selectComponent(icon.componentId, 0);
     }
 
-    boolean isMouseOverNextUpCard(int mouseX, int mouseY) {
+    @Override
+    public boolean isMouseOverNextUpCard(int mouseX, int mouseY) {
         return screen.isMouseOverNextUpCard(mouseX, mouseY);
     }
 
@@ -231,11 +237,13 @@ final class PonderDebugScreenHostSupport {
         screen.selectSceneFromHost(selectionState.getSelectedSceneIndex() + 1);
     }
 
-    boolean isMouseOverShowcaseHeaderIcon(int mouseX, int mouseY) {
+    @Override
+    public boolean isMouseOverShowcaseHeaderIcon(int mouseX, int mouseY) {
         return screen.isMouseOverShowcaseHeaderIcon(mouseX, mouseY);
     }
 
-    boolean hasShowcaseGroupChoices() {
+    @Override
+    public boolean hasShowcaseGroupChoices() {
         return screen.hasShowcaseGroupChoices();
     }
 
