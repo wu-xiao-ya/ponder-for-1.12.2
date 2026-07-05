@@ -61,10 +61,8 @@ final class ScenePreviewRenderer {
     void renderPreview(PonderScene scene, PreviewBounds bounds, PonderSceneRuntimeTypes.RuntimeState runtimeState,
         PreviewLayout layout, float renderTick, PonderPreviewCameraState cameraState,
         PonderOverlayLayoutHelper overlayLayoutHelper) {
-        try (GLStateGuard scissorGuard = GLStateGuard.scissor(minecraft, layout.originX, layout.originY,
-            layout.width, layout.height);
-            ScenePreviewStateScope previewState = ScenePreviewStateScope.open(minecraft);
-            GLStateGuard matrixGuard = previewState.matrix()) {
+        try (ScenePreviewFrameScope previewFrame = ScenePreviewFrameScope.open(minecraft, layout.originX, layout.originY,
+            layout.width, layout.height)) {
             minecraft.getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
 
             float viewportCenterX = layout.originX + layout.width / 2.0F;
@@ -81,6 +79,36 @@ final class ScenePreviewRenderer {
             GlStateManager.rotate(animatedYaw, 0.0F, 1.0F, 0.0F);
             GlStateManager.translate(-centerX, -centerY - scene.getSceneOffsetY(), -centerZ);
             renderPreviewScenePass(scene, bounds, runtimeState, renderTick);
+        }
+    }
+
+    private static final class ScenePreviewFrameScope implements AutoCloseable {
+
+        private final GLStateGuard scissorGuard;
+        private final ScenePreviewStateScope previewState;
+        private final GLStateGuard matrixGuard;
+        private boolean closed;
+
+        private ScenePreviewFrameScope(Minecraft minecraft, int originX, int originY, int width, int height) {
+            this.scissorGuard = GLStateGuard.scissor(minecraft, originX, originY, width, height);
+            this.previewState = ScenePreviewStateScope.open(minecraft);
+            this.matrixGuard = previewState.matrix();
+        }
+
+        static ScenePreviewFrameScope open(Minecraft minecraft, int originX, int originY, int width, int height) {
+            return new ScenePreviewFrameScope(minecraft, originX, originY, width, height);
+        }
+
+        @Override
+        public void close() {
+            if (closed) {
+                return;
+            }
+            closed = true;
+
+            matrixGuard.close();
+            previewState.close();
+            scissorGuard.close();
         }
     }
 
