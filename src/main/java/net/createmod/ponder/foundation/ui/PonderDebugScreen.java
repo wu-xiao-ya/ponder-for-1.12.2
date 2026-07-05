@@ -1013,47 +1013,7 @@ public class PonderDebugScreen extends CompatGuiScreen {
 
     private ShowcaseHudRenderer.HoverLabelHost getShowcaseHoverLabelHost() {
         if (showcaseHoverLabelHost == null) {
-            showcaseHoverLabelHost = new ShowcaseHudRenderer.HoverLabelHost() {
-                @Override
-                public boolean isMouseOverPlaybackBar(int mouseX, int mouseY) {
-                    return PonderDebugScreen.this.isMouseOverPlaybackBar(mouseX, mouseY);
-                }
-
-                @Override
-                public boolean isMouseOverShowcaseHeaderIcon(int mouseX, int mouseY) {
-                    return PonderDebugScreen.this.isMouseOverShowcaseHeaderIcon(mouseX, mouseY);
-                }
-
-                @Override
-                public boolean hasShowcaseGroupChoices() {
-                    return PonderDebugScreen.this.hasShowcaseGroupChoices();
-                }
-
-                @Override
-                public ShowcaseGroupIconHitBox getShowcaseGroupIconAt(int mouseX, int mouseY) {
-                    return interactionHitCache.getShowcaseGroupIconAt(mouseX, mouseY);
-                }
-
-                @Override
-                public boolean isMouseOverNextUpCard(int mouseX, int mouseY) {
-                    return PonderDebugScreen.this.isMouseOverNextUpCard(mouseX, mouseY);
-                }
-
-                @Override
-                public int estimatePlaybackTickForMouse(int mouseX) {
-                    return PonderDebugScreen.this.estimatePlaybackTickForMouse(mouseX);
-                }
-
-                @Override
-                public PonderScene getSelectedScene() {
-                    return PonderDebugScreen.this.getSelectedScene();
-                }
-
-                @Override
-                public ItemStack createComponentStack(ResourceLocation componentId) {
-                    return PonderDebugScreen.this.createComponentStack(componentId);
-                }
-            };
+            showcaseHoverLabelHost = new ShowcaseHudHoverLabelHostAdapter(hostSupport);
         }
         return showcaseHoverLabelHost;
     }

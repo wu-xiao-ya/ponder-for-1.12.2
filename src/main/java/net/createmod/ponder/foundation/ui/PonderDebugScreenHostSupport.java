@@ -7,6 +7,8 @@ import java.util.List;
 import net.createmod.ponder.foundation.PonderScene;
 import net.createmod.ponder.foundation.PonderScene.RecordedOperation;
 import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.item.ItemStack;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
 
 final class PonderDebugScreenHostSupport {
@@ -44,6 +46,18 @@ final class PonderDebugScreenHostSupport {
 
     boolean isMouseOverPlaybackBar(int mouseX, int mouseY) {
         return screen.isMouseOverPlaybackBar(mouseX, mouseY);
+    }
+
+    int estimatePlaybackTickForMouse(int mouseX) {
+        return screen.estimatePlaybackTickForMouse(mouseX);
+    }
+
+    PonderScene getSelectedScene() {
+        return screen.getSelectedScene();
+    }
+
+    ItemStack createComponentStack(ResourceLocation componentId) {
+        return screen.createComponentStack(componentId);
     }
 
     void startPlaybackBarDragging() {
