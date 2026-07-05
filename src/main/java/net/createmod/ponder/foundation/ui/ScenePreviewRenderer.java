@@ -61,29 +61,11 @@ final class ScenePreviewRenderer {
     void renderPreview(PonderScene scene, PreviewBounds bounds, PonderSceneRuntimeTypes.RuntimeState runtimeState,
         PreviewLayout layout, float renderTick, PonderPreviewCameraState cameraState,
         PonderOverlayLayoutHelper overlayLayoutHelper) {
-        int previousAmbientOcclusion = minecraft.gameSettings != null ? minecraft.gameSettings.ambientOcclusion : 0;
-        GLStateGuard scissorGuard = GLStateGuard.scissor(minecraft, layout.originX, layout.originY, layout.width,
-            layout.height);
-        if (minecraft.gameSettings != null) {
-            minecraft.gameSettings.ambientOcclusion = 0;
-        }
-
-        GlStateManager.enableDepth();
-        GlStateManager.depthMask(true);
-        GlStateManager.clear(GL11.GL_DEPTH_BUFFER_BIT);
-        GLStateGuard itemLightingGuard = GLStateGuard.guiItemLighting();
-        try (GLStateGuard matrixGuard = GLStateGuard.matrix()) {
-            GlStateManager.enableRescaleNormal();
-            GlStateManager.enableAlpha();
-            GlStateManager.alphaFunc(516, 0.1F);
-            GlStateManager.enableBlend();
-            GlStateManager.blendFunc(770, 771);
-            GlStateManager.shadeModel(GL11.GL_SMOOTH);
+        try (GLStateGuard scissorGuard = GLStateGuard.scissor(minecraft, layout.originX, layout.originY,
+            layout.width, layout.height);
+            ScenePreviewStateScope previewState = ScenePreviewStateScope.open(minecraft);
+            GLStateGuard matrixGuard = previewState.matrix()) {
             minecraft.getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
-
-            if (minecraft.entityRenderer != null) {
-                minecraft.entityRenderer.enableLightmap();
-            }
 
             float viewportCenterX = layout.originX + layout.width / 2.0F;
             float viewportAnchorY = overlayLayoutHelper.getPreviewAnchorY(layout);
@@ -99,20 +81,6 @@ final class ScenePreviewRenderer {
             GlStateManager.rotate(animatedYaw, 0.0F, 1.0F, 0.0F);
             GlStateManager.translate(-centerX, -centerY - scene.getSceneOffsetY(), -centerZ);
             renderPreviewScenePass(scene, bounds, runtimeState, renderTick);
-        } finally {
-            if (minecraft.entityRenderer != null) {
-                minecraft.entityRenderer.disableLightmap();
-            }
-            if (minecraft.gameSettings != null) {
-                minecraft.gameSettings.ambientOcclusion = previousAmbientOcclusion;
-            }
-            itemLightingGuard.close();
-            GlStateManager.shadeModel(GL11.GL_FLAT);
-            GlStateManager.disableBlend();
-            GlStateManager.disableAlpha();
-            GlStateManager.disableRescaleNormal();
-            GlStateManager.disableDepth();
-            scissorGuard.close();
         }
     }
 
