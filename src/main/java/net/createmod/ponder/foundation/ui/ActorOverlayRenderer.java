@@ -1,13 +1,15 @@
 package net.createmod.ponder.foundation.ui;
 
 import java.util.List;
+
 import net.createmod.ponder.foundation.PonderScene;
+import net.createmod.ponder.foundation.ui.render.RenderContext;
 
 public final class ActorOverlayRenderer {
 
-    private final DrawContext draw;
+    private final RenderContext draw;
 
-    public ActorOverlayRenderer(DrawContext draw) {
+    public ActorOverlayRenderer(RenderContext draw) {
         this.draw = draw;
     }
 
@@ -17,11 +19,11 @@ public final class ActorOverlayRenderer {
             float actorFade = actor.actorFade;
 
             if (actor.kind == PonderScene.ActorKind.ITEM && actor.itemStack != null && !actor.itemStack.isEmpty()) {
-                draw.renderItemStack(actor.itemStack, actor.targetX - 8, actor.targetY - 8);
+                draw.renderItem(actor.itemStack, actor.targetX - 8, actor.targetY - 8);
             }
 
-            int border = draw.withAlpha(baseColor, fade * actorFade * 235.0F);
-            int fill = draw.withAlpha(baseColor, fade * actorFade * 72.0F);
+            int border = withAlpha(baseColor, fade * actorFade * 235.0F);
+            int fill = withAlpha(baseColor, fade * actorFade * 72.0F);
             int boxSize = actor.kind == PonderScene.ActorKind.BIRB ? 8 : 10;
 
             if (actor.kind != PonderScene.ActorKind.ITEM) {
@@ -32,9 +34,14 @@ public final class ActorOverlayRenderer {
             double yawRadians = Math.toRadians(actor.yawDegrees);
             int lineX = actor.targetX + (int) Math.round(Math.sin(yawRadians) * (boxSize + 2));
             int lineY = actor.targetY - (int) Math.round(Math.cos(yawRadians) * (boxSize + 2));
-            draw.drawLineSegment(actor.targetX, actor.targetY, lineX, lineY, border, 1.5F);
+            draw.drawLine(actor.targetX, actor.targetY, lineX, lineY, border, 1.5F);
 
-            draw.drawString(actor.label, actor.targetX + boxSize / 2 + 4, actor.targetY - 4, 0xF2F5F8);
+            draw.renderText(actor.label, actor.targetX + boxSize / 2 + 4, actor.targetY - 4, 0xF2F5F8);
         }
+    }
+
+    private static int withAlpha(int color, float alpha) {
+        int clampedAlpha = Math.min(255, Math.max(0, (int) alpha));
+        return (clampedAlpha << 24) | (color & 0x00FFFFFF);
     }
 }
