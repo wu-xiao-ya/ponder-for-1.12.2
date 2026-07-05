@@ -54,33 +54,43 @@ public final class GLStateGuard implements AutoCloseable {
     }
 
     public static GLStateGuard textureDisabled() {
+        boolean previousTextureEnabled = GL11.glIsEnabled(GL11.GL_TEXTURE_2D);
         GlStateManager.disableTexture2D();
-        return new GLStateGuard(GlStateManager::enableTexture2D);
+        return new GLStateGuard(() -> restoreCapability(previousTextureEnabled, GlStateManager::enableTexture2D,
+            GlStateManager::disableTexture2D));
     }
 
     public static GLStateGuard cullDisabled() {
+        boolean previousCullEnabled = GL11.glIsEnabled(GL11.GL_CULL_FACE);
         GlStateManager.disableCull();
-        return new GLStateGuard(GlStateManager::enableCull);
+        return new GLStateGuard(() -> restoreCapability(previousCullEnabled, GlStateManager::enableCull,
+            GlStateManager::disableCull));
     }
 
     public static GLStateGuard blendEnabled() {
+        boolean previousBlendEnabled = GL11.glIsEnabled(GL11.GL_BLEND);
         GlStateManager.enableBlend();
-        return new GLStateGuard(GlStateManager::disableBlend);
+        return new GLStateGuard(() -> restoreCapability(previousBlendEnabled, GlStateManager::enableBlend,
+            GlStateManager::disableBlend));
     }
 
     public static GLStateGuard alphaDisabled() {
+        boolean previousAlphaEnabled = GL11.glIsEnabled(GL11.GL_ALPHA_TEST);
         GlStateManager.disableAlpha();
-        return new GLStateGuard(GlStateManager::enableAlpha);
+        return new GLStateGuard(() -> restoreCapability(previousAlphaEnabled, GlStateManager::enableAlpha,
+            GlStateManager::disableAlpha));
     }
 
     public static GLStateGuard smoothShade() {
+        int previousShadeModel = GL11.glGetInteger(GL11.GL_SHADE_MODEL);
         GlStateManager.shadeModel(GL11.GL_SMOOTH);
-        return new GLStateGuard(() -> GlStateManager.shadeModel(GL11.GL_FLAT));
+        return new GLStateGuard(() -> GlStateManager.shadeModel(previousShadeModel));
     }
 
     public static GLStateGuard lineWidth(float width) {
+        float previousLineWidth = GL11.glGetFloat(GL11.GL_LINE_WIDTH);
         GL11.glLineWidth(width);
-        return new GLStateGuard(() -> GL11.glLineWidth(1.0F));
+        return new GLStateGuard(() -> GL11.glLineWidth(previousLineWidth));
     }
 
     public static GLStateGuard color(float red, float green, float blue, float alpha) {
@@ -103,11 +113,9 @@ public final class GLStateGuard implements AutoCloseable {
     }
 
     public static GLStateGuard guiItemLighting() {
+        ItemLightingState previousLighting = ItemLightingState.capture();
         RenderHelper.enableGUIStandardItemLighting();
-        return new GLStateGuard(() -> {
-            RenderHelper.disableStandardItemLighting();
-            GlStateManager.disableLighting();
-        });
+        return new GLStateGuard(previousLighting::restore);
     }
 
     public static GLStateGuard itemLighting() {
@@ -121,5 +129,65 @@ public final class GLStateGuard implements AutoCloseable {
         }
         closed = true;
         onClose.run();
+    }
+
+    private static void restoreCapability(boolean previousEnabled, Runnable enableAction, Runnable disableAction) {
+        if (previousEnabled) {
+            enableAction.run();
+        } else {
+            disableAction.run();
+        }
+    }
+
+    private static FloatBuffer captureFloat(int value) {
+        FloatBuffer buffer = BufferUtils.createFloatBuffer(4);
+        GL11.glGetFloat(value, buffer);
+        return buffer;
+    }
+
+    private static FloatBuffer captureLight(int light, int value) {
+        FloatBuffer buffer = BufferUtils.createFloatBuffer(4);
+        GL11.glGetLight(light, value, buffer);
+        return buffer;
+    }
+
+    private record LightState(FloatBuffer position, FloatBuffer ambient, FloatBuffer diffuse) {
+
+        static LightState capture(int light) {
+            return new LightState(captureLight(light, GL11.GL_POSITION), captureLight(light, GL11.GL_AMBIENT),
+                captureLight(light, GL11.GL_DIFFUSE));
+        }
+
+        void restore(int light) {
+            GL11.glLight(light, GL11.GL_POSITION, position);
+            GL11.glLight(light, GL11.GL_AMBIENT, ambient);
+            GL11.glLight(light, GL11.GL_DIFFUSE, diffuse);
+        }
+    }
+
+    private record ItemLightingState(boolean lightingEnabled, boolean light0Enabled, boolean light1Enabled,
+        boolean colorMaterialEnabled, int shadeModel, FloatBuffer lightModelAmbient, LightState light0,
+        LightState light1) {
+
+        static ItemLightingState capture() {
+            return new ItemLightingState(GL11.glIsEnabled(GL11.GL_LIGHTING), GL11.glIsEnabled(GL11.GL_LIGHT0),
+                GL11.glIsEnabled(GL11.GL_LIGHT1), GL11.glIsEnabled(GL11.GL_COLOR_MATERIAL),
+                GL11.glGetInteger(GL11.GL_SHADE_MODEL), captureFloat(GL11.GL_LIGHT_MODEL_AMBIENT),
+                LightState.capture(GL11.GL_LIGHT0), LightState.capture(GL11.GL_LIGHT1));
+        }
+
+        void restore() {
+            light0.restore(GL11.GL_LIGHT0);
+            light1.restore(GL11.GL_LIGHT1);
+            GL11.glLightModel(GL11.GL_LIGHT_MODEL_AMBIENT, lightModelAmbient);
+            GlStateManager.shadeModel(shadeModel);
+            restoreCapability(light0Enabled, () -> GL11.glEnable(GL11.GL_LIGHT0),
+                () -> GL11.glDisable(GL11.GL_LIGHT0));
+            restoreCapability(light1Enabled, () -> GL11.glEnable(GL11.GL_LIGHT1),
+                () -> GL11.glDisable(GL11.GL_LIGHT1));
+            restoreCapability(colorMaterialEnabled, () -> GL11.glEnable(GL11.GL_COLOR_MATERIAL),
+                () -> GL11.glDisable(GL11.GL_COLOR_MATERIAL));
+            restoreCapability(lightingEnabled, GlStateManager::enableLighting, GlStateManager::disableLighting);
+        }
     }
 }

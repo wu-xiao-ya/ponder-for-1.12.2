@@ -813,7 +813,7 @@ CI 整改候选：
 
 - `CompatGuiScreen` 的 gradient / textured rect 通过 context 暴露
 - `DrawContext` 能桥接到 `RenderContext`
-- `GLStateGuard` 覆盖 blend、alpha、texture、shade model、line width、color
+- `GLStateGuard` 覆盖 blend、alpha、texture、shade model、line width、color、lighting
 - `ScissorStack` 统一坐标换算和 GL scissor 生命周期
 
 状态：已完成基础层
@@ -824,7 +824,7 @@ CI 整改候选：
 - `foundation/ui/render/ScissorStack.java` 已落地
 - `CompatGuiScreen` 已实现 `DrawContext`
 - `RenderContext` 已补 `drawBorderedRect` / `drawCrossMarker` 等通用 primitive
-- `GLStateGuard` 已补 scissor / color 入场快照恢复，`GlRenderContext.drawLine()` 已收束颜色恢复
+- `GLStateGuard` 已补 scissor / texture / cull / blend / alpha / shade / line width / color / lighting 入场快照恢复
 - `DebugPanelRenderer` 已接入 local `RenderContext` bridge 复用 entry chrome
 - `DrawContext` 已继承 `RenderContext` 并提供 1.12.2 GUI bridge
 - `RenderContext` 2D bridge 已完成，Actor / Scene / Particle / POI / Controls overlay 已迁入 `RenderContext`，preview / snapshot 继续通过各自 state scope 收口
@@ -1021,6 +1021,7 @@ CI 在上传前执行 beta 产物内容门，并上传两个 beta 验证产物�
 
 - 旧 helper / 旧桥接字段已删除
 - 重复入口已收口
+- `GLStateGuard` 覆盖范围与 live render 结构一致
 - 文档与 live 结构同步
 
 ## 11. 当前建议的开工顺序
@@ -1031,7 +1032,7 @@ CI 在上传前执行 beta 产物内容门，并上传两个 beta 验证产物�
 2. 收口 CraftTweaker / shim 边界
 3. 视需要补齐 `PonderDebugScreen` 残余 host adapter
 4. 继续把 tag / shared text 的逐条失败明细扩展成可截断输出
-5. 继续推进 `ScenePreviewRenderer` 的 GLStateGuard 单项能力，优先补 lighting / texture / alpha / blend 入场快照恢复
+5. 继续收口 `ScenePreviewRenderer` 的 preview state scope，并消除局部手写状态恢复
 
 这条顺序能先消灭当前最高频的耦合点，再推进更深层的现代化改造。
 
@@ -1045,7 +1046,7 @@ CI 在上传前执行 beta 产物内容门，并上传两个 beta 验证产物�
 2. Showcase hover-label：维持 `ShowcaseHudRenderer.computeHoverLabel(...)` 单入口，继续压缩 screen 侧接线
 3. CI / artifact verifier 门：围绕当前 `build.gradle + gradle/scripts/*` 验证路径继续补远程门禁
 4. CraftTweaker / shim：收口边界和发布语义
-5. ScenePreviewRenderer：继续推进 GLStateGuard 单项能力，优先补 lighting / texture / alpha / blend 入场快照恢复
+5. ScenePreviewRenderer：收口 preview state scope，优先移除 `renderActorPreviews()` 的手写 blend 恢复
 
 主代理负责范围控制、冲突处理、文档同步、远程 CI 验证。
 
