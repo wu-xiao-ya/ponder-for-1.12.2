@@ -68,7 +68,9 @@ final class PonderReloadOrchestrator {
     private PonderReloadDetails collectReloadDetails() {
         PonderReloadDetails details = PonderReloadDetails.EMPTY;
         for (PonderPlugin plugin : plugins) {
-            details = details.merge(plugin.collectReloadDetails());
+            if (plugin instanceof PonderReloadDetailsProvider provider) {
+                details = details.merge(provider.collectReloadDetails());
+            }
         }
         return details;
     }

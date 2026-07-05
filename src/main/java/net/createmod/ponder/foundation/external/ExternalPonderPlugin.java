@@ -6,6 +6,7 @@ import net.createmod.ponder.api.registration.PonderSceneRegistrationHelper;
 import net.createmod.ponder.api.registration.PonderTagRegistrationHelper;
 import net.createmod.ponder.api.registration.SharedTextRegistrationHelper;
 import net.createmod.ponder.foundation.PonderReloadDetails;
+import net.createmod.ponder.foundation.PonderReloadDetailsProvider;
 import net.createmod.ponder.foundation.external.definition.ExternalDefinitionSet;
 import net.createmod.ponder.foundation.external.parse.ExternalPonderSceneParser;
 import net.createmod.ponder.foundation.external.parse.ExternalParseResult;
@@ -16,7 +17,7 @@ import net.createmod.ponder.foundation.external.validate.ExternalValidationDiagn
 import net.createmod.ponder.foundation.external.validate.ValidationReport;
 import net.minecraft.util.ResourceLocation;
 
-public class ExternalPonderPlugin implements PonderPlugin {
+public class ExternalPonderPlugin implements PonderPlugin, PonderReloadDetailsProvider {
 
     private ExternalParseResult cachedParseResult;
     private boolean validationReportLogged;
