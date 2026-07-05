@@ -10,11 +10,15 @@ import net.createmod.ponder.foundation.external.parse.ExternalPonderSceneParser;
 import net.createmod.ponder.foundation.external.register.ExternalPonderRegistrationService;
 import net.createmod.ponder.foundation.external.register.ExternalSharedTextRegistrationService;
 import net.createmod.ponder.foundation.external.register.RegistrationOutcome;
+import net.createmod.ponder.foundation.external.validate.ExternalValidationDiagnostics;
+import net.createmod.ponder.foundation.external.validate.ValidationReport;
 import net.minecraft.util.ResourceLocation;
 
 public class ExternalPonderPlugin implements PonderPlugin {
 
     private ExternalDefinitionSet cachedDefinitions;
+    private ValidationReport cachedValidationReport = ValidationReport.EMPTY;
+    private boolean validationReportLogged;
 
     @Override
     public String getModId() {
@@ -23,6 +27,7 @@ public class ExternalPonderPlugin implements PonderPlugin {
 
     @Override
     public void registerScenes(PonderSceneRegistrationHelper<ResourceLocation> helper) {
+        clearCachedDefinitions();
         logOutcome("scenes", ExternalPonderRegistrationService.registerLoadedScenes(loadDefinitions(), helper));
     }
 
@@ -37,15 +42,35 @@ public class ExternalPonderPlugin implements PonderPlugin {
             logOutcome("shared text",
                 ExternalSharedTextRegistrationService.registerLoadedSharedText(loadDefinitions(), helper));
         } finally {
-            cachedDefinitions = null;
+            clearCachedDefinitions();
         }
     }
 
     private ExternalDefinitionSet loadDefinitions() {
         if (cachedDefinitions == null) {
-            cachedDefinitions = ExternalPonderSceneParser.loadDefinitions();
+            ExternalValidationDiagnostics diagnostics = new ExternalValidationDiagnostics();
+            cachedDefinitions = ExternalPonderSceneParser.loadDefinitions(diagnostics);
+            cachedValidationReport = diagnostics.report();
+            logValidationReport();
         }
         return cachedDefinitions;
+    }
+
+    private void clearCachedDefinitions() {
+        cachedDefinitions = null;
+        cachedValidationReport = ValidationReport.EMPTY;
+        validationReportLogged = false;
+    }
+
+    private void logValidationReport() {
+        if (validationReportLogged || cachedValidationReport == null) {
+            return;
+        }
+        validationReportLogged = true;
+        Ponder.LOGGER.info("External ponder validation: {} scanned, {} loaded, {} failed, {} warnings, {} errors",
+            Integer.valueOf(cachedValidationReport.filesScanned()), Integer.valueOf(cachedValidationReport.filesLoaded()),
+            Integer.valueOf(cachedValidationReport.filesFailed()), Integer.valueOf(cachedValidationReport.warnings()),
+            Integer.valueOf(cachedValidationReport.errors()));
     }
 
     private void logOutcome(String channel, RegistrationOutcome outcome) {

@@ -39,7 +39,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 
-import net.createmod.ponder.Ponder;
 import net.createmod.ponder.foundation.external.definition.ComponentDefinition;
 import net.createmod.ponder.foundation.external.definition.ExternalDefinitionSet;
 import net.createmod.ponder.foundation.external.definition.InteractionDefinition;
@@ -50,6 +49,7 @@ import net.createmod.ponder.foundation.external.definition.SourceInfo;
 import net.createmod.ponder.foundation.external.definition.TagDefinition;
 import net.createmod.ponder.foundation.external.scan.ExternalPonderSceneScanner;
 import net.createmod.ponder.foundation.external.scan.ExternalScanResult;
+import net.createmod.ponder.foundation.external.validate.ExternalValidationDiagnostics;
 import net.createmod.ponder.foundation.external.validate.ExternalNbtValidation;
 import net.minecraft.util.ResourceLocation;
 
@@ -59,6 +59,12 @@ public final class ExternalPonderSceneParser {
     }
 
     public static ExternalDefinitionSet loadDefinitions() {
+        return loadDefinitions(new ExternalValidationDiagnostics());
+    }
+
+    public static ExternalDefinitionSet loadDefinitions(ExternalValidationDiagnostics diagnostics) {
+        ExternalValidationDiagnostics validationDiagnostics = diagnostics == null ? new ExternalValidationDiagnostics()
+            : diagnostics;
         List<TagDefinition> tags = new ArrayList<TagDefinition>();
         List<SceneDefinition> scenes = new ArrayList<SceneDefinition>();
         Map<ResourceLocation, InteractionDefinition> interactions =
@@ -67,14 +73,15 @@ public final class ExternalPonderSceneParser {
 
         ExternalScanResult scanResult = ExternalPonderSceneScanner.collectScanResult();
         for (File file : scanResult.files()) {
-            ExternalDefinitionSet source = parseDefinitionFile(file);
+            ExternalDefinitionSet source = parseDefinitionFile(file, validationDiagnostics);
             tags.addAll(source.tags());
             scenes.addAll(source.scenes());
             sharedTexts.addAll(source.sharedTexts());
             for (Map.Entry<ResourceLocation, InteractionDefinition> entry : source.interactions().entrySet()) {
                 if (interactions.containsKey(entry.getKey())) {
-                    Ponder.LOGGER.warn("Skipping duplicate external ponder interaction definition '{}'",
-                        entry.getKey());
+                    validationDiagnostics.warn("interaction", entry.getKey().toString(),
+                        entry.getValue().source(),
+                        "duplicate definition skipped");
                     continue;
                 }
                 interactions.put(entry.getKey(), entry.getValue());
@@ -85,6 +92,13 @@ public final class ExternalPonderSceneParser {
     }
 
     public static ExternalDefinitionSet parseDefinitionFile(File file) {
+        return parseDefinitionFile(file, new ExternalValidationDiagnostics());
+    }
+
+    public static ExternalDefinitionSet parseDefinitionFile(File file, ExternalValidationDiagnostics diagnostics) {
+        ExternalValidationDiagnostics validationDiagnostics = diagnostics == null ? new ExternalValidationDiagnostics()
+            : diagnostics;
+        validationDiagnostics.fileScanned();
         try (Reader reader = new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8)) {
             JsonElement root = new JsonParser().parse(reader);
             List<TagDefinition> tags = new ArrayList<TagDefinition>();
@@ -97,7 +111,7 @@ public final class ExternalPonderSceneParser {
                 JsonObject rootObject = root.getAsJsonObject();
                 String rootNamespace = readString(rootObject, "namespace", "ponder");
                 tags.addAll(parseTagDefinitions(rootObject, file, rootNamespace));
-                interactions.putAll(parseInteractionDefinitions(rootObject, file, rootNamespace));
+                interactions.putAll(parseInteractionDefinitions(rootObject, file, rootNamespace, validationDiagnostics));
                 sharedTexts.addAll(parseSharedTextDefinitions(rootObject, file, rootNamespace));
                 if (rootObject.has("scenes") && rootObject.get("scenes").isJsonArray()) {
                     JsonArray sceneArray = rootObject.getAsJsonArray("scenes");
@@ -119,9 +133,12 @@ public final class ExternalPonderSceneParser {
                 throw new JsonParseException("Root element must be an object or array");
             }
 
+            validationDiagnostics.fileLoaded();
             return new ExternalDefinitionSet(tags, scenes, interactions, sharedTexts);
         } catch (RuntimeException | IOException exception) {
-            Ponder.LOGGER.error("Failed to parse external ponder scene file {}", file, exception);
+            validationDiagnostics.fileFailed();
+            validationDiagnostics.error("file", file.getName(), SourceInfo.of(file, "ponder"),
+                "failed to parse external ponder scene file", exception);
             return ExternalDefinitionSet.EMPTY;
         }
     }
@@ -228,7 +245,7 @@ public final class ExternalPonderSceneParser {
     }
 
     private static Map<ResourceLocation, InteractionDefinition> parseInteractionDefinitions(JsonObject rootObject,
-        File file, String defaultNamespace) {
+        File file, String defaultNamespace, ExternalValidationDiagnostics diagnostics) {
         JsonElement definitionsElement = resolveInteractionDefinitions(rootObject);
         if (definitionsElement == null || definitionsElement.isJsonNull()) {
             return Collections.emptyMap();
@@ -243,8 +260,13 @@ public final class ExternalPonderSceneParser {
                 }
                 InteractionDefinition definition =
                     parseInteractionDefinition(element.getAsJsonObject(), null, file, defaultNamespace);
-                if (definition != null && !definitions.containsKey(definition.id())) {
-                    definitions.put(definition.id(), definition);
+                if (definition != null) {
+                    if (!definitions.containsKey(definition.id())) {
+                        definitions.put(definition.id(), definition);
+                    } else {
+                        diagnostics.warn("interaction", definition.id().toString(), definition.source(),
+                            "duplicate definition skipped");
+                    }
                 }
             }
             return definitions;
@@ -259,8 +281,13 @@ public final class ExternalPonderSceneParser {
                 InteractionDefinition definition =
                     parseInteractionDefinition(entry.getValue().getAsJsonObject(), entry.getKey(), file,
                         defaultNamespace);
-                if (definition != null && !definitions.containsKey(definition.id())) {
-                    definitions.put(definition.id(), definition);
+                if (definition != null) {
+                    if (!definitions.containsKey(definition.id())) {
+                        definitions.put(definition.id(), definition);
+                    } else {
+                        diagnostics.warn("interaction", definition.id().toString(), definition.source(),
+                            "duplicate definition skipped");
+                    }
                 }
             }
         }
