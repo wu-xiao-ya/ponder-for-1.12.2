@@ -29,7 +29,7 @@
 - `PonderTheme` / `PonderThemes` / `ThemeResolver` / `ponder_themes.json` 已完成
 - `ExternalRegistrationDiagnostic(s)` 已完成
 - `RenderContext` bridge 已完成，Actor / Scene / Particle / POI / Controls overlay 已迁入 `RenderContext`，`OverlayDrawContextAdapter` 已抽出
-- `ScenePreviewRenderer.renderPreviewScenePass(...)` 已抽出，preview 帧生命周期和主场景 pass 已分层
+- `ScenePreviewRenderer.renderPreviewScenePass(...)` 与 `ScenePreviewStateScope` 已抽出，preview 帧生命周期、主场景 pass、preview state scope 已分层
 - `PonderDebugScreen` adapter 切片已完成，HUD host、renderer host、caption host、HUD text provider 已收口
 - `PonderReloadOrchestrator` 已落地，scan / parse / validate / compile / register 结果继续结构化
 
@@ -124,7 +124,7 @@ Unimined
 
 当前残留热点：
 
-- `ScenePreviewRenderer` 的 preview scene pass 已抽出，depth / scissor / lightmap / blend 继续收口成 scoped preview guard
+- `ScenePreviewRenderer` 的 preview scene pass 与 preview state scope 已抽出，后续继续推进 scissor stack 与 GLStateGuard 单项能力
 - 匿名 Host 接线占据较多 screen 篇幅
 - `isMouseOver*` 与 hover label host 仍保留在 screen 侧
 - `PonderDebugScreen` 继续向页面协调器和 host adapter 收口
@@ -785,7 +785,7 @@ CI 整改候选：
 
 - speech box、connector、line segment 已由 `SpeechRenderer` 承担
 - `PonderDebugScreen` 当前仍保留少量 preview 桥接
-- `ScenePreviewRenderer` 已抽出 `renderPreviewScenePass(...)`，下一步补 preview state scope
+- `ScenePreviewRenderer` 已抽出 `renderPreviewScenePass(...)` 与 `ScenePreviewStateScope`
 
 ### P1：建立稳定渲染骨架
 
@@ -1002,8 +1002,8 @@ CI 上传两个 beta 验证产物：
 
 真正开工时按下面顺序最稳：
 
-1. 继续收口 `ScenePreviewRenderer` 的 depth / scissor / lightmap / blend preview state scope
-2. 把 `PonderReloadOrchestrator` 的 scan / parse / validate / compile / register 结果继续结构化
+1. 把 `PonderReloadOrchestrator` 的 scan / parse / validate / compile / register 结果继续结构化
+2. 收口 showcase hover-label 的命中判定与文案拼接路径
 3. 推进 CI / test 门，固定当前 `build.gradle + gradle/scripts/*` 构建路径
 4. 收口 CraftTweaker / shim 边界
 5. 视需要补齐 `PonderDebugScreen` 残余 host adapter
@@ -1016,11 +1016,11 @@ CI 上传两个 beta 验证产物：
 
 建议并行切片：
 
-1. ScenePreviewRenderer：收口 preview state scope 与 GLStateGuard 能力
-2. Reload 编排：把 scan / parse / validate / compile / register 结果对象继续拆细
+1. Reload 编排：先把 register 结果对象口径统一，再拆 scan / parse / validate
+2. Showcase hover-label：统一命中判定与文案拼接路径
 3. CI / test 门：围绕当前 `build.gradle + gradle/scripts/*` 验证路径补门禁
 4. CraftTweaker / shim：收口边界和发布语义
-5. Residual host：处理剩余 `PonderDebugScreen` adapter 细节
+5. ScenePreviewRenderer：继续推进 scissor stack 与 GLStateGuard 单项能力
 
 主代理负责范围控制、冲突处理、文档同步、远程 CI 验证。
 
