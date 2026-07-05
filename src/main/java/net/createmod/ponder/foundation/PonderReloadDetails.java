@@ -2,19 +2,28 @@ package net.createmod.ponder.foundation;
 
 import net.createmod.ponder.foundation.external.register.RegistrationOutcome;
 import net.createmod.ponder.foundation.external.register.ExternalSceneCompileSummary;
+import net.createmod.ponder.foundation.external.register.ExternalSceneCompileFailureDiagnostic;
+import net.createmod.ponder.foundation.external.register.ExternalSceneCompileFailureReport;
+import net.createmod.ponder.foundation.external.register.RegistrationDiagnosticReport;
 import net.createmod.ponder.foundation.external.validate.ValidationReport;
 
 public record PonderReloadDetails(ValidationReport validationReport, ExternalSceneCompileSummary sceneCompileSummary,
+    ExternalSceneCompileFailureReport sceneCompileFailures, RegistrationDiagnosticReport registrationDiagnostics,
     RegistrationOutcome sceneOutcome, RegistrationOutcome tagOutcome, RegistrationOutcome sharedTextOutcome) {
 
     public static final PonderReloadDetails EMPTY =
-        new PonderReloadDetails(ValidationReport.EMPTY, ExternalSceneCompileSummary.EMPTY, RegistrationOutcome.EMPTY,
+        new PonderReloadDetails(ValidationReport.EMPTY, ExternalSceneCompileSummary.EMPTY,
+            ExternalSceneCompileFailureReport.EMPTY, RegistrationDiagnosticReport.EMPTY, RegistrationOutcome.EMPTY,
             RegistrationOutcome.EMPTY, RegistrationOutcome.EMPTY);
 
     public PonderReloadDetails {
         validationReport = validationReport == null ? ValidationReport.EMPTY : validationReport;
         sceneCompileSummary =
             sceneCompileSummary == null ? ExternalSceneCompileSummary.EMPTY : sceneCompileSummary;
+        sceneCompileFailures =
+            sceneCompileFailures == null ? ExternalSceneCompileFailureReport.EMPTY : sceneCompileFailures;
+        registrationDiagnostics =
+            registrationDiagnostics == null ? RegistrationDiagnosticReport.EMPTY : registrationDiagnostics;
         sceneOutcome = sceneOutcome == null ? RegistrationOutcome.EMPTY : sceneOutcome;
         tagOutcome = tagOutcome == null ? RegistrationOutcome.EMPTY : tagOutcome;
         sharedTextOutcome = sharedTextOutcome == null ? RegistrationOutcome.EMPTY : sharedTextOutcome;
@@ -25,21 +34,28 @@ public record PonderReloadDetails(ValidationReport validationReport, ExternalSce
             return this;
         }
         return new PonderReloadDetails(validationReport.merge(other.validationReport),
-            sceneCompileSummary.merge(other.sceneCompileSummary), sceneOutcome.merge(other.sceneOutcome),
+            sceneCompileSummary.merge(other.sceneCompileSummary),
+            sceneCompileFailures.merge(other.sceneCompileFailures),
+            registrationDiagnostics.merge(other.registrationDiagnostics), sceneOutcome.merge(other.sceneOutcome),
             tagOutcome.merge(other.tagOutcome),
             sharedTextOutcome.merge(other.sharedTextOutcome));
     }
 
     public boolean hasDetails() {
-        return hasCompileSummary() || hasExternalDetails();
+        return hasCompileSummary() || hasCompileFailureDiagnostics() || hasExternalDetails();
     }
 
     public boolean hasCompileSummary() {
         return sceneCompileSummary.hasSummary();
     }
 
+    public boolean hasCompileFailureDiagnostics() {
+        return sceneCompileFailures.hasFailures();
+    }
+
     public boolean hasExternalDetails() {
-        return !validationReport.equals(ValidationReport.EMPTY) || !sceneOutcome.equals(RegistrationOutcome.EMPTY)
+        return !validationReport.equals(ValidationReport.EMPTY) || registrationDiagnostics.hasDiagnostics()
+            || !sceneOutcome.equals(RegistrationOutcome.EMPTY)
             || !tagOutcome.equals(RegistrationOutcome.EMPTY) || !sharedTextOutcome.equals(RegistrationOutcome.EMPTY);
     }
 
@@ -47,9 +63,18 @@ public record PonderReloadDetails(ValidationReport validationReport, ExternalSce
         return sceneCompileSummary.formatSummary();
     }
 
+    public String formatCompileFailureSummary() {
+        return "Compile failures (" + sceneCompileFailures.failureCount() + "):";
+    }
+
+    public Iterable<ExternalSceneCompileFailureDiagnostic> compileFailureDiagnostics() {
+        return sceneCompileFailures.failures();
+    }
+
     public String formatSummary() {
         StringBuilder builder = new StringBuilder();
         appendValidationSummary(builder);
+        appendRegistrationDiagnosticSummary(builder);
         appendOutcomeSummary(builder, "external scene registration", sceneOutcome);
         appendOutcomeSummary(builder, "external tag registration", tagOutcome);
         appendOutcomeSummary(builder, "external shared text registration", sharedTextOutcome);
@@ -63,6 +88,13 @@ public record PonderReloadDetails(ValidationReport validationReport, ExternalSce
         appendPart(builder, "validation: " + validationReport.filesScanned() + " scanned, "
             + validationReport.filesLoaded() + " loaded, " + validationReport.filesFailed() + " failed, "
             + validationReport.warnings() + " warnings, " + validationReport.errors() + " errors");
+    }
+
+    private void appendRegistrationDiagnosticSummary(StringBuilder builder) {
+        if (!registrationDiagnostics.hasDiagnostics()) {
+            return;
+        }
+        appendPart(builder, "registration diagnostics: " + registrationDiagnostics.formatSummary());
     }
 
     private void appendOutcomeSummary(StringBuilder builder, String label, RegistrationOutcome outcome) {

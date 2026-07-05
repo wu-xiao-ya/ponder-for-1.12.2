@@ -35,7 +35,7 @@
 - external scan 已产出 `ExternalScanResult`，files / scannedRoots / skippedRoots 进入结构化结果
 - external validate 已产出 `ValidationReport` 与 `ExternalValidationDiagnostic(s)`，文件级加载失败和重复 interaction warning 进入诊断汇总
 - external parse 已产出 `ExternalParseResult`，`definitions + scanResult + validationReport` 进入单次加载结果
-- `PonderReloadOrchestrator` 已落地，`PonderReloadDetails` 开始汇总 validation、compile summary 与三段 registration outcome
+- `PonderReloadOrchestrator` 已落地，`PonderReloadDetails` 开始汇总 validation、compile summary、registration diagnostics 与三段 registration outcome
 - scene registration outcome 已区分 registered / skipped / failed，`indexExclusions` 命中项进入 skipped 口径
 
 ## 1. 目标
@@ -117,7 +117,7 @@ Unimined
 - external parse 阶段已通过 `ExternalParseResult` 汇总 definitions / scanResult / validationReport
 - `RenderContext` bridge 已完成，Actor / Scene / Particle / POI / Controls overlay 已迁入 `RenderContext`
 - `ScenePreviewRenderer` 已把 preview frame lifecycle 与 scene pass 分开，下一步收口 scoped preview state guard
-- `PonderReloadOrchestrator` 已落地，reload report 已携带 external validation、compile summary 与 registration 明细
+- `PonderReloadOrchestrator` 已落地，reload report 已携带 external validation、compile summary、registration diagnostics 与 registration 明细
 
 对应参考：
 
@@ -137,7 +137,7 @@ Unimined
 - 匿名 Host 接线占据较多 screen 篇幅
 - `isMouseOver*` 仍服务 hover / click / drag，showcase hover-label 已由 `ShowcaseHudRenderer.computeHoverLabel(...)` 统一承接
 - `PonderDebugScreen` 继续向页面协调器和 host adapter 收口
-- reload 结果结构化继续推进，validation、compile summary 与 register 结果已进入 reload report
+- reload 结果结构化继续推进，validation、compile summary、registration diagnostics 与 register 结果已进入 reload report
 - line count 当前反映 adapter 与 renderer 过渡期成本，下一步目标是收敛剩余 preview 桥接
 
 #### B. Snapshot 体系已完成首轮收口
@@ -913,11 +913,11 @@ CI 整改候选：
 
 - `CompiledSceneBundle` 已落在 `foundation/external/register`
 - `ExternalSceneCompileSummary` 已承载 scene definition / compiled bundle / component binding / compile failure 计数，component binding 口径为成功编译的 scene 内声明数量
-- `ExternalSceneRegistrationResult` 已作为 scene 侧编排返回值，绑定 compile summary 与 registration outcome
+- `ExternalSceneRegistrationResult` 已作为 scene 侧编排返回值，绑定 compile summary、registration diagnostics 与 registration outcome
 - `ExternalSceneRegistrationService` 已经先 compile 再注册 component/storyboard/order
 - `ExternalSceneRegistrationService` 已按实际 registry entry 增量统计 registered / skipped
 - `RegistrationContext` 现在负责 source info 归一化
-- 后续注册失败会走结构化 diagnostic sink
+- scene 注册失败已进入结构化 diagnostic sink 与 `RegistrationDiagnosticReport`
 
 #### P2-2：引入结构化诊断对象
 
@@ -925,6 +925,8 @@ CI 整改候选：
 
 - `ExternalRegistrationDiagnostic` 已落地，承载 severity / subject / source / detail / cause
 - `ExternalSceneRegistrationService`、`ExternalTagDefinitionRegistrar`、`ExternalSharedTextRegistrationService` 已改成通过 sink 发出失败信息
+- `RegistrationDiagnosticReport` 已落地，scene compile failure 与 component registration failure 已按 info / warning / error 聚合到 reload details
+- `ExternalSceneCompileFailureDiagnostic` / `ExternalSceneCompileFailureReport` 已落地，`/ponder reload` 会按固定上限展示逐条 compile failure
 - `RegistrationContext` 负责 source info 归一化，注册边界直接携带 `SourceInfo`
 
 #### P2-3：引入 `RegistrationCommand`
@@ -942,10 +944,10 @@ CI 整改候选：
 - `PonderReloadOrchestrator` 已落地
 - scan / parse / validate / register 结果口径已先统一
 - `ExternalParseResult` 已承载 definitions / scanResult / validationReport
-- `PonderReloadDetails` 已承载 validationReport、scene compile summary 与 scene / tag / shared text registration outcome
-- `ExternalSceneRegistrationResult` 已作为 scene 注册编排返回值，避免 reload 层重新推断 compile 与 registration 结果
-- compile summary 已独立展示并接入 reload 汇总
-- 失败信息统一进入 diagnostic sink
+- `PonderReloadDetails` 已承载 validationReport、scene compile summary、scene compile failure report、registration diagnostics 与 scene / tag / shared text registration outcome
+- `ExternalSceneRegistrationResult` 已作为 scene 注册编排返回值，避免 reload 层重新推断 compile、diagnostics 与 registration 结果
+- compile summary 已独立展示并接入 reload 汇总，compile failure 明细由 `PonderCommand` 截断输出
+- scene 失败信息已进入 diagnostic sink 与 `RegistrationDiagnosticReport`
 
 ### P3：构建层和兼容层收尾
 
@@ -1020,7 +1022,7 @@ CI 上传两个 beta 验证产物：
 
 真正开工时按下面顺序最稳：
 
-1. 把 `PonderReloadOrchestrator` 的 compile summary 继续细化到失败诊断聚合
+1. 把 tag / shared text 注册也升级成 result 对象，继续把 registration diagnostics 聚合到 reload 汇总
 2. 收口 showcase hover-label 的命中判定与文案拼接路径，保留 `ShowcaseHudRenderer.computeHoverLabel(...)` 作为唯一运行时入口
 3. 推进 CI / test 门，固定当前 `build.gradle + gradle/scripts/*` 构建路径
 4. 收口 CraftTweaker / shim 边界

@@ -1,5 +1,7 @@
 package net.createmod.ponder.foundation.external.register;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 
 import net.createmod.ponder.api.registration.PonderSceneRegistrationHelper;
@@ -23,7 +25,7 @@ public final class ExternalSceneRegistrationService {
 
     public static ExternalSceneRegistrationResult registerLoadedScenesResult(ExternalDefinitionSet definitions,
         PonderSceneRegistrationHelper<ResourceLocation> helper) {
-        return registerScenes(RegistrationContext.of(definitions), helper, ExternalRegistrationDiagnostics.logger());
+        return registerScenes(RegistrationContext.of(definitions), helper, new ExternalRegistrationDiagnostics());
     }
 
     private static ExternalSceneRegistrationResult registerScenes(RegistrationContext ctx,
@@ -38,6 +40,8 @@ public final class ExternalSceneRegistrationService {
         int registered = 0;
         int skipped = 0;
         int failed = 0;
+        List<ExternalSceneCompileFailureDiagnostic> compileFailureDiagnostics =
+            new ArrayList<ExternalSceneCompileFailureDiagnostic>();
         for (SceneDefinition definition : ctx.definitions().scenes()) {
             sceneDefinitions++;
             SourceInfo source = ctx.source(definition.source());
@@ -48,6 +52,8 @@ public final class ExternalSceneRegistrationService {
                 componentBindings += definition.components().size();
             } catch (RuntimeException exception) {
                 sink.accept(ExternalRegistrationDiagnostic.error("scene", definition.sceneId().toString(), source,
+                    "scene compilation failed", exception));
+                compileFailureDiagnostics.add(ExternalSceneCompileFailureDiagnostic.from(definition.sceneId(), source,
                     "scene compilation failed", exception));
                 compileFailures++;
                 continue;
@@ -82,9 +88,14 @@ public final class ExternalSceneRegistrationService {
                 }
             }
         }
+        RegistrationDiagnosticReport diagnosticReport = sink instanceof ExternalRegistrationDiagnostics diagnostics
+            ? diagnostics.report()
+            : RegistrationDiagnosticReport.EMPTY;
         return new ExternalSceneRegistrationResult(
             new ExternalSceneCompileSummary(sceneDefinitions, compiledBundles, componentBindings, compileFailures),
-            new RegistrationOutcome(registered, skipped, failed)
+            new RegistrationOutcome(registered, skipped, failed),
+            diagnosticReport,
+            new ExternalSceneCompileFailureReport(compileFailureDiagnostics)
         );
     }
 

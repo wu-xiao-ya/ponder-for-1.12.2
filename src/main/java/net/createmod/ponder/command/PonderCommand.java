@@ -14,6 +14,7 @@ import net.createmod.ponder.foundation.PonderReloadReport;
 import net.createmod.ponder.foundation.PonderScene;
 import net.createmod.ponder.foundation.PonderScene.RecordedOperation;
 import net.createmod.ponder.foundation.PonderTag;
+import net.createmod.ponder.foundation.external.register.ExternalSceneCompileFailureDiagnostic;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommandSender;
@@ -25,6 +26,7 @@ import net.minecraft.util.text.TextComponentString;
 public class PonderCommand extends CommandBase {
 
     private static final int MAX_DUMP_LINES = 40;
+    private static final int MAX_RELOAD_DIAGNOSTIC_LINES = 5;
 
     @Override
     public String getName() {
@@ -180,8 +182,27 @@ public class PonderCommand extends CommandBase {
         if (report.details().hasCompileSummary()) {
             sendLine(sender, "Compile result: " + report.details().formatCompileSummary());
         }
+        if (report.details().hasCompileFailureDiagnostics()) {
+            sendCompileFailureDiagnostics(sender, report);
+        }
         if (report.details().hasExternalDetails()) {
             sendLine(sender, "External details: " + report.details().formatSummary());
+        }
+    }
+
+    private void sendCompileFailureDiagnostics(ICommandSender sender, PonderReloadReport report) {
+        sendLine(sender, report.details().formatCompileFailureSummary());
+        int emitted = 0;
+        for (ExternalSceneCompileFailureDiagnostic diagnostic : report.details().compileFailureDiagnostics()) {
+            if (emitted >= MAX_RELOAD_DIAGNOSTIC_LINES) {
+                break;
+            }
+            sendLine(sender, diagnostic.formatSummary());
+            emitted++;
+        }
+        int remaining = report.details().sceneCompileFailures().failureCount() - emitted;
+        if (remaining > 0) {
+            sendLine(sender, "... +" + remaining + " more");
         }
     }
 
