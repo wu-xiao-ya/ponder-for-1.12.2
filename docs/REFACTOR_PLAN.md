@@ -29,6 +29,7 @@
 - `PonderTheme` / `PonderThemes` / `ThemeResolver` / `ponder_themes.json` 已完成
 - `ExternalRegistrationDiagnostic(s)` 已完成
 - `RenderContext` bridge 已完成，Actor / Scene / Particle / POI / Controls overlay 已迁入 `RenderContext`，`OverlayDrawContextAdapter` 已抽出
+- `ScenePreviewRenderer.renderPreviewScenePass(...)` 已抽出，preview 帧生命周期和主场景 pass 已分层
 - `PonderDebugScreen` adapter 切片已完成，HUD host、renderer host、caption host、HUD text provider 已收口
 - `PonderReloadOrchestrator` 已落地，scan / parse / validate / compile / register 结果继续结构化
 
@@ -106,6 +107,7 @@ Unimined
 - external 注册已通过 `CompiledSceneBundle` 进入显式 compile 阶段
 - registration 内部写入已通过 `RegistrationCommands` 与 `RegistrationCommandService` 收口
 - `RenderContext` bridge 已完成，Actor / Scene / Particle / POI / Controls overlay 已迁入 `RenderContext`
+- `ScenePreviewRenderer` 已把 preview frame lifecycle 与 scene pass 分开，下一步收口 scoped preview state guard
 - `PonderReloadOrchestrator` 已落地，scan / parse / validate / compile / register 结果继续结构化
 
 对应参考：
@@ -122,7 +124,7 @@ Unimined
 
 当前残留热点：
 
-- `ScenePreviewRenderer` 的 preview GL / scissor / shadow 继续收口
+- `ScenePreviewRenderer` 的 preview scene pass 已抽出，depth / scissor / lightmap / blend 继续收口成 scoped preview guard
 - 匿名 Host 接线占据较多 screen 篇幅
 - `isMouseOver*` 与 hover label host 仍保留在 screen 侧
 - `PonderDebugScreen` 继续向页面协调器和 host adapter 收口
@@ -783,7 +785,7 @@ CI 整改候选：
 
 - speech box、connector、line segment 已由 `SpeechRenderer` 承担
 - `PonderDebugScreen` 当前仍保留少量 preview 桥接
-- `ScenePreviewRenderer` 的 preview GL / scissor / shadow 继续收口
+- `ScenePreviewRenderer` 已抽出 `renderPreviewScenePass(...)`，下一步补 preview state scope
 
 ### P1：建立稳定渲染骨架
 
@@ -1000,7 +1002,7 @@ CI 上传两个 beta 验证产物：
 
 真正开工时按下面顺序最稳：
 
-1. 继续收口 `ScenePreviewRenderer` 的 preview GL / scissor / shadow
+1. 继续收口 `ScenePreviewRenderer` 的 depth / scissor / lightmap / blend preview state scope
 2. 把 `PonderReloadOrchestrator` 的 scan / parse / validate / compile / register 结果继续结构化
 3. 推进 CI / test 门，固定当前 `build.gradle + gradle/scripts/*` 构建路径
 4. 收口 CraftTweaker / shim 边界
@@ -1014,7 +1016,7 @@ CI 上传两个 beta 验证产物：
 
 建议并行切片：
 
-1. ScenePreviewRenderer：收口 preview GL / scissor / shadow
+1. ScenePreviewRenderer：收口 preview state scope 与 GLStateGuard 能力
 2. Reload 编排：把 scan / parse / validate / compile / register 结果对象继续拆细
 3. CI / test 门：围绕当前 `build.gradle + gradle/scripts/*` 验证路径补门禁
 4. CraftTweaker / shim：收口边界和发布语义
