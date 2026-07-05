@@ -31,6 +31,7 @@
 - `RenderContext` bridge 已完成，Actor / Scene / Particle / POI / Controls overlay 已迁入 `RenderContext`，`OverlayDrawContextAdapter` 已抽出
 - `ScenePreviewRenderer.renderPreviewScenePass(...)` 与 `ScenePreviewStateScope` 已抽出，preview 帧生命周期、主场景 pass、preview state scope 已分层
 - `PonderDebugScreen` adapter 切片已完成，HUD host、renderer host、caption host、HUD text provider 已收口
+- tag 注册结果已统一到 `RegistrationOutcome`，`ExternalTagDefinitionRegistrar.Result` 已退场
 - `PonderReloadOrchestrator` 已落地，scan / parse / validate / compile / register 结果继续结构化
 
 ## 1. 目标
@@ -106,6 +107,7 @@ Unimined
 - `ExternalRegistrationDiagnostic(s)` 已完成
 - external 注册已通过 `CompiledSceneBundle` 进入显式 compile 阶段
 - registration 内部写入已通过 `RegistrationCommands` 与 `RegistrationCommandService` 收口
+- tag definition 注册与 component-tag assignment 已统一用 `RegistrationOutcome` 汇总
 - `RenderContext` bridge 已完成，Actor / Scene / Particle / POI / Controls overlay 已迁入 `RenderContext`
 - `ScenePreviewRenderer` 已把 preview frame lifecycle 与 scene pass 分开，下一步收口 scoped preview state guard
 - `PonderReloadOrchestrator` 已落地，scan / parse / validate / compile / register 结果继续结构化
@@ -895,6 +897,7 @@ CI 整改候选：
 - `ExternalPonderRegistrationService` 已成为场景与标签注册门面
 - `ExternalSceneRegistrationService`、`ExternalTagRegistrationService`、`ExternalSharedTextRegistrationService` 已独立
 - tag 定义注册与 component-tag 关联已拆入独立 registrar
+- `ExternalTagDefinitionRegistrar` 已直接返回 `RegistrationOutcome`
 - external scene 执行已拆成 scene / world / overlay 三类执行器
 
 #### P2-1：补 `compile` 阶段，显式产出 `CompiledSceneBundle`
@@ -927,7 +930,7 @@ CI 整改候选：
 状态：已落地，继续拆分
 
 - `PonderReloadOrchestrator` 已落地
-- reload 结果继续拆成 scan / parse / validate / compile / register
+- register 结果口径已先统一，reload 结果继续拆成 scan / parse / validate / compile / register
 - 每个阶段继续返回结构化结果
 - 失败信息统一进入 diagnostic sink
 
@@ -1016,7 +1019,7 @@ CI 上传两个 beta 验证产物：
 
 建议并行切片：
 
-1. Reload 编排：先把 register 结果对象口径统一，再拆 scan / parse / validate
+1. Reload 编排：继续拆 scan / parse / validate 阶段结果对象
 2. Showcase hover-label：统一命中判定与文案拼接路径
 3. CI / test 门：围绕当前 `build.gradle + gradle/scripts/*` 验证路径补门禁
 4. CraftTweaker / shim：收口边界和发布语义
