@@ -255,16 +255,15 @@ final class ScenePreviewRenderer {
         float maxZ = bounds.maxZ + 1.35F;
         float y = bounds.minY + 0.01F;
 
-        GlStateManager.disableTexture2D();
-        GlStateManager.color(0.0F, 0.0F, 0.0F, showcaseMode ? 0.12F : 0.06F);
-        GL11.glBegin(GL11.GL_QUADS);
-        GL11.glVertex3f(minX, y, minZ);
-        GL11.glVertex3f(maxX, y, minZ);
-        GL11.glVertex3f(maxX, y, maxZ);
-        GL11.glVertex3f(minX, y, maxZ);
-        GL11.glEnd();
-        GlStateManager.enableTexture2D();
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        try (GLStateGuard textureGuard = GLStateGuard.textureDisabled();
+            GLStateGuard colorGuard = GLStateGuard.color(0.0F, 0.0F, 0.0F, showcaseMode ? 0.12F : 0.06F)) {
+            GL11.glBegin(GL11.GL_QUADS);
+            GL11.glVertex3f(minX, y, minZ);
+            GL11.glVertex3f(maxX, y, minZ);
+            GL11.glVertex3f(maxX, y, maxZ);
+            GL11.glVertex3f(minX, y, maxZ);
+            GL11.glEnd();
+        }
     }
 
     private void renderActorPreviews(PonderScene scene, float currentTick) {
