@@ -37,7 +37,8 @@ public class ExternalPonderPlugin implements PonderPlugin, PonderReloadDetailsPr
         ExternalSceneRegistrationResult result =
             ExternalPonderRegistrationService.registerLoadedScenesResult(loadDefinitions(), helper);
         reloadDetails = reloadDetails.merge(new PonderReloadDetails(null, result.compileSummary(),
-            result.compileFailureReport(), result.diagnosticReport(), result.registrationOutcome(), null, null));
+            result.compileFailureReport(), result.diagnosticReport(), null, null,
+            result.registrationOutcome(), null, null));
         logOutcome("scenes", result.registrationOutcome());
     }
 
@@ -46,7 +47,8 @@ public class ExternalPonderPlugin implements PonderPlugin, PonderReloadDetailsPr
         ExternalTagRegistrationResult result =
             ExternalPonderRegistrationService.registerLoadedTagsResult(loadDefinitions(), helper);
         reloadDetails = reloadDetails.merge(new PonderReloadDetails(null, null, null,
-            result.diagnosticReport(), null, result.registrationOutcome(), null));
+            result.diagnosticReport(), result.failureReport(), null, null,
+            result.registrationOutcome(), null));
         logOutcome("tags", result.registrationOutcome());
     }
 
@@ -56,7 +58,8 @@ public class ExternalPonderPlugin implements PonderPlugin, PonderReloadDetailsPr
             ExternalSharedTextRegistrationResult result =
                 ExternalPonderRegistrationService.registerLoadedSharedTextResult(loadDefinitions(), helper);
             reloadDetails = reloadDetails.merge(new PonderReloadDetails(null, null, null,
-                result.diagnosticReport(), null, null, result.registrationOutcome()));
+                result.diagnosticReport(), null, result.failureReport(), null,
+                null, result.registrationOutcome()));
             logOutcome("shared text", result.registrationOutcome());
         } finally {
             clearCachedParseResult();
@@ -84,7 +87,8 @@ public class ExternalPonderPlugin implements PonderPlugin, PonderReloadDetailsPr
 
     private void recordValidationReport(ValidationReport validationReport) {
         reloadDetails =
-            reloadDetails.merge(new PonderReloadDetails(validationReport, null, null, null, null, null, null));
+            reloadDetails.merge(new PonderReloadDetails(validationReport, null, null, null, null, null,
+                null, null, null));
     }
 
     private void resetReloadDetails() {

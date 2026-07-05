@@ -1,5 +1,7 @@
 package net.createmod.ponder.foundation.external.register;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 
 import net.createmod.ponder.Ponder;
@@ -7,9 +9,10 @@ import net.createmod.ponder.Ponder;
 final class ExternalRegistrationDiagnostics implements Consumer<ExternalRegistrationDiagnostic> {
 
     private final Consumer<ExternalRegistrationDiagnostic> delegate;
+    private final List<ExternalRegistrationDiagnostic> errors = new ArrayList<ExternalRegistrationDiagnostic>();
     private int infos;
     private int warnings;
-    private int errors;
+    private int errorCount;
 
     ExternalRegistrationDiagnostics() {
         this(ExternalRegistrationDiagnostics.logger());
@@ -33,7 +36,8 @@ final class ExternalRegistrationDiagnostics implements Consumer<ExternalRegistra
                 warnings++;
                 break;
             case ERROR:
-                errors++;
+                errorCount++;
+                errors.add(diagnostic);
                 break;
             default:
                 throw new IllegalStateException("Unhandled severity " + diagnostic.severity());
@@ -43,7 +47,14 @@ final class ExternalRegistrationDiagnostics implements Consumer<ExternalRegistra
     }
 
     RegistrationDiagnosticReport report() {
-        return new RegistrationDiagnosticReport(infos, warnings, errors);
+        return new RegistrationDiagnosticReport(infos, warnings, errorCount);
+    }
+
+    ExternalRegistrationFailureReport failureReport() {
+        if (errors.isEmpty()) {
+            return ExternalRegistrationFailureReport.EMPTY;
+        }
+        return new ExternalRegistrationFailureReport(errors);
     }
 
     static Consumer<ExternalRegistrationDiagnostic> logger() {

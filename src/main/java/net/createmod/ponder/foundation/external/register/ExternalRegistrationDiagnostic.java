@@ -2,7 +2,7 @@ package net.createmod.ponder.foundation.external.register;
 
 import net.createmod.ponder.foundation.external.definition.SourceInfo;
 
-record ExternalRegistrationDiagnostic(
+public record ExternalRegistrationDiagnostic(
     Severity severity,
     String channel,
     String subject,
@@ -10,13 +10,13 @@ record ExternalRegistrationDiagnostic(
     String detail,
     Throwable cause
 ) {
-    enum Severity {
+    public enum Severity {
         INFO,
         WARN,
         ERROR
     }
 
-    ExternalRegistrationDiagnostic {
+    public ExternalRegistrationDiagnostic {
         if (severity == null) {
             throw new IllegalArgumentException("severity must not be null");
         }
@@ -34,20 +34,20 @@ record ExternalRegistrationDiagnostic(
         }
     }
 
-    static ExternalRegistrationDiagnostic info(String channel, String subject, SourceInfo source, String detail) {
+    public static ExternalRegistrationDiagnostic info(String channel, String subject, SourceInfo source, String detail) {
         return new ExternalRegistrationDiagnostic(Severity.INFO, channel, subject, source, detail, null);
     }
 
-    static ExternalRegistrationDiagnostic warn(String channel, String subject, SourceInfo source, String detail) {
+    public static ExternalRegistrationDiagnostic warn(String channel, String subject, SourceInfo source, String detail) {
         return new ExternalRegistrationDiagnostic(Severity.WARN, channel, subject, source, detail, null);
     }
 
-    static ExternalRegistrationDiagnostic error(String channel, String subject, SourceInfo source, String detail,
+    public static ExternalRegistrationDiagnostic error(String channel, String subject, SourceInfo source, String detail,
         Throwable cause) {
         return new ExternalRegistrationDiagnostic(Severity.ERROR, channel, subject, source, detail, cause);
     }
 
-    String render() {
+    public String render() {
         StringBuilder builder = new StringBuilder();
         switch (severity) {
             case INFO:

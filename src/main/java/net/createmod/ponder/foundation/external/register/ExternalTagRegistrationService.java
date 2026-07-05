@@ -20,7 +20,7 @@ public final class ExternalTagRegistrationService {
         PonderTagRegistrationHelper<ResourceLocation> helper) {
         ExternalRegistrationDiagnostics diagnostics = new ExternalRegistrationDiagnostics();
         RegistrationOutcome outcome = registerTags(RegistrationContext.of(definitions), helper, diagnostics);
-        return new ExternalTagRegistrationResult(outcome, diagnostics.report());
+        return new ExternalTagRegistrationResult(outcome, diagnostics.report(), diagnostics.failureReport());
     }
 
     private static RegistrationOutcome registerTags(RegistrationContext ctx,

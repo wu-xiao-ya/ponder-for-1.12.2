@@ -4,17 +4,21 @@ import net.createmod.ponder.foundation.external.register.RegistrationOutcome;
 import net.createmod.ponder.foundation.external.register.ExternalSceneCompileSummary;
 import net.createmod.ponder.foundation.external.register.ExternalSceneCompileFailureDiagnostic;
 import net.createmod.ponder.foundation.external.register.ExternalSceneCompileFailureReport;
+import net.createmod.ponder.foundation.external.register.ExternalRegistrationDiagnostic;
+import net.createmod.ponder.foundation.external.register.ExternalRegistrationFailureReport;
 import net.createmod.ponder.foundation.external.register.RegistrationDiagnosticReport;
 import net.createmod.ponder.foundation.external.validate.ValidationReport;
 
 public record PonderReloadDetails(ValidationReport validationReport, ExternalSceneCompileSummary sceneCompileSummary,
     ExternalSceneCompileFailureReport sceneCompileFailures, RegistrationDiagnosticReport registrationDiagnostics,
+    ExternalRegistrationFailureReport tagFailureReport, ExternalRegistrationFailureReport sharedTextFailureReport,
     RegistrationOutcome sceneOutcome, RegistrationOutcome tagOutcome, RegistrationOutcome sharedTextOutcome) {
 
     public static final PonderReloadDetails EMPTY =
         new PonderReloadDetails(ValidationReport.EMPTY, ExternalSceneCompileSummary.EMPTY,
-            ExternalSceneCompileFailureReport.EMPTY, RegistrationDiagnosticReport.EMPTY, RegistrationOutcome.EMPTY,
-            RegistrationOutcome.EMPTY, RegistrationOutcome.EMPTY);
+            ExternalSceneCompileFailureReport.EMPTY, RegistrationDiagnosticReport.EMPTY,
+            ExternalRegistrationFailureReport.EMPTY, ExternalRegistrationFailureReport.EMPTY,
+            RegistrationOutcome.EMPTY, RegistrationOutcome.EMPTY, RegistrationOutcome.EMPTY);
 
     public PonderReloadDetails {
         validationReport = validationReport == null ? ValidationReport.EMPTY : validationReport;
@@ -24,6 +28,10 @@ public record PonderReloadDetails(ValidationReport validationReport, ExternalSce
             sceneCompileFailures == null ? ExternalSceneCompileFailureReport.EMPTY : sceneCompileFailures;
         registrationDiagnostics =
             registrationDiagnostics == null ? RegistrationDiagnosticReport.EMPTY : registrationDiagnostics;
+        tagFailureReport =
+            tagFailureReport == null ? ExternalRegistrationFailureReport.EMPTY : tagFailureReport;
+        sharedTextFailureReport =
+            sharedTextFailureReport == null ? ExternalRegistrationFailureReport.EMPTY : sharedTextFailureReport;
         sceneOutcome = sceneOutcome == null ? RegistrationOutcome.EMPTY : sceneOutcome;
         tagOutcome = tagOutcome == null ? RegistrationOutcome.EMPTY : tagOutcome;
         sharedTextOutcome = sharedTextOutcome == null ? RegistrationOutcome.EMPTY : sharedTextOutcome;
@@ -36,7 +44,9 @@ public record PonderReloadDetails(ValidationReport validationReport, ExternalSce
         return new PonderReloadDetails(validationReport.merge(other.validationReport),
             sceneCompileSummary.merge(other.sceneCompileSummary),
             sceneCompileFailures.merge(other.sceneCompileFailures),
-            registrationDiagnostics.merge(other.registrationDiagnostics), sceneOutcome.merge(other.sceneOutcome),
+            registrationDiagnostics.merge(other.registrationDiagnostics),
+            tagFailureReport.merge(other.tagFailureReport),
+            sharedTextFailureReport.merge(other.sharedTextFailureReport), sceneOutcome.merge(other.sceneOutcome),
             tagOutcome.merge(other.tagOutcome),
             sharedTextOutcome.merge(other.sharedTextOutcome));
     }
@@ -55,6 +65,7 @@ public record PonderReloadDetails(ValidationReport validationReport, ExternalSce
 
     public boolean hasExternalDetails() {
         return !validationReport.equals(ValidationReport.EMPTY) || registrationDiagnostics.hasDiagnostics()
+            || tagFailureReport.hasFailures() || sharedTextFailureReport.hasFailures()
             || !sceneOutcome.equals(RegistrationOutcome.EMPTY)
             || !tagOutcome.equals(RegistrationOutcome.EMPTY) || !sharedTextOutcome.equals(RegistrationOutcome.EMPTY);
     }
@@ -71,10 +82,36 @@ public record PonderReloadDetails(ValidationReport validationReport, ExternalSce
         return sceneCompileFailures.failures();
     }
 
+    public boolean hasTagFailureDiagnostics() {
+        return tagFailureReport.hasFailures();
+    }
+
+    public boolean hasSharedTextFailureDiagnostics() {
+        return sharedTextFailureReport.hasFailures();
+    }
+
+    public String formatTagFailureSummary() {
+        return "Tag registration failures (" + tagFailureReport.failureCount() + "):";
+    }
+
+    public String formatSharedTextFailureSummary() {
+        return "Shared text registration failures (" + sharedTextFailureReport.failureCount() + "):";
+    }
+
+    public Iterable<ExternalRegistrationDiagnostic> tagFailureDiagnostics() {
+        return tagFailureReport.failures();
+    }
+
+    public Iterable<ExternalRegistrationDiagnostic> sharedTextFailureDiagnostics() {
+        return sharedTextFailureReport.failures();
+    }
+
     public String formatSummary() {
         StringBuilder builder = new StringBuilder();
         appendValidationSummary(builder);
         appendRegistrationDiagnosticSummary(builder);
+        appendFailureSummary(builder, "tag registration failures", tagFailureReport);
+        appendFailureSummary(builder, "shared text registration failures", sharedTextFailureReport);
         appendOutcomeSummary(builder, "external scene registration", sceneOutcome);
         appendOutcomeSummary(builder, "external tag registration", tagOutcome);
         appendOutcomeSummary(builder, "external shared text registration", sharedTextOutcome);
@@ -95,6 +132,14 @@ public record PonderReloadDetails(ValidationReport validationReport, ExternalSce
             return;
         }
         appendPart(builder, "registration diagnostics: " + registrationDiagnostics.formatSummary());
+    }
+
+    private void appendFailureSummary(StringBuilder builder, String label,
+        ExternalRegistrationFailureReport failureReport) {
+        if (!failureReport.hasFailures()) {
+            return;
+        }
+        appendPart(builder, label + ": " + failureReport.failureCount() + " error(s)");
     }
 
     private void appendOutcomeSummary(StringBuilder builder, String label, RegistrationOutcome outcome) {

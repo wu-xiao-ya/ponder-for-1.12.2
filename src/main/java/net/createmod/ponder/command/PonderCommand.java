@@ -14,6 +14,8 @@ import net.createmod.ponder.foundation.PonderReloadReport;
 import net.createmod.ponder.foundation.PonderScene;
 import net.createmod.ponder.foundation.PonderScene.RecordedOperation;
 import net.createmod.ponder.foundation.PonderTag;
+import net.createmod.ponder.foundation.external.register.ExternalRegistrationDiagnostic;
+import net.createmod.ponder.foundation.external.register.ExternalRegistrationFailureReport;
 import net.createmod.ponder.foundation.external.register.ExternalSceneCompileFailureDiagnostic;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.CommandException;
@@ -185,6 +187,14 @@ public class PonderCommand extends CommandBase {
         if (report.details().hasCompileFailureDiagnostics()) {
             sendCompileFailureDiagnostics(sender, report);
         }
+        if (report.details().hasTagFailureDiagnostics()) {
+            sendRegistrationFailureDiagnostics(sender, report.details().formatTagFailureSummary(),
+                report.details().tagFailureReport());
+        }
+        if (report.details().hasSharedTextFailureDiagnostics()) {
+            sendRegistrationFailureDiagnostics(sender, report.details().formatSharedTextFailureSummary(),
+                report.details().sharedTextFailureReport());
+        }
         if (report.details().hasExternalDetails()) {
             sendLine(sender, "External details: " + report.details().formatSummary());
         }
@@ -201,6 +211,24 @@ public class PonderCommand extends CommandBase {
             emitted++;
         }
         int remaining = report.details().sceneCompileFailures().failureCount() - emitted;
+        if (remaining > 0) {
+            sendLine(sender, "... +" + remaining + " more");
+        }
+    }
+
+    private void sendRegistrationFailureDiagnostics(ICommandSender sender, String title,
+        ExternalRegistrationFailureReport failureReport) {
+        sendLine(sender, title);
+        int emitted = 0;
+        for (ExternalRegistrationDiagnostic diagnostic : failureReport.failures()) {
+            if (emitted >= MAX_RELOAD_DIAGNOSTIC_LINES) {
+                break;
+            }
+            sendLine(sender, diagnostic.render());
+            emitted++;
+        }
+
+        int remaining = failureReport.failureCount() - emitted;
         if (remaining > 0) {
             sendLine(sender, "... +" + remaining + " more");
         }

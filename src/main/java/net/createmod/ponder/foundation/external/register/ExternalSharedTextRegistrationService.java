@@ -22,7 +22,7 @@ public final class ExternalSharedTextRegistrationService {
         SharedTextRegistrationHelper helper) {
         ExternalRegistrationDiagnostics diagnostics = new ExternalRegistrationDiagnostics();
         RegistrationOutcome outcome = registerSharedTexts(RegistrationContext.of(definitions), helper, diagnostics);
-        return new ExternalSharedTextRegistrationResult(outcome, diagnostics.report());
+        return new ExternalSharedTextRegistrationResult(outcome, diagnostics.report(), diagnostics.failureReport());
     }
 
     private static RegistrationOutcome registerSharedTexts(RegistrationContext ctx,
