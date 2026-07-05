@@ -3,13 +3,14 @@ package net.createmod.ponder.foundation.ui;
 import net.createmod.ponder.api.PonderPalette;
 import net.createmod.ponder.foundation.PonderScene;
 import net.createmod.ponder.foundation.ui.PonderScenePreview.PreviewBounds;
+import net.createmod.ponder.foundation.ui.render.RenderContext;
 
 final class PoiOverlayRenderer {
 
     private final PonderOverlayLayoutHelper overlayLayoutHelper;
-    private final DrawContext draw;
+    private final RenderContext draw;
 
-    PoiOverlayRenderer(PonderOverlayLayoutHelper overlayLayoutHelper, DrawContext draw) {
+    PoiOverlayRenderer(PonderOverlayLayoutHelper overlayLayoutHelper, RenderContext draw) {
         this.overlayLayoutHelper = overlayLayoutHelper;
         this.draw = draw;
     }
@@ -26,10 +27,10 @@ final class PoiOverlayRenderer {
             return;
         }
 
-        int accent = draw.withAlpha(PonderPalette.RED.getColor(), fade * 235.0F);
-        int fill = draw.withAlpha(PonderPalette.RED.getColor(), fade * 72.0F);
+        int accent = withAlpha(PonderPalette.RED.getColor(), fade * 235.0F);
+        int fill = withAlpha(PonderPalette.RED.getColor(), fade * 72.0F);
         draw.drawCrossMarker(target.x, target.y, 5, 2, accent, fill);
-        draw.drawString("POI", target.x + 8, target.y - 4, 0xF2F5F8);
+        draw.renderText("POI", target.x + 8, target.y - 4, 0xF2F5F8);
     }
 
     private static PonderScene.PoiEvent getActivePoiEvent(PonderScene scene, float currentTick) {
@@ -45,5 +46,10 @@ final class PoiOverlayRenderer {
             }
         }
         return active;
+    }
+
+    private static int withAlpha(int color, float alpha) {
+        int clampedAlpha = Math.min(255, Math.max(0, (int) alpha));
+        return (clampedAlpha << 24) | (color & 0x00FFFFFF);
     }
 }
