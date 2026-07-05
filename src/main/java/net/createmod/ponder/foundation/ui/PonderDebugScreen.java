@@ -738,47 +738,7 @@ public class PonderDebugScreen extends CompatGuiScreen {
     }
 
     protected ShowcaseCaptionRenderer.Host createShowcaseCaptionHost() {
-        return new ShowcaseCaptionRenderer.Host() {
-            @Override
-            public PonderScene.OverlayEvent getShowcaseCaption(PonderScene scene, float currentTick) {
-                ShowcaseCaption caption = PonderDebugScreen.this.getShowcaseCaption(scene, currentTick);
-                return caption == null ? null : caption.overlayEvent;
-            }
-
-            @Override
-            public float computeCaptionFade(PonderScene.OverlayEvent overlayEvent, float currentTick) {
-                return overlayEvent == null ? 0.0F
-                    : PonderOverlayHelper.computeOverlayFade(overlayEvent.getTick(), overlayEvent.getDuration(),
-                        currentTick);
-            }
-
-            @Override
-            public PreviewLayout getLastPreviewLayout() {
-                return interactionHitCache.getPreviewLayout();
-            }
-
-            @Override
-            public void drawSpeechBox(int boxX, int boxY, int boxWidth, int boxHeight,
-                SpeechRenderer.SpeechPointing pointing, int accentColor, float fade) {
-                PonderDebugScreen.this.drawSpeechBox(boxX, boxY, boxWidth, boxHeight, pointing, accentColor, fade);
-            }
-
-            @Override
-            public SpeechRenderer.Point getSpeechPointerTip(int boxX, int boxY, int boxWidth, int boxHeight,
-                SpeechRenderer.SpeechPointing pointing) {
-                return PonderDebugScreen.this.getSpeechPointerTip(boxX, boxY, boxWidth, boxHeight, pointing);
-            }
-
-            @Override
-            public void drawCaptionConnector(int startX, int startY, int endX, int endY, int color, float fade) {
-                PonderDebugScreen.this.drawCaptionConnector(startX, startY, endX, endY, color, fade);
-            }
-
-            @Override
-            public void drawCenteredStringNoShadow(String text, int centerX, int y, int color) {
-                PonderDebugScreen.this.drawCenteredStringNoShadow(text, centerX, y, color);
-            }
-        };
+        return new ShowcaseCaptionHostAdapter(hostSupport, fontRenderer);
     }
 
     private ShowcaseCaptionRenderer getShowcaseCaptionRenderer() {

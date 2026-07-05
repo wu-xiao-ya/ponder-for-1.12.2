@@ -92,6 +92,10 @@ final class PonderDebugScreenHostSupport {
         return screen.getDebugPanelBridge().getOperationIndexAt(mouseX, mouseY);
     }
 
+    PreviewLayout getLastPreviewLayout() {
+        return interactionHitCache.getPreviewLayout();
+    }
+
     List<RecordedOperation> getSelectedRecordedOperations() {
         PonderScene scene = screen.getSelectedScene();
         return scene == null ? Collections.<RecordedOperation>emptyList() : scene.getRecordedOperations();
