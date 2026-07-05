@@ -24,7 +24,13 @@
 - `d661bbc Retry remote CI Gradle build` 已推送
 - `4fa20aab18668991a596809432375699392813f4` 是当前记录的远端可编译基线，Build `28735055457` 成功
 - `patch1.patch` 是未跟踪文件，暂存前需要确认用途
-- 第二批 UI adapter、RenderContext bridge、projection 预铺处于本地整合阶段
+- `OverlayPlacementEngine` / `PonderOverlayHelper` placement 收口已完成
+- `SnapshotSource` / `ConstantSnapshotSource` / `ProviderSnapshotSource` / `SnapshotRegistryStore` 已完成
+- `PonderTheme` / `PonderThemes` / `ThemeResolver` / `ponder_themes.json` 已完成
+- `ExternalRegistrationDiagnostic(s)` 已完成
+- `RenderContext` bridge 已完成，Actor / Scene / Particle / POI / Controls overlay 已迁入 `RenderContext`，`OverlayDrawContextAdapter` 已抽出
+- `PonderDebugScreen` adapter 切片已完成，HUD host、renderer host、caption host、HUD text provider 已收口
+- `PonderReloadOrchestrator` 已落地，scan / parse / validate / compile / register 结果继续结构化
 
 ## 1. 目标
 
@@ -93,9 +99,14 @@ Unimined
 - `componentScroll` 与 `operationScroll` 已由 `DebugPanelRenderer` 持有，`DebugPanelViewState` 已退场
 - speech box、connector、line segment 绘制已集中到 `SpeechRenderer`
 - section fade、camera rotate、actor progress 已接入 `AnimationSpec`
+- `OverlayPlacementEngine`、`PonderOverlayHelper` 的 placement 收口已完成，`OverlayDrawContextAdapter` 已抽出
+- `SnapshotSource`、`ConstantSnapshotSource`、`ProviderSnapshotSource`、`SnapshotRegistryStore` 已完成
+- `PonderTheme`、`PonderThemes`、`ThemeResolver`、`ponder_themes.json` 已完成
+- `ExternalRegistrationDiagnostic(s)` 已完成
 - external 注册已通过 `CompiledSceneBundle` 进入显式 compile 阶段
 - registration 内部写入已通过 `RegistrationCommands` 与 `RegistrationCommandService` 收口
-- external 管线已拆成 `definition / parse / scan / register / execute / validate / compat`，执行端继续拆为 scene / world / overlay 分派器
+- `RenderContext` bridge 已完成，Actor / Scene / Particle / POI / Controls overlay 已迁入 `RenderContext`
+- `PonderReloadOrchestrator` 已落地，scan / parse / validate / compile / register 结果继续结构化
 
 对应参考：
 
@@ -111,26 +122,27 @@ Unimined
 
 当前残留热点：
 
-- 直接 `GlStateManager` 调用仍集中在 preview 绘制桥接和 scene shadow 周边
+- `ScenePreviewRenderer` 的 preview GL / scissor / shadow 继续收口
 - 匿名 Host 接线占据较多 screen 篇幅
 - `isMouseOver*` 与 hover label host 仍保留在 screen 侧
-- showcase theme 构造仍散在 `PonderDebugScreen`、`PonderUI`、renderer 内嵌类型之间
-- line count 当前反映 adapter 与 renderer 过渡期成本，下一步目标是拆出 Host adapter 与 RenderContext
+- `PonderDebugScreen` 继续向页面协调器和 host adapter 收口
+- reload 结果结构化继续推进，scan / parse / validate / compile / register 结果继续拆分
+- line count 当前反映 adapter 与 renderer 过渡期成本，下一步目标是收敛剩余 preview 桥接
 
-#### B. Snapshot 体系过薄
+#### B. Snapshot 体系已完成首轮收口
 
-当前残留热点：
+当前收口结果：
 
-- `SnapshotProvider` 已具备 `constant(...)` 便捷入口
+- `SnapshotSource` / `ConstantSnapshotSource` / `ProviderSnapshotSource` / `SnapshotRegistryStore` 已完成
 - `SnapshotRenderer.GuiSnapshotRenderer` 已升级为 sealed 子接口
-- `PonderGuiSnapshotRegistry` 已开始传递 block GUI tile NBT，失效和来源建模仍需继续强化
-- 反射型 snapshot provider 仍然偏重
+- `PonderGuiSnapshotRegistry` 继续细化 cache scope、失效语义和 rebuild 边界
+- 反射型 snapshot provider 继续向 source 模型迁移
 
 #### C. 构建层和兼容层重复
 
 当前残留热点：
 
-- `build.gradle` 与 `crl_ponder/build.gradle` 存在高重复
+- `build.gradle` 与 `gradle/scripts/*` 继续收口重复逻辑
 - `forgeServerShim` 与主源码有重合逻辑
 - `mixins.ponder.json` 仍停在 `JAVA_16`
 - CraftTweaker 依赖拉取方式偏临时
@@ -322,6 +334,12 @@ plugin input
 - `GLStateGuard`
 - `SnapshotRenderContext`
 
+状态：
+
+- `RenderContext` bridge 已完成
+- Actor / Scene / Particle / POI / Controls overlay 已迁入 `RenderContext`
+- `OverlayDrawContextAdapter` 已抽出
+
 目标：
 
 - renderer 直接依赖 `RenderContext`
@@ -359,7 +377,7 @@ interface RenderContext {
 2. `DebugPanelRenderer`、`ActorOverlayRenderer` 迁入纯 2D context
 3. `OverlayRenderer`、`SpeechRenderer`、`GuiOverlayRenderer` 迁入 line / gradient / triangle 能力
 4. `PonderUI` 与 showcase renderer 迁入 theme-aware context
-5. `ScenePreviewRenderer` 和 snapshot renderer 接入 scoped scissor / matrix / depth guard
+5. `ScenePreviewRenderer` 和 snapshot renderer 接入 scoped scissor / matrix / depth guard，继续收口 preview GL / shadow
 
 这条顺序先稳住 2D 绘制和状态恢复，再处理 3D preview 与外部 GUI 嵌入。
 
@@ -395,6 +413,12 @@ interface SceneProjectionContext {
 ```
 
 `OverlayPlacementEngine` 输入 scene-space 数据，输出 screen-space placement。renderer 接收 placement 后只负责绘制。
+
+状态：
+
+- `OverlayPlacementEngine`、`PonderOverlayHelper` placement 收口已完成
+- `OverlayDrawContextAdapter` 已抽出
+- `PonderOverlayLayoutHelper` 继续保留 projection 适配职责
 
 当前入口按职责分为六组：
 
@@ -484,7 +508,10 @@ record CompositeHitRegion(String id, List<HitRegion> children, HitAction action)
 2. 再用 `SymbolicColor` 替代裸 `int` 颜色参数
 3. 最后把默认主题迁入资源配置，保留 Java 默认值兜底
 
-当前第一步已先落 `PonderThemes.showcase()` / `PonderThemes.debug()` Java preset，debug 与 showcase 的 renderer 创建入口已经开始收口。
+状态：
+
+- `PonderThemes.showcase()` / `PonderThemes.debug()` Java preset 已落地
+- debug 与 showcase 的 renderer 创建入口已收口
 
 当前 theme 分布：
 
@@ -513,7 +540,7 @@ enum SymbolicColor {
 }
 ```
 
-先提供 `PonderThemes.showcase()` 与 `PonderThemes.debug()` 两个 Java preset，再把资源配置接入 `ThemeResolver`。
+`PonderTheme`、`PonderThemes`、`ThemeResolver`、`ponder_themes.json` 已完成当前阶段目标。
 
 ### 6.6 SnapshotSource 路线
 
@@ -532,6 +559,13 @@ SnapshotSource
 - 反射 tab GUI：`EmbeddedReflectiveTabGuiSnapshot`
 - 沙盒捕获 GUI：`SandboxTriggeredBlockGuiSnapshot`
 - tick 动态 provider：`te_*_cycle`
+
+状态：
+
+- `SnapshotSource` 已完成
+- `ConstantSnapshotSource` 已完成
+- `ProviderSnapshotSource` 已完成
+- `SnapshotRegistryStore` 已完成
 
 目标类型：
 
@@ -748,8 +782,8 @@ CI 整改候选：
 状态：部分完成
 
 - speech box、connector、line segment 已由 `SpeechRenderer` 承担
-- `PonderDebugScreen` 当前仍保留 `GlStateManager.disableLighting()` 等 preview 桥接
-- 下一步先抽 `RenderContext`，再迁 `drawSceneShadow` 和 preview scissor
+- `PonderDebugScreen` 当前仍保留少量 preview 桥接
+- `ScenePreviewRenderer` 的 preview GL / scissor / shadow 继续收口
 
 ### P1：建立稳定渲染骨架
 
@@ -780,7 +814,7 @@ CI 整改候选：
 - `GLStateGuard` 已补 color restore guard，`GlRenderContext.drawLine()` 已收束颜色恢复
 - `DebugPanelRenderer` 已接入 local `RenderContext` bridge 复用 entry chrome
 - `DrawContext` 已继承 `RenderContext` 并提供 1.12.2 GUI bridge
-- 现阶段先提供桥接能力，renderer 迁移留在下一轮
+- `RenderContext` bridge 已完成，Actor / Scene / Particle / POI / Controls overlay 已迁入 `RenderContext`
 
 #### P1-2：建立 `SceneProjectionContext + OverlayPlacementEngine`
 
@@ -806,6 +840,8 @@ CI 整改候选：
 - `CaptionPlacement`、`GuiOverlayPlacement`、`GuiHighlightPlacement` 已在 projection 包预铺
 - `PonderOverlayHelper` 已接入 projection record，caption / overlay / highlight 共用同一上下文
 - `PonderOverlayLayoutHelper` 继续保留 legacy `ProjectedBounds` 给 `SceneOverlayRenderer`
+- `OverlayPlacementEngine`、`PonderOverlayHelper` placement 收口已完成
+- `OverlayDrawContextAdapter` 已抽出
 - screen 侧 layout 汇总职责继续缩小
 
 #### P1-3：把 snapshot 体系升级为 sealed provider/source 模型
@@ -829,6 +865,9 @@ CI 整改候选：
 状态：已完成基础层
 
 - `SnapshotSource` sealed interface 已落地
+- `ConstantSnapshotSource` 已落地
+- `ProviderSnapshotSource` 已落地
+- `SnapshotRegistryStore` 已落地
 - `SnapshotContext` 已落地
 - `SnapshotCacheKey` 已落地
 - `SnapshotInvalidationPolicy` 已落地
@@ -883,17 +922,18 @@ CI 整改候选：
 
 #### P2-4：把 `PonderIndex.reload()` 收口成编排器
 
-下一步：
+状态：已落地，继续拆分
 
-- reload 只组织 scan、parse、validate、compile、register
-- 每个阶段返回结构化结果
+- `PonderReloadOrchestrator` 已落地
+- reload 结果继续拆成 scan / parse / validate / compile / register
+- 每个阶段继续返回结构化结果
 - 失败信息统一进入 diagnostic sink
 
 ### P3：构建层和兼容层收尾
 
 #### P3-1：收敛 Gradle 重复逻辑
 
-- `gradle/scripts/project-conventions.gradle` 已经承接共享 JVM/toolchain/test 默认项，remap、shadow、发布逻辑继续留在主 `build.gradle`。
+- `gradle/scripts/project-conventions.gradle` 已经承接共享 JVM/toolchain/test 默认项，remap、shadow、发布逻辑继续留在主 `build.gradle`
 
 #### P3-2：理顺 CraftTweaker 依赖与测试开关
 
@@ -960,15 +1000,11 @@ CI 上传两个 beta 验证产物：
 
 真正开工时按下面顺序最稳：
 
-1. 把 `PonderDebugScreen` 的匿名 Host 接线继续收口到 controller adapter
-2. 引入 `RenderContext + GLStateGuard`
-3. 迁移 `CompatGuiScreen`、`DrawContext`、`DebugPanelRenderer`、`OverlayRenderer`
-4. 引入 `SceneProjectionContext + OverlayPlacementEngine`
-5. 升级 snapshot 体系的来源、失效、缓存语义
-6. 合并 showcase / debug theme 到 `PonderTheme`
-7. external 继续补结构化 diagnostic 与 source map
-8. registration 继续补 command/query split
-9. 构建层和 shim 层收尾
+1. 继续收口 `ScenePreviewRenderer` 的 preview GL / scissor / shadow
+2. 把 `PonderReloadOrchestrator` 的 scan / parse / validate / compile / register 结果继续结构化
+3. 推进 CI / test 门，固定当前 `build.gradle + gradle/scripts/*` 构建路径
+4. 收口 CraftTweaker / shim 边界
+5. 视需要补齐 `PonderDebugScreen` 残余 host adapter
 
 这条顺序能先消灭当前最高频的耦合点，再推进更深层的现代化改造。
 
@@ -978,12 +1014,11 @@ CI 上传两个 beta 验证产物：
 
 建议并行切片：
 
-1. Mouse Host adapter：落 debug/showcase mouse adapter
-2. RenderContext 迁移：迁 `DebugPanelRenderer`、`SceneOverlayRenderer`、`GuiOverlayRenderer`
-3. Projection wiring：把 `PonderOverlayLayoutHelper` 与 `PonderOverlayHelper` 接入 projection 包
-4. Snapshot 深化：补 `SnapshotCacheKey` 边界、失效策略和 `clear` / `rebuild` 入口
-5. Theme：落 `PonderTheme`、`SymbolicColor`、`PonderThemes` preset
-6. Build cleanup：合并主工程与 `crl_ponder` 的重复 Gradle 逻辑
+1. ScenePreviewRenderer：收口 preview GL / scissor / shadow
+2. Reload 编排：把 scan / parse / validate / compile / register 结果对象继续拆细
+3. CI / test 门：围绕当前 `build.gradle + gradle/scripts/*` 验证路径补门禁
+4. CraftTweaker / shim：收口边界和发布语义
+5. Residual host：处理剩余 `PonderDebugScreen` adapter 细节
 
 主代理负责范围控制、冲突处理、文档同步、远程 CI 验证。
 
@@ -1032,6 +1067,8 @@ scene-space
 - `PonderOverlayHelper` 输出 `CaptionPlacement`、`GuiOverlayPlacement`、`GuiHighlightPlacement`
 - overlay renderer 只消费 placement record 和 draw context
 - legacy `ProjectedBounds` 保留到所有调用点完成迁移后统一删除
+- `OverlayPlacementEngine`、`PonderOverlayHelper` placement 收口已完成
+- `OverlayDrawContextAdapter` 已抽出
 
 ### 13.4 Snapshot Source 规格
 
@@ -1053,12 +1090,13 @@ SnapshotSource
 - registry 负责 source 注册、cache 命中、cache 清理和 rebuild
 - capture session 状态留在 renderer 实例，source key 只表达输入边界
 
-下一阶段拆分目标：
+当前阶段结果：
 
-- `ConstantSnapshotSource` 提升为独立文件
-- `ProviderSnapshotSource` 提升为独立文件
-- sandbox block GUI 拆成 source 与 capture session
-- 资源重载入口接 `PonderGuiSnapshotRegistry.rebuild()`
+- `ConstantSnapshotSource` 已完成
+- `ProviderSnapshotSource` 已完成
+- `SnapshotRegistryStore` 已完成
+- sandbox block GUI 继续沿 source 与 capture session 边界演进
+- 资源重载入口继续接 `PonderGuiSnapshotRegistry.rebuild()`
 
 ### 13.5 Theme 资源化规格
 
@@ -1067,6 +1105,13 @@ Theme 迁移按三步推进：
 1. Java preset 承接 showcase/debug 现有数值
 2. renderer 构造入口统一从 `PonderThemes` 获取 theme
 3. `ThemeResolver` 接资源配置 `ponder_themes.json`
+
+当前阶段结果：
+
+- `PonderTheme` 已完成
+- `PonderThemes` 已完成
+- `ThemeResolver` 已完成
+- `ponder_themes.json` 已完成
 
 资源格式目标：
 
