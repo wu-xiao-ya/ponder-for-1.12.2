@@ -146,7 +146,7 @@ public class PonderDebugScreen extends CompatGuiScreen {
     @Nullable
     private PoiOverlayRenderer poiOverlayRenderer;
     @Nullable
-    private DrawContext overlayDrawContext;
+    private OverlayDrawContextAdapter overlayDrawContext;
 
     protected GuiButton prevSceneButton;
     protected GuiButton nextSceneButton;
@@ -812,49 +812,9 @@ public class PonderDebugScreen extends CompatGuiScreen {
         return guiOverlayRenderer;
     }
 
-    private DrawContext getOverlayDrawContext() {
+    private OverlayDrawContextAdapter getOverlayDrawContext() {
         if (overlayDrawContext == null) {
-            overlayDrawContext = new DrawContext() {
-                @Override
-                public void fillRect(int left, int top, int right, int bottom, int color) {
-                    PonderDebugScreen.this.drawRect(left, top, right, bottom, color);
-                }
-
-                @Override
-                public void drawString(String text, int x, int y, int color) {
-                    PonderDebugScreen.this.drawString(fontRenderer, text, x, y, color);
-                }
-
-                @Override
-                public void drawLineSegment(int startX, int startY, int endX, int endY, int color, float width) {
-                    PonderDebugScreen.this.drawLineSegment(startX, startY, endX, endY, color, width);
-                }
-
-                @Override
-                public int withAlpha(int color, float alpha) {
-                    return PonderDebugScreen.this.withAlpha(color, alpha);
-                }
-
-                @Override
-                public int blendColors(int baseColor, int accentColor, float accentWeight) {
-                    return PonderDebugScreen.this.blendColors(baseColor, accentColor, accentWeight);
-                }
-
-                @Override
-                public void drawHoveringText(List<String> textLines, int x, int y) {
-                    PonderDebugScreen.this.drawHoveringText(textLines, x, y);
-                }
-
-                @Override
-                public int getStringWidth(String text) {
-                    return fontRenderer.getStringWidth(text);
-                }
-
-                @Override
-                public void drawCenteredString(String text, int centerX, int y, int color) {
-                    PonderDebugScreen.this.drawCenteredString(fontRenderer, text, centerX, y, color);
-                }
-            };
+            overlayDrawContext = new OverlayDrawContextAdapter(this);
         }
         return overlayDrawContext;
     }
