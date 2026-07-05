@@ -4,7 +4,6 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.ScaledResolution;
 
 import org.lwjgl.opengl.GL11;
 
@@ -21,7 +20,7 @@ public final class ScissorStack {
         Rect rect = stack.isEmpty() ? new Rect(x, y, width, height) : stack.peek().intersect(x, y, width, height);
         stack.push(rect);
         apply(rect);
-        return this::pop;
+        return new Scope();
     }
 
     private void pop() {
@@ -36,13 +35,11 @@ public final class ScissorStack {
     }
 
     private void apply(Rect rect) {
-        ScaledResolution resolution = new ScaledResolution(minecraft);
-        int scaleFactor = resolution.getScaleFactor();
+        if (minecraft == null) {
+            return;
+        }
         GL11.glEnable(GL11.GL_SCISSOR_TEST);
-        GL11.glScissor(rect.x * scaleFactor,
-            minecraft.displayHeight - (rect.y + rect.height) * scaleFactor,
-            rect.width * scaleFactor,
-            rect.height * scaleFactor);
+        ScissorMath.apply(minecraft, rect.x, rect.y, rect.width, rect.height);
     }
 
     private record Rect(int x, int y, int width, int height) {
@@ -52,6 +49,20 @@ public final class ScissorStack {
             int maxX = Math.min(x + width, otherX + otherWidth);
             int maxY = Math.min(y + height, otherY + otherHeight);
             return new Rect(minX, minY, Math.max(0, maxX - minX), Math.max(0, maxY - minY));
+        }
+    }
+
+    private final class Scope implements AutoCloseable {
+
+        private boolean closed;
+
+        @Override
+        public void close() {
+            if (closed) {
+                return;
+            }
+            closed = true;
+            pop();
         }
     }
 }
