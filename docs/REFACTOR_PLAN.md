@@ -30,7 +30,7 @@
 - `ExternalRegistrationDiagnostic(s)` 已完成
 - `RenderContext` bridge 已完成，Actor / Scene / Particle / POI / Controls overlay 已迁入 `RenderContext`，`OverlayDrawContextAdapter` 已抽出
 - `ScenePreviewRenderer.renderPreviewScenePass(...)` 与 `ScenePreviewStateScope` 已抽出，preview 帧生命周期、主场景 pass、preview state scope 已分层
-- `PonderDebugScreen` adapter 切片已完成，HUD host、renderer host、caption host、HUD text provider 已收口
+- `PonderDebugScreen` adapter 切片已完成，HUD host、renderer host、caption host 已收口，showcase HUD 文案提供器已内联
 - tag 注册结果已统一到 `RegistrationOutcome`，`ExternalTagDefinitionRegistrar.Result` 已退场
 - external scan 已产出 `ExternalScanResult`，files / scannedRoots / skippedRoots 进入结构化结果
 - external validate 已产出 `ValidationReport` 与 `ExternalValidationDiagnostic(s)`，文件级加载失败和重复 interaction warning 进入诊断汇总
@@ -134,7 +134,7 @@ Unimined
 
 - `ScenePreviewRenderer` 的 preview scene pass 与 preview state scope 已抽出，后续继续推进 scissor stack 与 GLStateGuard 单项能力
 - 匿名 Host 接线占据较多 screen 篇幅
-- `isMouseOver*` 仍服务 hover / click / drag，hover label 文案计算已集中到 showcase HUD 路径
+- `isMouseOver*` 仍服务 hover / click / drag，showcase hover-label 已由 `ShowcaseHudRenderer.computeHoverLabel(...)` 统一承接
 - `PonderDebugScreen` 继续向页面协调器和 host adapter 收口
 - reload 结果结构化继续推进，validation 与 register 结果已进入 reload report，compile 结果继续拆分
 - line count 当前反映 adapter 与 renderer 过渡期成本，下一步目标是收敛剩余 preview 桥接
@@ -1016,7 +1016,7 @@ CI 上传两个 beta 验证产物：
 真正开工时按下面顺序最稳：
 
 1. 把 `PonderReloadOrchestrator` 的 compile 结果继续结构化
-2. 收口 showcase hover-label 的命中判定与文案拼接路径
+2. 收口 showcase hover-label 的命中判定与文案拼接路径，保留 `ShowcaseHudRenderer.computeHoverLabel(...)` 作为唯一运行时入口
 3. 推进 CI / test 门，固定当前 `build.gradle + gradle/scripts/*` 构建路径
 4. 收口 CraftTweaker / shim 边界
 5. 视需要补齐 `PonderDebugScreen` 残余 host adapter
@@ -1030,7 +1030,7 @@ CI 上传两个 beta 验证产物：
 建议并行切片：
 
 1. Reload 编排：继续拆 compile 阶段结果对象并接入 reload 汇总
-2. Showcase hover-label：统一命中判定与文案拼接路径
+2. Showcase hover-label：维持 `ShowcaseHudRenderer.computeHoverLabel(...)` 单入口，继续清理残余重复实现
 3. CI / test 门：围绕当前 `build.gradle + gradle/scripts/*` 验证路径补远程门禁
 4. CraftTweaker / shim：收口边界和发布语义
 5. ScenePreviewRenderer：继续推进 scissor stack 与 GLStateGuard 单项能力

@@ -758,7 +758,32 @@ public class PonderDebugScreen extends CompatGuiScreen {
     }
 
     protected ShowcaseHudRenderer.Theme createShowcaseHudTheme() {
-        return PonderThemes.debugHudTheme(new PonderDebugHudTextProvider(this));
+        return PonderThemes.debugHudTheme(new PonderTheme.HudTextProvider() {
+            @Override
+            public String getPlaybackBarHoverLabel(int estimatedTick, @Nullable PonderScene scene) {
+                return getHoverHintForPlaybackBar(estimatedTick, scene);
+            }
+
+            @Override
+            public String getGroupSelectorHoverLabel() {
+                return getHoverHintForGroupSelector();
+            }
+
+            @Override
+            public String getNextUpHoverLabel() {
+                return getHoverHintForNextUp();
+            }
+
+            @Override
+            public String getSceneShortLabel(int sceneIndex) {
+                return "场景 " + sceneIndex;
+            }
+
+            @Override
+            public String getNextUpLabel() {
+                return "接下来";
+            }
+        });
     }
 
     private ShowcaseHudRenderer getFallbackShowcaseHudRenderer() {
