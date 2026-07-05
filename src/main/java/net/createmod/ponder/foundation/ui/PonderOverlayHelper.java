@@ -10,7 +10,6 @@ import net.createmod.ponder.foundation.ui.projection.CaptionPlacement;
 import net.createmod.ponder.foundation.ui.projection.GuiHighlightPlacement;
 import net.createmod.ponder.foundation.ui.projection.GuiOverlayPlacement;
 import net.createmod.ponder.foundation.ui.projection.SceneProjectionContext;
-import net.minecraft.util.math.MathHelper;
 
 public final class PonderOverlayHelper {
 
@@ -22,21 +21,13 @@ public final class PonderOverlayHelper {
     // -- overlay fade helper -- //
 
     public static float computeOverlayFade(int startTick, int duration, float currentTick) {
-        float fadeIn = MathHelper.clamp((currentTick - startTick + 1.0F) / 6.0F, 0.0F, 1.0F);
-        float fadeOut = MathHelper.clamp((startTick + duration - currentTick) / 6.0F, 0.0F, 1.0F);
-        return Math.min(fadeIn, fadeOut);
+        return OVERLAY_PLACEMENT_ENGINE.computeOverlayFade(startTick, duration, currentTick);
     }
 
     // -- coordinate helpers -- //
 
     public static int resolveManualCaptionCoordinate(int coordinate, int origin, int size, int boxSize) {
         return OVERLAY_PLACEMENT_ENGINE.resolveManualCaptionCoordinate(coordinate, origin, size, boxSize);
-    }
-
-    // -- rect intersection -- //
-
-    public static boolean rectsIntersect(int ax, int ay, int aw, int ah, int bx, int by, int bw, int bh) {
-        return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
     }
 
     @Nullable

@@ -11,25 +11,6 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 
 public final class PonderOverlayLayoutHelper {
-
-    public static final class ProjectedBounds {
-        public final int minX;
-        public final int minY;
-        public final int maxX;
-        public final int maxY;
-
-        public ProjectedBounds(int minX, int minY, int maxX, int maxY) {
-            this.minX = minX;
-            this.minY = minY;
-            this.maxX = maxX;
-            this.maxY = maxY;
-        }
-
-        public net.createmod.ponder.foundation.ui.projection.ProjectedBounds toProjectionBounds() {
-            return new net.createmod.ponder.foundation.ui.projection.ProjectedBounds(minX, minY, maxX, maxY);
-        }
-    }
-
     private final boolean showcaseMode;
     private final PonderPreviewCameraState previewCameraState;
 
@@ -117,15 +98,6 @@ public final class PonderOverlayLayoutHelper {
         }
         return projectSceneBoundsInternal(context.scene(), toPreviewBounds(context.sceneBounds()), context.layout(),
             context.renderTick(), sceneBounds);
-    }
-
-    @Nullable
-    public ProjectedBounds projectSceneBounds(PonderScene scene, PreviewBounds bounds, PreviewLayout layout,
-        float renderTick, AxisAlignedBB sceneBounds) {
-        net.createmod.ponder.foundation.ui.projection.ProjectedBounds projected =
-            projectSceneBoundsInternal(scene, bounds, layout, renderTick, sceneBounds);
-        return projected == null ? null : new ProjectedBounds(projected.minX(), projected.minY(), projected.maxX(),
-            projected.maxY());
     }
 
     @Nullable
