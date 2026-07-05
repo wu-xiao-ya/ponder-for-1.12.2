@@ -7,17 +7,16 @@ import net.createmod.ponder.api.registration.PonderTagRegistrationHelper;
 import net.createmod.ponder.api.registration.SharedTextRegistrationHelper;
 import net.createmod.ponder.foundation.external.definition.ExternalDefinitionSet;
 import net.createmod.ponder.foundation.external.parse.ExternalPonderSceneParser;
+import net.createmod.ponder.foundation.external.parse.ExternalParseResult;
 import net.createmod.ponder.foundation.external.register.ExternalPonderRegistrationService;
 import net.createmod.ponder.foundation.external.register.ExternalSharedTextRegistrationService;
 import net.createmod.ponder.foundation.external.register.RegistrationOutcome;
 import net.createmod.ponder.foundation.external.validate.ExternalValidationDiagnostics;
-import net.createmod.ponder.foundation.external.validate.ValidationReport;
 import net.minecraft.util.ResourceLocation;
 
 public class ExternalPonderPlugin implements PonderPlugin {
 
-    private ExternalDefinitionSet cachedDefinitions;
-    private ValidationReport cachedValidationReport = ValidationReport.EMPTY;
+    private ExternalParseResult cachedParseResult;
     private boolean validationReportLogged;
 
     @Override
@@ -27,7 +26,7 @@ public class ExternalPonderPlugin implements PonderPlugin {
 
     @Override
     public void registerScenes(PonderSceneRegistrationHelper<ResourceLocation> helper) {
-        clearCachedDefinitions();
+        clearCachedParseResult();
         logOutcome("scenes", ExternalPonderRegistrationService.registerLoadedScenes(loadDefinitions(), helper));
     }
 
@@ -42,35 +41,40 @@ public class ExternalPonderPlugin implements PonderPlugin {
             logOutcome("shared text",
                 ExternalSharedTextRegistrationService.registerLoadedSharedText(loadDefinitions(), helper));
         } finally {
-            clearCachedDefinitions();
+            clearCachedParseResult();
         }
     }
 
     private ExternalDefinitionSet loadDefinitions() {
-        if (cachedDefinitions == null) {
-            ExternalValidationDiagnostics diagnostics = new ExternalValidationDiagnostics();
-            cachedDefinitions = ExternalPonderSceneParser.loadDefinitions(diagnostics);
-            cachedValidationReport = diagnostics.report();
-            logValidationReport();
-        }
-        return cachedDefinitions;
+        return loadResult().definitions();
     }
 
-    private void clearCachedDefinitions() {
-        cachedDefinitions = null;
-        cachedValidationReport = ValidationReport.EMPTY;
+    private ExternalParseResult loadResult() {
+        if (cachedParseResult == null) {
+            ExternalValidationDiagnostics diagnostics = new ExternalValidationDiagnostics();
+            cachedParseResult = ExternalPonderSceneParser.loadResult(diagnostics);
+            logValidationReport();
+        }
+        return cachedParseResult;
+    }
+
+    private void clearCachedParseResult() {
+        cachedParseResult = null;
         validationReportLogged = false;
     }
 
     private void logValidationReport() {
-        if (validationReportLogged || cachedValidationReport == null) {
+        ExternalParseResult parseResult = cachedParseResult;
+        if (validationReportLogged || parseResult == null) {
             return;
         }
         validationReportLogged = true;
         Ponder.LOGGER.info("External ponder validation: {} scanned, {} loaded, {} failed, {} warnings, {} errors",
-            Integer.valueOf(cachedValidationReport.filesScanned()), Integer.valueOf(cachedValidationReport.filesLoaded()),
-            Integer.valueOf(cachedValidationReport.filesFailed()), Integer.valueOf(cachedValidationReport.warnings()),
-            Integer.valueOf(cachedValidationReport.errors()));
+            Integer.valueOf(parseResult.validationReport().filesScanned()),
+            Integer.valueOf(parseResult.validationReport().filesLoaded()),
+            Integer.valueOf(parseResult.validationReport().filesFailed()),
+            Integer.valueOf(parseResult.validationReport().warnings()),
+            Integer.valueOf(parseResult.validationReport().errors()));
     }
 
     private void logOutcome(String channel, RegistrationOutcome outcome) {

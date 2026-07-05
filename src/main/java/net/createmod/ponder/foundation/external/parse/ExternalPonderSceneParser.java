@@ -59,10 +59,18 @@ public final class ExternalPonderSceneParser {
     }
 
     public static ExternalDefinitionSet loadDefinitions() {
-        return loadDefinitions(new ExternalValidationDiagnostics());
+        return loadResult().definitions();
     }
 
     public static ExternalDefinitionSet loadDefinitions(ExternalValidationDiagnostics diagnostics) {
+        return loadResult(diagnostics).definitions();
+    }
+
+    public static ExternalParseResult loadResult() {
+        return loadResult(new ExternalValidationDiagnostics());
+    }
+
+    public static ExternalParseResult loadResult(ExternalValidationDiagnostics diagnostics) {
         ExternalValidationDiagnostics validationDiagnostics = diagnostics == null ? new ExternalValidationDiagnostics()
             : diagnostics;
         List<TagDefinition> tags = new ArrayList<TagDefinition>();
@@ -88,7 +96,8 @@ public final class ExternalPonderSceneParser {
             }
         }
 
-        return new ExternalDefinitionSet(tags, scenes, interactions, sharedTexts);
+        return new ExternalParseResult(new ExternalDefinitionSet(tags, scenes, interactions, sharedTexts), scanResult,
+            validationDiagnostics.report());
     }
 
     public static ExternalDefinitionSet parseDefinitionFile(File file) {
