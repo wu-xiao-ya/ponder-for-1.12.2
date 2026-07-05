@@ -49,6 +49,7 @@ import net.createmod.ponder.foundation.external.definition.SharedTextDefinition;
 import net.createmod.ponder.foundation.external.definition.SourceInfo;
 import net.createmod.ponder.foundation.external.definition.TagDefinition;
 import net.createmod.ponder.foundation.external.scan.ExternalPonderSceneScanner;
+import net.createmod.ponder.foundation.external.scan.ExternalScanResult;
 import net.createmod.ponder.foundation.external.validate.ExternalNbtValidation;
 import net.minecraft.util.ResourceLocation;
 
@@ -64,7 +65,8 @@ public final class ExternalPonderSceneParser {
             new LinkedHashMap<ResourceLocation, InteractionDefinition>();
         List<SharedTextDefinition> sharedTexts = new ArrayList<SharedTextDefinition>();
 
-        for (File file : ExternalPonderSceneScanner.collectJsonFiles()) {
+        ExternalScanResult scanResult = ExternalPonderSceneScanner.collectScanResult();
+        for (File file : scanResult.files()) {
             ExternalDefinitionSet source = parseDefinitionFile(file);
             tags.addAll(source.tags());
             scenes.addAll(source.scenes());

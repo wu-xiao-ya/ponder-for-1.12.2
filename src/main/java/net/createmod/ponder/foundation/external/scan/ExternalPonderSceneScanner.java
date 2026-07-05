@@ -65,20 +65,26 @@ public final class ExternalPonderSceneScanner {
     }
 
     /**
-     * Collect all discoverable external ponder JSON files.
+     * Collect all discoverable external ponder JSON files and scan metadata.
      *
      * <p>The scan combines auto-scanned directories under the game directory
      * with individually queued paths. Results are deduplicated by canonical
      * path, preserving insertion order.</p>
      *
-     * @return a deduplicated list of JSON files, never {@code null}
+     * @return the scan result, never {@code null}
      */
-    public static List<File> collectJsonFiles() {
+    public static ExternalScanResult collectScanResult() {
         Set<String> seenPaths = new LinkedHashSet<String>();
         List<File> files = new ArrayList<File>();
+        List<File> scannedRoots = new ArrayList<File>();
+        List<File> skippedRoots = new ArrayList<File>();
 
         for (File root : getAutoScanRoots()) {
-            addJsonFiles(root, files, seenPaths);
+            if (addJsonFiles(root, files, seenPaths)) {
+                scannedRoots.add(root);
+            } else {
+                skippedRoots.add(root);
+            }
         }
 
         Collection<File> queuedSources;
@@ -86,10 +92,23 @@ public final class ExternalPonderSceneScanner {
             queuedSources = new ArrayList<File>(SCRIPT_JSON_SOURCES.values());
         }
         for (File source : queuedSources) {
-            addJsonFiles(source, files, seenPaths);
+            if (addJsonFiles(source, files, seenPaths)) {
+                scannedRoots.add(source);
+            } else {
+                skippedRoots.add(source);
+            }
         }
 
-        return files;
+        return new ExternalScanResult(files, scannedRoots, skippedRoots);
+    }
+
+    /**
+     * Collect all discoverable external ponder JSON files.
+     *
+     * @return a deduplicated list of JSON files, never {@code null}
+     */
+    public static List<File> collectJsonFiles() {
+        return collectScanResult().files();
     }
 
     /**
@@ -115,24 +134,26 @@ public final class ExternalPonderSceneScanner {
      * Directories are walked recursively. Each file is deduplicated via
      * {@link #rememberFile(List, Set, File)}.</p>
      */
-    private static void addJsonFiles(File source, List<File> files, Set<String> seenPaths) {
+    private static boolean addJsonFiles(File source, List<File> files, Set<String> seenPaths) {
         if (source == null || !source.exists()) {
-            return;
+            return false;
         }
 
         if (source.isFile()) {
             if (source.getName().toLowerCase(Locale.ROOT).endsWith(".json")) {
                 rememberFile(files, seenPaths, source);
             }
-            return;
+            return true;
         }
 
         try (Stream<Path> walk = Files.walk(source.toPath())) {
             walk.filter(Files::isRegularFile)
                 .filter(path -> path.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".json"))
                 .forEach(path -> rememberFile(files, seenPaths, path.toFile()));
+            return true;
         } catch (IOException exception) {
             Ponder.LOGGER.warn("Failed to scan external ponder scene directory {}", source, exception);
+            return false;
         }
     }
 
