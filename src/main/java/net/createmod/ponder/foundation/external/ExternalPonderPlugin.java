@@ -5,6 +5,7 @@ import net.createmod.ponder.api.registration.PonderPlugin;
 import net.createmod.ponder.api.registration.PonderSceneRegistrationHelper;
 import net.createmod.ponder.api.registration.PonderTagRegistrationHelper;
 import net.createmod.ponder.api.registration.SharedTextRegistrationHelper;
+import net.createmod.ponder.foundation.PonderReloadDetails;
 import net.createmod.ponder.foundation.external.definition.ExternalDefinitionSet;
 import net.createmod.ponder.foundation.external.parse.ExternalPonderSceneParser;
 import net.createmod.ponder.foundation.external.parse.ExternalParseResult;
@@ -12,12 +13,14 @@ import net.createmod.ponder.foundation.external.register.ExternalPonderRegistrat
 import net.createmod.ponder.foundation.external.register.ExternalSharedTextRegistrationService;
 import net.createmod.ponder.foundation.external.register.RegistrationOutcome;
 import net.createmod.ponder.foundation.external.validate.ExternalValidationDiagnostics;
+import net.createmod.ponder.foundation.external.validate.ValidationReport;
 import net.minecraft.util.ResourceLocation;
 
 public class ExternalPonderPlugin implements PonderPlugin {
 
     private ExternalParseResult cachedParseResult;
     private boolean validationReportLogged;
+    private PonderReloadDetails reloadDetails = PonderReloadDetails.EMPTY;
 
     @Override
     public String getModId() {
@@ -26,23 +29,35 @@ public class ExternalPonderPlugin implements PonderPlugin {
 
     @Override
     public void registerScenes(PonderSceneRegistrationHelper<ResourceLocation> helper) {
+        resetReloadDetails();
         clearCachedParseResult();
-        logOutcome("scenes", ExternalPonderRegistrationService.registerLoadedScenes(loadDefinitions(), helper));
+        RegistrationOutcome outcome = ExternalPonderRegistrationService.registerLoadedScenes(loadDefinitions(), helper);
+        reloadDetails = reloadDetails.merge(new PonderReloadDetails(null, outcome, null, null));
+        logOutcome("scenes", outcome);
     }
 
     @Override
     public void registerTags(PonderTagRegistrationHelper<ResourceLocation> helper) {
-        logOutcome("tags", ExternalPonderRegistrationService.registerLoadedTags(loadDefinitions(), helper));
+        RegistrationOutcome outcome = ExternalPonderRegistrationService.registerLoadedTags(loadDefinitions(), helper);
+        reloadDetails = reloadDetails.merge(new PonderReloadDetails(null, null, outcome, null));
+        logOutcome("tags", outcome);
     }
 
     @Override
     public void registerSharedText(SharedTextRegistrationHelper helper) {
         try {
-            logOutcome("shared text",
-                ExternalSharedTextRegistrationService.registerLoadedSharedText(loadDefinitions(), helper));
+            RegistrationOutcome outcome =
+                ExternalSharedTextRegistrationService.registerLoadedSharedText(loadDefinitions(), helper);
+            reloadDetails = reloadDetails.merge(new PonderReloadDetails(null, null, null, outcome));
+            logOutcome("shared text", outcome);
         } finally {
             clearCachedParseResult();
         }
+    }
+
+    @Override
+    public PonderReloadDetails collectReloadDetails() {
+        return reloadDetails;
     }
 
     private ExternalDefinitionSet loadDefinitions() {
@@ -53,9 +68,18 @@ public class ExternalPonderPlugin implements PonderPlugin {
         if (cachedParseResult == null) {
             ExternalValidationDiagnostics diagnostics = new ExternalValidationDiagnostics();
             cachedParseResult = ExternalPonderSceneParser.loadResult(diagnostics);
+            recordValidationReport(cachedParseResult.validationReport());
             logValidationReport();
         }
         return cachedParseResult;
+    }
+
+    private void recordValidationReport(ValidationReport validationReport) {
+        reloadDetails = reloadDetails.merge(new PonderReloadDetails(validationReport, null, null, null));
+    }
+
+    private void resetReloadDetails() {
+        reloadDetails = PonderReloadDetails.EMPTY;
     }
 
     private void clearCachedParseResult() {

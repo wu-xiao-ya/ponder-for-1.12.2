@@ -113,7 +113,7 @@ public class PonderCommand extends CommandBase {
     }
 
     private void listRegistryState(ICommandSender sender) {
-        sendSummary(sender, "Registry", PonderIndex.getCurrentReloadReport());
+        sendCurrentRegistrySummary(sender, PonderIndex.getCurrentReloadReport());
 
         Map<ResourceLocation, Integer> counts = countScenesByComponent();
         if (counts.isEmpty()) {
@@ -171,12 +171,15 @@ public class PonderCommand extends CommandBase {
         }
     }
 
-    private void sendSummary(ICommandSender sender, String prefix, PonderReloadReport report) {
-        sendLine(sender, prefix + " Ponder state: " + report.formatCounts());
+    private void sendCurrentRegistrySummary(ICommandSender sender, PonderReloadReport report) {
+        sendLine(sender, "Current registry snapshot: " + report.formatCounts());
     }
 
     private void sendReloadSummary(ICommandSender sender, PonderReloadReport report) {
-        sendLine(sender, "Reloaded Ponder state: " + report.formatCounts());
+        sendLine(sender, "Reload result: " + report.formatCounts());
+        if (report.details().hasDetails()) {
+            sendLine(sender, "External reload details: " + report.details().formatSummary());
+        }
     }
 
     private void sendLine(ICommandSender sender, String message) {

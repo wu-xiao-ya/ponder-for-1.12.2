@@ -1,6 +1,7 @@
 package net.createmod.ponder.api.registration;
 
 import net.createmod.ponder.api.level.PonderLevel;
+import net.createmod.ponder.foundation.PonderReloadDetails;
 import net.minecraft.util.ResourceLocation;
 
 public interface PonderPlugin {
@@ -14,6 +15,10 @@ public interface PonderPlugin {
     }
 
     default void registerSharedText(SharedTextRegistrationHelper helper) {
+    }
+
+    default PonderReloadDetails collectReloadDetails() {
+        return PonderReloadDetails.EMPTY;
     }
 
     default void onPonderLevelRestore(PonderLevel ponderLevel) {

@@ -37,11 +37,12 @@ final class PonderReloadOrchestrator {
         scenes.finishRegistration();
         tags.finishRegistration();
         int sharedTextCount = gatherSharedText();
+        PonderReloadDetails details = collectReloadDetails();
         localization.generateSceneLang(scenes);
         int componentCount = scenes.getRegisteredComponentCount();
 
         PonderReloadReport report = new PonderReloadReport(scenes.getRegisteredEntryCount(), componentCount,
-            tags.getListedTagCount(), plugins.size(), sharedTextCount);
+            tags.getListedTagCount(), plugins.size(), sharedTextCount, details);
         Ponder.LOGGER.info("Ponder registry now contains {}", report.formatCounts());
         return report;
     }
@@ -62,6 +63,14 @@ final class PonderReloadOrchestrator {
             });
         }
         return sharedTextCount[0];
+    }
+
+    private PonderReloadDetails collectReloadDetails() {
+        PonderReloadDetails details = PonderReloadDetails.EMPTY;
+        for (PonderPlugin plugin : plugins) {
+            details = details.merge(plugin.collectReloadDetails());
+        }
+        return details;
     }
 
     private void clearRegistries() {

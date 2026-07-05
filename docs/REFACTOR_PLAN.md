@@ -34,7 +34,8 @@
 - tag 注册结果已统一到 `RegistrationOutcome`，`ExternalTagDefinitionRegistrar.Result` 已退场
 - external scan 已产出 `ExternalScanResult`，files / scannedRoots / skippedRoots 进入结构化结果
 - external validate 已产出 `ValidationReport` 与 `ExternalValidationDiagnostic(s)`，文件级加载失败和重复 interaction warning 进入诊断汇总
-- `PonderReloadOrchestrator` 已落地，scan / parse / validate / compile / register 结果继续结构化
+- external parse 已产出 `ExternalParseResult`，`definitions + scanResult + validationReport` 进入单次加载结果
+- `PonderReloadOrchestrator` 已落地，`PonderReloadDetails` 开始汇总 validation 与三段 registration outcome
 
 ## 1. 目标
 
@@ -112,9 +113,10 @@ Unimined
 - tag definition 注册与 component-tag assignment 已统一用 `RegistrationOutcome` 汇总
 - external scan 阶段已通过 `ExternalScanResult` 暴露扫描文件与根路径统计
 - external validate 阶段已通过 `ValidationReport` 汇总 filesScanned / filesLoaded / filesFailed / warnings / errors
+- external parse 阶段已通过 `ExternalParseResult` 汇总 definitions / scanResult / validationReport
 - `RenderContext` bridge 已完成，Actor / Scene / Particle / POI / Controls overlay 已迁入 `RenderContext`
 - `ScenePreviewRenderer` 已把 preview frame lifecycle 与 scene pass 分开，下一步收口 scoped preview state guard
-- `PonderReloadOrchestrator` 已落地，scan / parse / validate / compile / register 结果继续结构化
+- `PonderReloadOrchestrator` 已落地，reload report 已携带 external validation 与 registration 明细
 
 对应参考：
 
@@ -132,9 +134,9 @@ Unimined
 
 - `ScenePreviewRenderer` 的 preview scene pass 与 preview state scope 已抽出，后续继续推进 scissor stack 与 GLStateGuard 单项能力
 - 匿名 Host 接线占据较多 screen 篇幅
-- `isMouseOver*` 与 hover label host 仍保留在 screen 侧
+- `isMouseOver*` 仍服务 hover / click / drag，hover label 文案计算已集中到 showcase HUD 路径
 - `PonderDebugScreen` 继续向页面协调器和 host adapter 收口
-- reload 结果结构化继续推进，scan / parse / validate / compile / register 结果继续拆分
+- reload 结果结构化继续推进，validation 与 register 结果已进入 reload report，compile 结果继续拆分
 - line count 当前反映 adapter 与 renderer 过渡期成本，下一步目标是收敛剩余 preview 桥接
 
 #### B. Snapshot 体系已完成首轮收口
@@ -931,11 +933,13 @@ CI 整改候选：
 
 #### P2-4：把 `PonderIndex.reload()` 收口成编排器
 
-状态：已落地，继续拆分
+状态：已完成当前详情层
 
 - `PonderReloadOrchestrator` 已落地
-- scan / validate / register 结果口径已先统一，reload 结果继续拆成 parse / compile / register
-- 每个阶段继续返回结构化结果
+- scan / parse / validate / register 结果口径已先统一
+- `ExternalParseResult` 已承载 definitions / scanResult / validationReport
+- `PonderReloadDetails` 已承载 validationReport 与 scene / tag / shared text registration outcome
+- compile 结果继续拆成结构化结果
 - 失败信息统一进入 diagnostic sink
 
 ### P3：构建层和兼容层收尾
@@ -981,6 +985,8 @@ CI 上传两个 beta 验证产物：
 
 - `ponder-client-runtime`：Cleanroom / CRL 客户端运行时 jar
 - `forge-server-shim`：stock Forge 1.12.2 专用服务端兼容 shim
+- beta 放行时检查 artifact 存在，并用 `jar tf` 复核 runtime jar 的 `net/createmod/ponder/` 与 `mixins.ponder.json`
+- beta 放行时检查 shim jar 的 `net/createmod/ponder/Reference.class` 与 `mcmod.info`
 
 本地只做静态检查，例如 `git diff --check`、`rg`、结构性文件审计。
 
@@ -1009,7 +1015,7 @@ CI 上传两个 beta 验证产物：
 
 真正开工时按下面顺序最稳：
 
-1. 把 `PonderReloadOrchestrator` 的 parse / compile / register 结果继续结构化
+1. 把 `PonderReloadOrchestrator` 的 compile 结果继续结构化
 2. 收口 showcase hover-label 的命中判定与文案拼接路径
 3. 推进 CI / test 门，固定当前 `build.gradle + gradle/scripts/*` 构建路径
 4. 收口 CraftTweaker / shim 边界
@@ -1023,9 +1029,9 @@ CI 上传两个 beta 验证产物：
 
 建议并行切片：
 
-1. Reload 编排：继续拆 parse 阶段结果对象并接入 reload 汇总
+1. Reload 编排：继续拆 compile 阶段结果对象并接入 reload 汇总
 2. Showcase hover-label：统一命中判定与文案拼接路径
-3. CI / test 门：围绕当前 `build.gradle + gradle/scripts/*` 验证路径补门禁
+3. CI / test 门：围绕当前 `build.gradle + gradle/scripts/*` 验证路径补远程门禁
 4. CraftTweaker / shim：收口边界和发布语义
 5. ScenePreviewRenderer：继续推进 scissor stack 与 GLStateGuard 单项能力
 
@@ -1168,4 +1174,6 @@ gh run watch <run_id> --exit-status
 - `gradle/scripts/project-conventions.gradle` 承接 JVM、toolchain、test 默认项
 - `gradle/scripts/dependencies.gradle` 承接依赖和仓库解析
 - 主 `build.gradle` 聚焦 Unimined、资源处理、remap、发布和部署任务
+- 当前 GitHub Actions 门覆盖 `compileJava remapJar forgeServerShimJar`
+- `test` 已在 conventions 层预留 JUnit Platform 与 Java 25 launcher，进入 workflow 前继续作为规划项
 - 后续构建切片复用同一 conventions 层，remap、shadow、发布任务按具体工程保留
