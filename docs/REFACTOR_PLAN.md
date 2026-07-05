@@ -676,13 +676,13 @@ CI 整改候选：
 
 ### 7.3 测试与校验
 
-这轮规划把测试从边缘事项提到正式骨架内。
+这轮规划把校验从边缘事项提到正式骨架内。
 
 第一批建议：
 
-- 为 `api` 与 definition model 建最小单元测试
-- 在 CI 中恢复 `test` 路径
-- 把 `compileJava` 和 `forgeServerShimJar` 分成更清楚的验证门
+- 先落 GitHub Actions artifact verifier，固定 beta 产物内容门
+- 为 `api` 与 definition model 规划首批纯 JVM 单元测试
+- 把 `compileJava`、`remapJar`、`forgeServerShimJar` 与产物复核分成更清楚的验证门
 
 ## 8. 参考项目吸收点
 
@@ -991,12 +991,12 @@ CI 覆盖命令：
 .\gradlew.bat compileJava remapJar forgeServerShimJar -Pdeploy_test_mods_dir= --stacktrace
 ```
 
-CI 上传两个 beta 验证产物：
+CI 在上传前执行 beta 产物内容门，并上传两个 beta 验证产物：
 
 - `ponder-client-runtime`：Cleanroom / CRL 客户端运行时 jar
 - `forge-server-shim`：stock Forge 1.12.2 专用服务端兼容 shim
-- beta 放行时检查 artifact 存在，并用 `jar tf` 复核 runtime jar 的 `net/createmod/ponder/` 与 `mixins.ponder.json`
-- beta 放行时检查 shim jar 的 `net/createmod/ponder/Reference.class` 与 `mcmod.info`
+- CI 内置 artifact verifier 复核 runtime jar 的 `net/createmod/ponder/` 前缀与 `mixins.ponder.json`
+- CI 内置 artifact verifier 复核 shim jar 的 `net/createmod/ponder/Reference.class` 与 `mcmod.info`
 
 本地只做静态检查，例如 `git diff --check`、`rg`、结构性文件审计。
 
@@ -1025,7 +1025,7 @@ CI 上传两个 beta 验证产物：
 
 真正开工时按下面顺序最稳：
 
-1. 推进 CI / test 门，固定当前 `build.gradle + gradle/scripts/*` 构建路径
+1. 推进 CI artifact verifier 产物门，固定当前 `build.gradle + gradle/scripts/*` 构建路径
 2. 收口 CraftTweaker / shim 边界
 3. 视需要补齐 `PonderDebugScreen` 残余 host adapter
 4. 继续把 tag / shared text 的逐条失败明细扩展成可截断输出
@@ -1041,7 +1041,7 @@ CI 上传两个 beta 验证产物：
 
 1. Reload 编排：继续把 tag / shared text 的逐条失败明细接入 reload 汇总
 2. Showcase hover-label：维持 `ShowcaseHudRenderer.computeHoverLabel(...)` 单入口，继续压缩 screen 侧接线
-3. CI / test 门：围绕当前 `build.gradle + gradle/scripts/*` 验证路径补远程门禁
+3. CI / artifact verifier 门：围绕当前 `build.gradle + gradle/scripts/*` 验证路径继续补远程门禁
 4. CraftTweaker / shim：收口边界和发布语义
 5. ScenePreviewRenderer：继续推进 scissor stack 与 GLStateGuard 单项能力
 
@@ -1178,12 +1178,14 @@ gh run watch <run_id> --exit-status
 
 - `ponder-client-runtime`
 - `forge-server-shim`
+- 上传前固定检查 runtime jar 内容：`net/createmod/ponder/` 前缀、`mixins.ponder.json`
+- 上传前固定检查 shim jar 内容：`net/createmod/ponder/Reference.class`、`mcmod.info`
 
 构建层目标：
 
 - `gradle/scripts/project-conventions.gradle` 承接 JVM、toolchain、test 默认项
 - `gradle/scripts/dependencies.gradle` 承接依赖和仓库解析
 - 主 `build.gradle` 聚焦 Unimined、资源处理、remap、发布和部署任务
-- 当前 GitHub Actions 门覆盖 `compileJava remapJar forgeServerShimJar`
-- `test` 已在 conventions 层预留 JUnit Platform 与 Java 25 launcher，进入 workflow 前继续作为规划项
+- 当前 GitHub Actions 门覆盖 `compileJava remapJar forgeServerShimJar` 与 beta artifact 内容复核
+- `test` 已在 conventions 层预留 JUnit Platform 与 Java 25 launcher；当前仓库尚无 `src/test`，进入 workflow 前继续作为规划项
 - 后续构建切片复用同一 conventions 层，remap、shadow、发布任务按具体工程保留

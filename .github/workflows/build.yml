@@ -87,6 +87,59 @@ jobs:
           }
           exit $LASTEXITCODE
 
+      - name: Verify beta artifacts
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-StrictMode -Version Latest
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+
+          function Assert-ZipEntryExact {
+            param(
+              [Parameter(Mandatory = $true)][string] $JarPath,
+              [Parameter(Mandatory = $true)][string] $Entry
+            )
+            $zip = [System.IO.Compression.ZipFile]::OpenRead($JarPath)
+            try {
+              if (-not ($zip.Entries | Where-Object { $_.FullName -eq $Entry })) {
+                throw "Missing entry '$Entry' in $JarPath"
+              }
+            } finally {
+              $zip.Dispose()
+            }
+          }
+
+          function Assert-ZipEntryPrefix {
+            param(
+              [Parameter(Mandatory = $true)][string] $JarPath,
+              [Parameter(Mandatory = $true)][string] $Prefix
+            )
+            $zip = [System.IO.Compression.ZipFile]::OpenRead($JarPath)
+            try {
+              if (-not ($zip.Entries | Where-Object { $_.FullName.StartsWith($Prefix, [System.StringComparison]::Ordinal) })) {
+                throw "Missing prefix '$Prefix' in $JarPath"
+              }
+            } finally {
+              $zip.Dispose()
+            }
+          }
+
+          $runtimeJar = Get-Item -LiteralPath "build\libs\ponder-0.1.0-beta.jar"
+          $shimJar = Get-ChildItem -LiteralPath "build\libs" -File -Filter "*forge-server-shim*.jar" |
+            Sort-Object Name |
+            Select-Object -First 1
+          if ($null -eq $shimJar) {
+            throw "Forge server shim jar was not produced."
+          }
+
+          Write-Host "Verified artifact candidate: $($runtimeJar.Name) ($($runtimeJar.Length) bytes)"
+          Write-Host "Verified artifact candidate: $($shimJar.Name) ($($shimJar.Length) bytes)"
+
+          Assert-ZipEntryPrefix -JarPath $runtimeJar.FullName -Prefix "net/createmod/ponder/"
+          Assert-ZipEntryExact -JarPath $runtimeJar.FullName -Entry "mixins.ponder.json"
+          Assert-ZipEntryExact -JarPath $shimJar.FullName -Entry "net/createmod/ponder/Reference.class"
+          Assert-ZipEntryExact -JarPath $shimJar.FullName -Entry "mcmod.info"
+
       - name: Upload Ponder runtime jar
         uses: actions/upload-artifact@v4
         with:
