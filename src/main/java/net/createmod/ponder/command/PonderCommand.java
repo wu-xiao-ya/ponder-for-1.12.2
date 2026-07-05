@@ -108,11 +108,8 @@ public class PonderCommand extends CommandBase {
     }
 
     private void sendUsage(ICommandSender sender) {
-        sender.sendMessage(new TextComponentString("Ponder debug commands:"));
-        sender.sendMessage(new TextComponentString("/ponder list"));
-        sender.sendMessage(new TextComponentString("/ponder reload"));
-        sender.sendMessage(new TextComponentString("/ponder compile <component_id>"));
-        sender.sendMessage(new TextComponentString("/ponder dump <component_id> [scene_index]"));
+        sendLines(sender, "Ponder debug commands:", "/ponder list", "/ponder reload",
+            "/ponder compile <component_id>", "/ponder dump <component_id> [scene_index]");
     }
 
     private void listRegistryState(ICommandSender sender) {
@@ -120,35 +117,33 @@ public class PonderCommand extends CommandBase {
 
         Map<ResourceLocation, Integer> counts = countScenesByComponent();
         if (counts.isEmpty()) {
-            sender.sendMessage(new TextComponentString("No Ponder scenes are registered."));
+            sendLine(sender, "No Ponder scenes are registered.");
             return;
         }
 
         for (Map.Entry<ResourceLocation, Integer> entry : counts.entrySet()) {
             int tagCount = PonderIndex.getTagAccess().getTags(entry.getKey()).size();
-            sender.sendMessage(new TextComponentString(entry.getKey() + " -> " + entry.getValue()
-                + " storyboard(s), " + tagCount + " tag(s)"));
+            sendLine(sender, formatRegistryLine(entry.getKey(), entry.getValue().intValue(), tagCount));
         }
     }
 
     private void compileScenes(ICommandSender sender, ResourceLocation componentId) {
         List<PonderScene> scenes = PonderIndex.getSceneAccess().compile(componentId);
         if (scenes.isEmpty()) {
-            sender.sendMessage(new TextComponentString("No storyboard entries found for " + componentId));
+            sendLine(sender, "No storyboard entries found for " + componentId);
             return;
         }
 
-        sender.sendMessage(new TextComponentString(
-            "Compiled " + scenes.size() + " scene(s) for " + componentId + ":"));
+        sendLine(sender, formatCompileHeader(componentId, scenes.size()));
         for (int i = 0; i < scenes.size(); i++) {
-            sender.sendMessage(new TextComponentString(describeScene(i, scenes.get(i))));
+            sendLine(sender, describeScene(i, scenes.get(i)));
         }
     }
 
     private void dumpScene(ICommandSender sender, ResourceLocation componentId, int sceneIndex) throws CommandException {
         List<PonderScene> scenes = PonderIndex.getSceneAccess().compile(componentId);
         if (scenes.isEmpty()) {
-            sender.sendMessage(new TextComponentString("No storyboard entries found for " + componentId));
+            sendLine(sender, "No storyboard entries found for " + componentId);
             return;
         }
 
@@ -157,7 +152,7 @@ public class PonderCommand extends CommandBase {
         }
 
         PonderScene scene = scenes.get(sceneIndex);
-        sender.sendMessage(new TextComponentString(describeScene(sceneIndex, scene)));
+        sendLine(sender, describeScene(sceneIndex, scene));
 
         List<RecordedOperation> operations = scene.getRecordedOperations();
         if (operations.isEmpty()) {
@@ -168,22 +163,46 @@ public class PonderCommand extends CommandBase {
         int lines = Math.min(MAX_DUMP_LINES, operations.size());
         for (int i = 0; i < lines; i++) {
             RecordedOperation operation = operations.get(i);
-            sender.sendMessage(
-                new TextComponentString("[" + i + " @ " + operation.getTick() + "t] " + operation.getDescription()));
+            sendLine(sender, formatOperationLine(i, operation));
         }
 
         if (operations.size() > lines) {
-            sender.sendMessage(new TextComponentString(
-                "... truncated " + (operations.size() - lines) + " additional operation(s)"));
+            sendLine(sender, formatTruncationLine(operations.size() - lines));
         }
     }
 
     private void sendSummary(ICommandSender sender, String prefix, PonderReloadReport report) {
-        sender.sendMessage(new TextComponentString(prefix + " Ponder state: " + report.formatCounts()));
+        sendLine(sender, prefix + " Ponder state: " + report.formatCounts());
     }
 
     private void sendReloadSummary(ICommandSender sender, PonderReloadReport report) {
-        sender.sendMessage(new TextComponentString("Reloaded Ponder state: " + report.formatCounts()));
+        sendLine(sender, "Reloaded Ponder state: " + report.formatCounts());
+    }
+
+    private void sendLine(ICommandSender sender, String message) {
+        sender.sendMessage(new TextComponentString(message));
+    }
+
+    private void sendLines(ICommandSender sender, String... messages) {
+        for (String message : messages) {
+            sendLine(sender, message);
+        }
+    }
+
+    private String formatRegistryLine(ResourceLocation componentId, int sceneCount, int tagCount) {
+        return componentId + " -> " + sceneCount + " storyboard(s), " + tagCount + " tag(s)";
+    }
+
+    private String formatCompileHeader(ResourceLocation componentId, int sceneCount) {
+        return "Compiled " + sceneCount + " scene(s) for " + componentId + ":";
+    }
+
+    private String formatOperationLine(int index, RecordedOperation operation) {
+        return "[" + index + " @ " + operation.getTick() + "t] " + operation.getDescription();
+    }
+
+    private String formatTruncationLine(int omittedCount) {
+        return "... truncated " + omittedCount + " additional operation(s)";
     }
 
     private Map<ResourceLocation, Integer> countScenesByComponent() {
