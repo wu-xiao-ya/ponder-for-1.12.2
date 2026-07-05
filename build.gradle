@@ -294,17 +294,21 @@ tasks.register('deployToConfiguredTestMods', Copy) {
     description = 'Copies the remapped jar into the configured desktop test instance mods folder.'
     dependsOn remapTaskName
 
-    def deployDir = project.findProperty('deploy_test_mods_dir')
+    def deployDir = project.findProperty('deploy_test_mods_dir')?.toString()?.trim()
     onlyIf {
-        deployDir != null && !deployDir.toString().trim().isEmpty()
+        deployDir != null && !deployDir.isEmpty()
     }
 
     from(layout.buildDirectory.file("libs/${propertyString('mod_id')}-${propertyString('mod_version')}.jar"))
-    into(file(deployDir))
+    if (deployDir != null && !deployDir.isEmpty()) {
+        into(file(deployDir))
+    }
 }
 
-tasks.named(remapTaskName).configure {
-    finalizedBy 'deployToConfiguredTestMods'
+if (project.findProperty('deploy_test_mods_dir')?.toString()?.trim()) {
+    tasks.named(remapTaskName).configure {
+        finalizedBy 'deployToConfiguredTestMods'
+    }
 }
 
 apply from: 'gradle/scripts/publishing.gradle'
