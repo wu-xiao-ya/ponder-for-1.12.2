@@ -1,9 +1,12 @@
 package net.createmod.ponder.foundation.ui.render;
 
+import java.nio.IntBuffer;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderHelper;
 
+import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 
 public final class GLStateGuard implements AutoCloseable {
@@ -30,9 +33,23 @@ public final class GLStateGuard implements AutoCloseable {
             return noop();
         }
 
+        boolean previousScissorEnabled = GL11.glIsEnabled(GL11.GL_SCISSOR_TEST);
+        IntBuffer previousScissorBox = BufferUtils.createIntBuffer(4);
+        GL11.glGetInteger(GL11.GL_SCISSOR_BOX, previousScissorBox);
         GL11.glEnable(GL11.GL_SCISSOR_TEST);
         ScissorMath.apply(minecraft, x, y, width, height);
-        return new GLStateGuard(() -> GL11.glDisable(GL11.GL_SCISSOR_TEST));
+        return new GLStateGuard(() -> {
+            int previousX = previousScissorBox.get(0);
+            int previousY = previousScissorBox.get(1);
+            int previousWidth = previousScissorBox.get(2);
+            int previousHeight = previousScissorBox.get(3);
+            GL11.glScissor(previousX, previousY, previousWidth, previousHeight);
+            if (previousScissorEnabled) {
+                GL11.glEnable(GL11.GL_SCISSOR_TEST);
+            } else {
+                GL11.glDisable(GL11.GL_SCISSOR_TEST);
+            }
+        });
     }
 
     public static GLStateGuard textureDisabled() {
