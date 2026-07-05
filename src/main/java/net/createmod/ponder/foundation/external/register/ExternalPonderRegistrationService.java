@@ -2,6 +2,7 @@ package net.createmod.ponder.foundation.external.register;
 
 import net.createmod.ponder.api.registration.PonderSceneRegistrationHelper;
 import net.createmod.ponder.api.registration.PonderTagRegistrationHelper;
+import net.createmod.ponder.api.registration.SharedTextRegistrationHelper;
 import net.createmod.ponder.foundation.external.definition.ExternalDefinitionSet;
 import net.minecraft.util.ResourceLocation;
 
@@ -24,7 +25,22 @@ public final class ExternalPonderRegistrationService {
 
     public static RegistrationOutcome registerLoadedTags(ExternalDefinitionSet definitions,
         PonderTagRegistrationHelper<ResourceLocation> helper) {
-        return ExternalTagRegistrationService.registerLoadedTags(definitions, helper);
+        return registerLoadedTagsResult(definitions, helper).registrationOutcome();
+    }
+
+    public static ExternalTagRegistrationResult registerLoadedTagsResult(ExternalDefinitionSet definitions,
+        PonderTagRegistrationHelper<ResourceLocation> helper) {
+        return ExternalTagRegistrationService.registerLoadedTagsResult(definitions, helper);
+    }
+
+    public static RegistrationOutcome registerLoadedSharedText(ExternalDefinitionSet definitions,
+        SharedTextRegistrationHelper helper) {
+        return registerLoadedSharedTextResult(definitions, helper).registrationOutcome();
+    }
+
+    public static ExternalSharedTextRegistrationResult registerLoadedSharedTextResult(ExternalDefinitionSet definitions,
+        SharedTextRegistrationHelper helper) {
+        return ExternalSharedTextRegistrationService.registerLoadedSharedTextResult(definitions, helper);
     }
 
 }

@@ -15,8 +15,14 @@ public final class ExternalSharedTextRegistrationService {
 
     public static RegistrationOutcome registerLoadedSharedText(ExternalDefinitionSet definitions,
         SharedTextRegistrationHelper helper) {
-        return registerSharedTexts(RegistrationContext.of(definitions), helper,
-            ExternalRegistrationDiagnostics.logger());
+        return registerLoadedSharedTextResult(definitions, helper).registrationOutcome();
+    }
+
+    public static ExternalSharedTextRegistrationResult registerLoadedSharedTextResult(ExternalDefinitionSet definitions,
+        SharedTextRegistrationHelper helper) {
+        ExternalRegistrationDiagnostics diagnostics = new ExternalRegistrationDiagnostics();
+        RegistrationOutcome outcome = registerSharedTexts(RegistrationContext.of(definitions), helper, diagnostics);
+        return new ExternalSharedTextRegistrationResult(outcome, diagnostics.report());
     }
 
     private static RegistrationOutcome registerSharedTexts(RegistrationContext ctx,

@@ -905,6 +905,7 @@ CI 整改候选：
 - `ExternalSceneRegistrationService`、`ExternalTagRegistrationService`、`ExternalSharedTextRegistrationService` 已独立
 - tag 定义注册与 component-tag 关联已拆入独立 registrar
 - `ExternalTagDefinitionRegistrar` 已直接返回 `RegistrationOutcome`
+- `ExternalTagRegistrationResult` / `ExternalSharedTextRegistrationResult` 已作为 tag 与 shared text 侧编排返回值，绑定 registration diagnostics 与 registration outcome
 - external scene 执行已拆成 scene / world / overlay 三类执行器
 
 #### P2-1：补 `compile` 阶段，显式产出 `CompiledSceneBundle`
@@ -924,8 +925,8 @@ CI 整改候选：
 状态：已完成首轮
 
 - `ExternalRegistrationDiagnostic` 已落地，承载 severity / subject / source / detail / cause
-- `ExternalSceneRegistrationService`、`ExternalTagDefinitionRegistrar`、`ExternalSharedTextRegistrationService` 已改成通过 sink 发出失败信息
-- `RegistrationDiagnosticReport` 已落地，scene compile failure 与 component registration failure 已按 info / warning / error 聚合到 reload details
+- `ExternalSceneRegistrationService`、`ExternalTagDefinitionRegistrar`、`ExternalComponentTagRegistrar`、`ExternalSharedTextRegistrationService` 已改成通过 sink 发出失败信息
+- `RegistrationDiagnosticReport` 已落地，scene compile failure、component registration failure、tag definition failure、component-tag assignment failure 与 shared text failure 已按 info / warning / error 聚合到 reload details
 - `ExternalSceneCompileFailureDiagnostic` / `ExternalSceneCompileFailureReport` 已落地，`/ponder reload` 会按固定上限展示逐条 compile failure
 - `RegistrationContext` 负责 source info 归一化，注册边界直接携带 `SourceInfo`
 
@@ -946,8 +947,9 @@ CI 整改候选：
 - `ExternalParseResult` 已承载 definitions / scanResult / validationReport
 - `PonderReloadDetails` 已承载 validationReport、scene compile summary、scene compile failure report、registration diagnostics 与 scene / tag / shared text registration outcome
 - `ExternalSceneRegistrationResult` 已作为 scene 注册编排返回值，避免 reload 层重新推断 compile、diagnostics 与 registration 结果
+- `ExternalTagRegistrationResult` / `ExternalSharedTextRegistrationResult` 已作为 tag 与 shared text 注册编排返回值，避免 reload 层重新推断 diagnostics 与 registration 结果
 - compile summary 已独立展示并接入 reload 汇总，compile failure 明细由 `PonderCommand` 截断输出
-- scene 失败信息已进入 diagnostic sink 与 `RegistrationDiagnosticReport`
+- scene、tag、component-tag assignment 与 shared text 失败信息已进入 diagnostic sink 与 `RegistrationDiagnosticReport`
 
 ### P3：构建层和兼容层收尾
 
@@ -1022,11 +1024,11 @@ CI 上传两个 beta 验证产物：
 
 真正开工时按下面顺序最稳：
 
-1. 把 tag / shared text 注册也升级成 result 对象，继续把 registration diagnostics 聚合到 reload 汇总
-2. 收口 showcase hover-label 的命中判定与文案拼接路径，保留 `ShowcaseHudRenderer.computeHoverLabel(...)` 作为唯一运行时入口
-3. 推进 CI / test 门，固定当前 `build.gradle + gradle/scripts/*` 构建路径
-4. 收口 CraftTweaker / shim 边界
-5. 视需要补齐 `PonderDebugScreen` 残余 host adapter
+1. 收口 showcase hover-label 的命中判定与文案拼接路径，保留 `ShowcaseHudRenderer.computeHoverLabel(...)` 作为唯一运行时入口
+2. 推进 CI / test 门，固定当前 `build.gradle + gradle/scripts/*` 构建路径
+3. 收口 CraftTweaker / shim 边界
+4. 视需要补齐 `PonderDebugScreen` 残余 host adapter
+5. 继续把 tag / shared text 的逐条失败明细扩展成可截断输出
 
 这条顺序能先消灭当前最高频的耦合点，再推进更深层的现代化改造。
 
@@ -1036,7 +1038,7 @@ CI 上传两个 beta 验证产物：
 
 建议并行切片：
 
-1. Reload 编排：继续拆 compile failure 诊断并接入 reload 汇总
+1. Reload 编排：继续把 tag / shared text 的逐条失败明细接入 reload 汇总
 2. Showcase hover-label：维持 `ShowcaseHudRenderer.computeHoverLabel(...)` 单入口，继续清理残余重复实现
 3. CI / test 门：围绕当前 `build.gradle + gradle/scripts/*` 验证路径补远程门禁
 4. CraftTweaker / shim：收口边界和发布语义

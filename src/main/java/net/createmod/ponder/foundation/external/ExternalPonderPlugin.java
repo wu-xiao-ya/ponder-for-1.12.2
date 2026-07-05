@@ -12,7 +12,8 @@ import net.createmod.ponder.foundation.external.parse.ExternalPonderSceneParser;
 import net.createmod.ponder.foundation.external.parse.ExternalParseResult;
 import net.createmod.ponder.foundation.external.register.ExternalPonderRegistrationService;
 import net.createmod.ponder.foundation.external.register.ExternalSceneRegistrationResult;
-import net.createmod.ponder.foundation.external.register.ExternalSharedTextRegistrationService;
+import net.createmod.ponder.foundation.external.register.ExternalSharedTextRegistrationResult;
+import net.createmod.ponder.foundation.external.register.ExternalTagRegistrationResult;
 import net.createmod.ponder.foundation.external.register.RegistrationOutcome;
 import net.createmod.ponder.foundation.external.validate.ExternalValidationDiagnostics;
 import net.createmod.ponder.foundation.external.validate.ValidationReport;
@@ -42,18 +43,21 @@ public class ExternalPonderPlugin implements PonderPlugin, PonderReloadDetailsPr
 
     @Override
     public void registerTags(PonderTagRegistrationHelper<ResourceLocation> helper) {
-        RegistrationOutcome outcome = ExternalPonderRegistrationService.registerLoadedTags(loadDefinitions(), helper);
-        reloadDetails = reloadDetails.merge(new PonderReloadDetails(null, null, null, null, null, outcome, null));
-        logOutcome("tags", outcome);
+        ExternalTagRegistrationResult result =
+            ExternalPonderRegistrationService.registerLoadedTagsResult(loadDefinitions(), helper);
+        reloadDetails = reloadDetails.merge(new PonderReloadDetails(null, null, null,
+            result.diagnosticReport(), null, result.registrationOutcome(), null));
+        logOutcome("tags", result.registrationOutcome());
     }
 
     @Override
     public void registerSharedText(SharedTextRegistrationHelper helper) {
         try {
-            RegistrationOutcome outcome =
-                ExternalSharedTextRegistrationService.registerLoadedSharedText(loadDefinitions(), helper);
-            reloadDetails = reloadDetails.merge(new PonderReloadDetails(null, null, null, null, null, null, outcome));
-            logOutcome("shared text", outcome);
+            ExternalSharedTextRegistrationResult result =
+                ExternalPonderRegistrationService.registerLoadedSharedTextResult(loadDefinitions(), helper);
+            reloadDetails = reloadDetails.merge(new PonderReloadDetails(null, null, null,
+                result.diagnosticReport(), null, null, result.registrationOutcome()));
+            logOutcome("shared text", result.registrationOutcome());
         } finally {
             clearCachedParseResult();
         }
