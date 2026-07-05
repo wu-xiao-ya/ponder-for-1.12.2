@@ -98,45 +98,7 @@ final class ScenePreviewRenderer {
             GlStateManager.rotate(cameraState.getPreviewPitch(), 1.0F, 0.0F, 0.0F);
             GlStateManager.rotate(animatedYaw, 0.0F, 1.0F, 0.0F);
             GlStateManager.translate(-centerX, -centerY - scene.getSceneOffsetY(), -centerZ);
-
-            drawSceneShadow(bounds);
-
-            BlockRendererDispatcher dispatcher = minecraft.getBlockRendererDispatcher();
-            PreviewBlockAccess previewWorld = createPreviewWorld(runtimeState);
-            List<PonderSceneRuntimeTypes.RuntimeBlockState> visibleBlocks =
-                new ArrayList<PonderSceneRuntimeTypes.RuntimeBlockState>(runtimeState.blocksByPosition().values());
-            Collections.sort(visibleBlocks, new Comparator<PonderSceneRuntimeTypes.RuntimeBlockState>() {
-                @Override
-                public int compare(PonderSceneRuntimeTypes.RuntimeBlockState left,
-                    PonderSceneRuntimeTypes.RuntimeBlockState right) {
-                    int yCompare = Double.compare(left.renderCenterY, right.renderCenterY);
-                    if (yCompare != 0) {
-                        return yCompare;
-                    }
-                    int zCompare = Double.compare(left.renderCenterZ, right.renderCenterZ);
-                    if (zCompare != 0) {
-                        return zCompare;
-                    }
-                    return Double.compare(left.renderCenterX, right.renderCenterX);
-                }
-            });
-
-            setPreviewLightmap();
-            for (PonderSceneRuntimeTypes.RuntimeBlockState block : visibleBlocks) {
-                if (!block.visible || block.fade <= 0.0F) {
-                    continue;
-                }
-
-                IBlockState state = block.currentState;
-                if (state == null) {
-                    continue;
-                }
-
-                renderBlockModelPreview(dispatcher, previewWorld, block, state);
-                renderTileEntityPreview(block, state);
-            }
-
-            renderActorPreviews(scene, renderTick);
+            renderPreviewScenePass(scene, bounds, runtimeState, renderTick);
         } finally {
             if (minecraft.entityRenderer != null) {
                 minecraft.entityRenderer.disableLightmap();
@@ -152,6 +114,48 @@ final class ScenePreviewRenderer {
             GlStateManager.disableDepth();
             scissorGuard.close();
         }
+    }
+
+    private void renderPreviewScenePass(PonderScene scene, PreviewBounds bounds,
+        PonderSceneRuntimeTypes.RuntimeState runtimeState, float renderTick) {
+        drawSceneShadow(bounds);
+
+        BlockRendererDispatcher dispatcher = minecraft.getBlockRendererDispatcher();
+        PreviewBlockAccess previewWorld = createPreviewWorld(runtimeState);
+        List<PonderSceneRuntimeTypes.RuntimeBlockState> visibleBlocks =
+            new ArrayList<PonderSceneRuntimeTypes.RuntimeBlockState>(runtimeState.blocksByPosition().values());
+        Collections.sort(visibleBlocks, new Comparator<PonderSceneRuntimeTypes.RuntimeBlockState>() {
+            @Override
+            public int compare(PonderSceneRuntimeTypes.RuntimeBlockState left,
+                PonderSceneRuntimeTypes.RuntimeBlockState right) {
+                int yCompare = Double.compare(left.renderCenterY, right.renderCenterY);
+                if (yCompare != 0) {
+                    return yCompare;
+                }
+                int zCompare = Double.compare(left.renderCenterZ, right.renderCenterZ);
+                if (zCompare != 0) {
+                    return zCompare;
+                }
+                return Double.compare(left.renderCenterX, right.renderCenterX);
+            }
+        });
+
+        setPreviewLightmap();
+        for (PonderSceneRuntimeTypes.RuntimeBlockState block : visibleBlocks) {
+            if (!block.visible || block.fade <= 0.0F) {
+                continue;
+            }
+
+            IBlockState state = block.currentState;
+            if (state == null) {
+                continue;
+            }
+
+            renderBlockModelPreview(dispatcher, previewWorld, block, state);
+            renderTileEntityPreview(block, state);
+        }
+
+        renderActorPreviews(scene, renderTick);
     }
 
     void renderBlockModelPreview(BlockRendererDispatcher dispatcher, PreviewBlockAccess previewWorld,
