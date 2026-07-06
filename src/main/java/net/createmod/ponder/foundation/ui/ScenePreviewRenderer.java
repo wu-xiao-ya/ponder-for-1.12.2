@@ -11,7 +11,6 @@ import java.util.Map;
 import javax.annotation.Nullable;
 
 import net.createmod.ponder.foundation.PonderScene;
-import net.createmod.ponder.foundation.Vec3iAccessor;
 import net.createmod.ponder.foundation.ui.PonderScenePreview.PreviewBounds;
 import net.createmod.ponder.foundation.ui.PonderSceneRuntimeTypes.RuntimeBlockState;
 import net.createmod.ponder.foundation.ui.render.GLStateGuard;
@@ -19,8 +18,6 @@ import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BlockRendererDispatcher;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
-import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
 import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.tileentity.TileEntity;
 
@@ -166,7 +163,6 @@ final class ScenePreviewRenderer {
         renderActorPreviews(scene, renderTick);
     }
 
-    @SuppressWarnings("unchecked")
     void renderTileEntityPreview(RuntimeBlockState block, IBlockState state) {
         if (state == null || minecraft == null || minecraft.world == null || !state.getBlock().hasTileEntity(state)) {
             return;
@@ -177,76 +173,7 @@ final class ScenePreviewRenderer {
             return;
         }
 
-        try {
-            TileEntityPreviewScope previewScope = TileEntityPreviewScope.open(this, block, tileEntity);
-            if (previewScope == null) {
-                return;
-            }
-            try (TileEntityPreviewScope activeScope = previewScope) {
-                activeScope.render(tileEntity);
-            }
-        } catch (RuntimeException ignored) {
-        }
-    }
-
-    private static final class TileEntityPreviewScope implements AutoCloseable {
-
-        private final GLStateGuard matrixGuard;
-        private final TileEntitySpecialRenderer<TileEntity> renderer;
-        private boolean closed;
-
-        private TileEntityPreviewScope(GLStateGuard matrixGuard, TileEntitySpecialRenderer<TileEntity> renderer) {
-            this.matrixGuard = matrixGuard;
-            this.renderer = renderer;
-        }
-
-        @Nullable
-        static TileEntityPreviewScope open(ScenePreviewRenderer sceneRenderer, RuntimeBlockState block,
-            TileEntity tileEntity) {
-            tileEntity.setWorld(sceneRenderer.minecraft.world);
-            tileEntity.setPos(block.pos);
-
-            TileEntitySpecialRenderer<TileEntity> tileEntityRenderer =
-                TileEntityRendererDispatcher.instance.getRenderer(tileEntity);
-            if (tileEntityRenderer == null) {
-                return null;
-            }
-
-            GLStateGuard matrixGuard = GLStateGuard.matrix();
-            boolean colorApplied = false;
-            try {
-                PonderSceneRuntime.applyRenderTransforms(block);
-                GlStateManager.translate(Vec3iAccessor.x(block.pos), Vec3iAccessor.y(block.pos),
-                    Vec3iAccessor.z(block.pos));
-                sceneRenderer.setPreviewLightmap();
-                GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-                colorApplied = true;
-                return new TileEntityPreviewScope(matrixGuard, tileEntityRenderer);
-            } catch (RuntimeException | Error exception) {
-                if (colorApplied) {
-                    GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-                }
-                closeScope(exception, matrixGuard);
-                throw exception;
-            }
-        }
-
-        void render(TileEntity tileEntity) {
-            renderer.render(tileEntity, 0.0D, 0.0D, 0.0D, 0.0F, -1, 1.0F);
-        }
-
-        @Override
-        public void close() {
-            if (closed) {
-                return;
-            }
-            closed = true;
-
-            Throwable failure = null;
-            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-            failure = closeScope(failure, matrixGuard);
-            rethrowScopeFailure(failure);
-        }
+        ScenePreviewTileEntityRenderer.render(minecraft, previewFullBright, block, tileEntity);
     }
 
     @Nullable
