@@ -480,21 +480,14 @@ final class ScenePreviewRenderer {
     }
 
     private void renderActorPreview(PonderSceneRuntime.ActorRuntimeState actor, float currentTick) {
-        float alpha = MathHelper.clamp(actor.fade, 0.0F, 1.0F);
-        int color = getActorBaseColor(actor);
-        float red = ((color >> 16) & 0xFF) / 255.0F;
-        float green = ((color >> 8) & 0xFF) / 255.0F;
-        float blue = (color & 0xFF) / 255.0F;
-        float bobOffset = getActorBobOffset(actor, currentTick);
-        float yaw = actor.kind == PonderScene.ActorKind.CART ? actor.cartYaw : (float) actor.rotation.y;
-        yaw += getActorYawOffset(actor, currentTick);
+        ActorPreviewRenderData renderData = ActorPreviewRenderData.of(actor, currentTick);
 
         try (GLStateGuard matrixGuard = GLStateGuard.matrix()) {
-            GlStateManager.translate(actor.position.x, actor.position.y + bobOffset, actor.position.z);
-            GlStateManager.rotate(yaw, 0.0F, 1.0F, 0.0F);
+            GlStateManager.translate(actor.position.x, actor.position.y + renderData.bobOffset, actor.position.z);
+            GlStateManager.rotate(renderData.yaw, 0.0F, 1.0F, 0.0F);
             GlStateManager.rotate((float) actor.rotation.x, 1.0F, 0.0F, 0.0F);
             GlStateManager.rotate((float) actor.rotation.z, 0.0F, 0.0F, 1.0F);
-            ActorBodyRenderer.forKind(actor.kind).render(this, actor, red, green, blue, alpha, currentTick);
+            ActorBodyRenderer.forKind(actor.kind).render(this, renderData);
         }
     }
 
@@ -536,35 +529,69 @@ final class ScenePreviewRenderer {
         drawActorPrism(red, green, blue, alpha, 0.12F + sway, 0.06F, 0.12F + sway);
     }
 
+    private static final class ActorPreviewRenderData {
+        private final PonderSceneRuntime.ActorRuntimeState actor;
+        private final float alpha;
+        private final float red;
+        private final float green;
+        private final float blue;
+        private final float bobOffset;
+        private final float yaw;
+        private final float currentTick;
+
+        private ActorPreviewRenderData(PonderSceneRuntime.ActorRuntimeState actor, float alpha, float red, float green,
+            float blue, float bobOffset, float yaw, float currentTick) {
+            this.actor = actor;
+            this.alpha = alpha;
+            this.red = red;
+            this.green = green;
+            this.blue = blue;
+            this.bobOffset = bobOffset;
+            this.yaw = yaw;
+            this.currentTick = currentTick;
+        }
+
+        private static ActorPreviewRenderData of(PonderSceneRuntime.ActorRuntimeState actor, float currentTick) {
+            float alpha = MathHelper.clamp(actor.fade, 0.0F, 1.0F);
+            int color = getActorBaseColor(actor);
+            float red = ((color >> 16) & 0xFF) / 255.0F;
+            float green = ((color >> 8) & 0xFF) / 255.0F;
+            float blue = (color & 0xFF) / 255.0F;
+            float bobOffset = getActorBobOffset(actor, currentTick);
+            float yaw = actor.kind == PonderScene.ActorKind.CART ? actor.cartYaw : (float) actor.rotation.y;
+            yaw += getActorYawOffset(actor, currentTick);
+            return new ActorPreviewRenderData(actor, alpha, red, green, blue, bobOffset, yaw, currentTick);
+        }
+    }
+
     private enum ActorBodyRenderer {
         BIRB {
             @Override
-            void render(ScenePreviewRenderer renderer, PonderSceneRuntime.ActorRuntimeState actor, float red,
-                float green, float blue, float alpha, float currentTick) {
-                renderer.drawBirbBody(actor, red, green, blue, alpha, currentTick);
-                renderer.drawActorHeading(alpha);
+            void render(ScenePreviewRenderer renderer, ActorPreviewRenderData renderData) {
+                renderer.drawBirbBody(renderData.actor, renderData.red, renderData.green, renderData.blue,
+                    renderData.alpha, renderData.currentTick);
+                renderer.drawActorHeading(renderData.alpha);
             }
         },
         ITEM {
             @Override
-            void render(ScenePreviewRenderer renderer, PonderSceneRuntime.ActorRuntimeState actor, float red,
-                float green, float blue, float alpha, float currentTick) {
-                renderer.drawItemBody(red, green, blue, alpha, currentTick);
-                renderer.drawActorHeading(alpha * 0.7F);
+            void render(ScenePreviewRenderer renderer, ActorPreviewRenderData renderData) {
+                renderer.drawItemBody(renderData.red, renderData.green, renderData.blue, renderData.alpha,
+                    renderData.currentTick);
+                renderer.drawActorHeading(renderData.alpha * 0.7F);
             }
         },
         CART {
             @Override
-            void render(ScenePreviewRenderer renderer, PonderSceneRuntime.ActorRuntimeState actor, float red,
-                float green, float blue, float alpha, float currentTick) {
-                renderer.drawActorPrism(red, green, blue, alpha, 0.30F, 0.16F, 0.18F);
-                renderer.drawCartWheels(alpha);
-                renderer.drawActorHeading(alpha);
+            void render(ScenePreviewRenderer renderer, ActorPreviewRenderData renderData) {
+                renderer.drawActorPrism(renderData.red, renderData.green, renderData.blue, renderData.alpha, 0.30F,
+                    0.16F, 0.18F);
+                renderer.drawCartWheels(renderData.alpha);
+                renderer.drawActorHeading(renderData.alpha);
             }
         };
 
-        abstract void render(ScenePreviewRenderer renderer, PonderSceneRuntime.ActorRuntimeState actor, float red,
-            float green, float blue, float alpha, float currentTick);
+        abstract void render(ScenePreviewRenderer renderer, ActorPreviewRenderData renderData);
 
         static ActorBodyRenderer forKind(PonderScene.ActorKind kind) {
             if (kind == PonderScene.ActorKind.BIRB) {
@@ -643,7 +670,7 @@ final class ScenePreviewRenderer {
         }
     }
 
-    private int getActorBaseColor(PonderSceneRuntime.ActorRuntimeState actor) {
+    private static int getActorBaseColor(PonderSceneRuntime.ActorRuntimeState actor) {
         if (actor.kind == PonderScene.ActorKind.CART) {
             return 0xD9C27A;
         }
@@ -662,7 +689,7 @@ final class ScenePreviewRenderer {
         return 0xA8D89A;
     }
 
-    private float getActorBobOffset(PonderSceneRuntime.ActorRuntimeState actor, float currentTick) {
+    private static float getActorBobOffset(PonderSceneRuntime.ActorRuntimeState actor, float currentTick) {
         if (actor.kind == PonderScene.ActorKind.CART) {
             return MathHelper.sin(currentTick * 0.15F + actor.actorId) * 0.01F;
         }
@@ -675,7 +702,7 @@ final class ScenePreviewRenderer {
         return Math.abs(MathHelper.sin(currentTick * 0.18F + actor.actorId * 0.35F)) * 0.04F;
     }
 
-    private float getActorYawOffset(PonderSceneRuntime.ActorRuntimeState actor, float currentTick) {
+    private static float getActorYawOffset(PonderSceneRuntime.ActorRuntimeState actor, float currentTick) {
         if (actor.kind != PonderScene.ActorKind.BIRB) {
             return 0.0F;
         }
@@ -688,15 +715,15 @@ final class ScenePreviewRenderer {
         return 0.0F;
     }
 
-    private boolean isBirbDancePose(PonderSceneRuntime.ActorRuntimeState actor) {
+    private static boolean isBirbDancePose(PonderSceneRuntime.ActorRuntimeState actor) {
         return actor.poseName != null && actor.poseName.contains("DancePose");
     }
 
-    private boolean isBirbCursorPose(PonderSceneRuntime.ActorRuntimeState actor) {
+    private static boolean isBirbCursorPose(PonderSceneRuntime.ActorRuntimeState actor) {
         return actor.poseName != null && actor.poseName.contains("FaceCursorPose");
     }
 
-    private boolean isBirbPoiPose(PonderSceneRuntime.ActorRuntimeState actor) {
+    private static boolean isBirbPoiPose(PonderSceneRuntime.ActorRuntimeState actor) {
         return actor.poseName != null && actor.poseName.contains("FacePointOfInterestPose");
     }
 
