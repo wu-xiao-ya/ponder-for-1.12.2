@@ -29,7 +29,7 @@
 - `PonderTheme` / `PonderThemes` / `ThemeResolver` / `ponder_themes.json` 已完成
 - `ExternalRegistrationDiagnostic(s)` 已完成
 - `RenderContext` 2D bridge 已完成，Actor / Scene / Particle / POI / Controls overlay 已迁入 `RenderContext`，`OverlayDrawContextAdapter` 已抽出
-- `ScenePreviewRenderer.renderPreviewScenePass(...)`、`ScenePreviewStateScope`、`BlockPreviewScope` 与 `ActorPreviewStateScope` 已抽出，preview 帧生命周期、主场景 pass、块模型预览 scope、actor-pass scope 已分层，`renderActorPreviews()` 的手写 blend 恢复已收口
+- `ScenePreviewRenderer.renderPreviewScenePass(...)`、`ScenePreviewStateScope`、`BlockPreviewScope`、`TileEntityPreviewScope` 与 `ActorPreviewStateScope` 已抽出，preview 帧生命周期、主场景 pass、块模型预览 scope、tile entity preview scope、actor-pass scope 已分层，`renderActorPreviews()` 的手写 blend 恢复已收口
 - `PonderDebugScreen` adapter 切片已完成，HUD host、renderer host、caption host 已收口，showcase HUD 文案提供器已内联
 - `ShowcaseHudHoverLabelHostAdapter` 已退场，`PonderDebugScreenHostSupport` 直接实现 `ShowcaseHudRenderer.HoverLabelHost`
 - tag 注册结果已统一到 `RegistrationOutcome`，`ExternalTagDefinitionRegistrar.Result` 已退场
@@ -102,7 +102,7 @@ Unimined
 - `PonderDebugScreen` 当前约 `1433` 行，主职责继续向页面协调器收口
 - `PonderSceneController`、`DebugMouseController`、`ShowcaseMouseController` 已承担输入和编排的一部分
 - `LayoutCache`、`InteractionState`、`Snapshot.RenderCapability`、`PonderSceneRuntimeTypes.TransformStep` 已开始吃到 `record` 与 `sealed interface`
-- `ScenePreviewRenderer`、`ShowcaseRenderer`、`ShowcaseHudRenderer`、`DebugPanelRenderer`、`SceneOverlayRenderer`、`GuiOverlayRenderer` 已形成 renderer 分层，`BlockPreviewScope` 与 `ActorPreviewStateScope` 已落位
+- `ScenePreviewRenderer`、`ShowcaseRenderer`、`ShowcaseHudRenderer`、`DebugPanelRenderer`、`SceneOverlayRenderer`、`GuiOverlayRenderer` 已形成 renderer 分层，`BlockPreviewScope`、`TileEntityPreviewScope` 与 `ActorPreviewStateScope` 已落位
 - `componentScroll` 与 `operationScroll` 已由 `DebugPanelRenderer` 持有，`DebugPanelViewState` 已退场
 - speech box、connector、line segment 绘制已集中到 `SpeechRenderer`
 - section fade、camera rotate、actor progress 已接入 `AnimationSpec`
@@ -117,7 +117,7 @@ Unimined
 - external validate 阶段已通过 `ValidationReport` 汇总 filesScanned / filesLoaded / filesFailed / warnings / errors
 - external parse 阶段已通过 `ExternalParseResult` 汇总 definitions / scanResult / validationReport
 - `RenderContext` 2D bridge 已完成，Actor / Scene / Particle / POI / Controls overlay 已迁入 `RenderContext`
-- `ScenePreviewRenderer` 已把 preview frame lifecycle、scene pass、块模型预览 scope 与 actor-pass scope 分开，`BlockPreviewScope` 已把块模型预览状态收进局部 scope，`ActorPreviewStateScope` 已把 actor blend 状态恢复收进局部 scope
+- `ScenePreviewRenderer` 已把 preview frame lifecycle、scene pass、块模型预览 scope、tile entity preview scope 与 actor-pass scope 分开，`BlockPreviewScope` 已把块模型预览状态收进局部 scope，`TileEntityPreviewScope` 已把 TileEntity 渲染状态收进局部 scope，`ActorPreviewStateScope` 已把 actor blend 状态恢复收进局部 scope
 - `PonderReloadOrchestrator` 已落地，reload report 已携带 external validation、compile summary、registration diagnostics 与 registration 明细
 
 对应参考：
@@ -134,7 +134,7 @@ Unimined
 
 当前残留热点：
 
-- `ScenePreviewRenderer` 的 preview scene pass、preview state scope、`BlockPreviewScope` 与 actor-pass scope 已抽出，`renderActorPreviews()` 手写 blend 恢复已收口
+- `ScenePreviewRenderer` 的 preview scene pass、preview state scope、`BlockPreviewScope`、`TileEntityPreviewScope` 与 actor-pass scope 已抽出，`renderActorPreviews()` 手写 blend 恢复已收口
 - 匿名 Host 接线占据较多 screen 篇幅
 - `isMouseOver*` 仍服务 hover / click / drag，showcase hover-label 已由 `ShowcaseHudRenderer.computeHoverLabel(...)` 统一承接
 - `PonderDebugScreen` 继续向页面协调器和 host adapter 收口
@@ -796,7 +796,7 @@ CI 整改候选：
 
 - speech box、connector、line segment 已由 `SpeechRenderer` 承担
 - `PonderDebugScreen` 当前仍保留少量 preview 桥接
-- `ScenePreviewRenderer` 已抽出 `renderPreviewScenePass(...)`、`ScenePreviewStateScope`、`BlockPreviewScope` 与 `ActorPreviewStateScope`，`renderActorPreviews()` 手写 blend 恢复已收口
+- `ScenePreviewRenderer` 已抽出 `renderPreviewScenePass(...)`、`ScenePreviewStateScope`、`BlockPreviewScope`、`TileEntityPreviewScope` 与 `ActorPreviewStateScope`，`renderActorPreviews()` 手写 blend 恢复已收口
 
 ### P1：建立稳定渲染骨架
 
@@ -1032,7 +1032,7 @@ CI 在上传前执行 beta 产物内容门，并上传两个 beta 验证产物�
 2. 收口 CraftTweaker / shim 边界
 3. 视需要补齐 `PonderDebugScreen` 残余 host adapter
 4. 继续把 tag / shared text 的逐条失败明细扩展成可截断输出
-5. 继续收束 `ScenePreviewRenderer` 的 tile entity preview scope 与 actor body dispatch
+5. 继续拆分 `ScenePreviewRenderer` 的 actor body dispatch
 
 这条顺序能先消灭当前最高频的耦合点，再推进更深层的现代化改造。
 
@@ -1046,7 +1046,7 @@ CI 在上传前执行 beta 产物内容门，并上传两个 beta 验证产物�
 2. Showcase hover-label：维持 `ShowcaseHudRenderer.computeHoverLabel(...)` 单入口，继续压缩 screen 侧接线
 3. CI / artifact verifier 门：围绕当前 `build.gradle + gradle/scripts/*` 验证路径继续补远程门禁
 4. CraftTweaker / shim：收口边界和发布语义
-5. ScenePreviewRenderer：拆分 tile entity preview scope 与 actor body dispatch，把缓存、TESR 渲染和 birb / item / cart 绘制继续局部化
+5. ScenePreviewRenderer：拆分 actor body dispatch，把 birb / item / cart 绘制继续局部化
 
 主代理负责范围控制、冲突处理、文档同步、远程 CI 验证。
 
