@@ -327,19 +327,7 @@ final class ScenePreviewRenderer {
     }
 
     private void renderActorPreviews(PonderScene scene, float currentTick) {
-        List<PonderSceneRuntime.ActorRuntimeState> actors = PonderSceneRuntime.buildActorStates(scene, currentTick);
-        if (actors.isEmpty()) {
-            return;
-        }
-
-        try (ActorPreviewStateScope actorState = ActorPreviewStateScope.open()) {
-            for (PonderSceneRuntime.ActorRuntimeState actor : actors) {
-                if (!actor.visible || actor.fade <= 0.0F) {
-                    continue;
-                }
-                renderActorPreview(actor, currentTick);
-            }
-        }
+        ActorPreviewRenderPass.render(this, scene, currentTick);
     }
 
     private static final class BlockPreviewScope implements AutoCloseable {
@@ -435,6 +423,78 @@ final class ScenePreviewRenderer {
         }
     }
 
+    private static final class ActorPreviewRenderPass implements AutoCloseable {
+
+        private final ScenePreviewRenderer renderer;
+        private final float currentTick;
+        private final List<PonderSceneRuntime.ActorRuntimeState> actors;
+        private final ActorPreviewStateScope actorStateScope;
+        private boolean closed;
+
+        private ActorPreviewRenderPass(ScenePreviewRenderer renderer, float currentTick,
+            List<PonderSceneRuntime.ActorRuntimeState> actors, ActorPreviewStateScope actorStateScope) {
+            this.renderer = renderer;
+            this.currentTick = currentTick;
+            this.actors = actors;
+            this.actorStateScope = actorStateScope;
+        }
+
+        static void render(ScenePreviewRenderer renderer, PonderScene scene, float currentTick) {
+            ActorPreviewRenderPass renderPass = open(renderer, scene, currentTick);
+            if (renderPass == null) {
+                return;
+            }
+
+            try (ActorPreviewRenderPass pass = renderPass) {
+                pass.render();
+            }
+        }
+
+        @Nullable
+        private static ActorPreviewRenderPass open(ScenePreviewRenderer renderer, PonderScene scene, float currentTick) {
+            List<PonderSceneRuntime.ActorRuntimeState> actors = PonderSceneRuntime.buildActorStates(scene, currentTick);
+            if (actors.isEmpty()) {
+                return null;
+            }
+
+            return new ActorPreviewRenderPass(renderer, currentTick, actors, ActorPreviewStateScope.open());
+        }
+
+        private void render() {
+            for (PonderSceneRuntime.ActorRuntimeState actor : actors) {
+                if (!actor.visible || actor.fade <= 0.0F) {
+                    continue;
+                }
+                renderActor(actor);
+            }
+        }
+
+        private void renderActor(PonderSceneRuntime.ActorRuntimeState actor) {
+            ActorPreviewRenderData renderData = ActorPreviewRenderData.of(actor, currentTick);
+
+            try (GLStateGuard matrixGuard = GLStateGuard.matrix()) {
+                GlStateManager.translate(actor.position.x, actor.position.y + renderData.bobOffset, actor.position.z);
+                GlStateManager.rotate(renderData.yaw, 0.0F, 1.0F, 0.0F);
+                GlStateManager.rotate((float) actor.rotation.x, 1.0F, 0.0F, 0.0F);
+                GlStateManager.rotate((float) actor.rotation.z, 0.0F, 0.0F, 1.0F);
+                ActorBodyDrawContext bodyDrawContext = new ActorBodyDrawContext(renderer, renderData);
+                ActorBodyRenderer.forKind(actor.kind).render(bodyDrawContext);
+            }
+        }
+
+        @Override
+        public void close() {
+            if (closed) {
+                return;
+            }
+            closed = true;
+
+            Throwable failure = null;
+            failure = closeScope(failure, actorStateScope);
+            rethrowScopeFailure(failure);
+        }
+    }
+
     private static Throwable closeScope(Throwable failure, GLStateGuard guard) {
         if (guard == null) {
             return failure;
@@ -449,6 +509,19 @@ final class ScenePreviewRenderer {
     }
 
     private static Throwable closeScope(Throwable failure, ScenePreviewStateScope scope) {
+        if (scope == null) {
+            return failure;
+        }
+
+        try {
+            scope.close();
+        } catch (RuntimeException | Error closeFailure) {
+            return addScopeFailure(failure, closeFailure);
+        }
+        return failure;
+    }
+
+    private static Throwable closeScope(Throwable failure, ActorPreviewStateScope scope) {
         if (scope == null) {
             return failure;
         }
@@ -477,19 +550,6 @@ final class ScenePreviewRenderer {
             throw (RuntimeException) failure;
         }
         throw (Error) failure;
-    }
-
-    private void renderActorPreview(PonderSceneRuntime.ActorRuntimeState actor, float currentTick) {
-        ActorPreviewRenderData renderData = ActorPreviewRenderData.of(actor, currentTick);
-
-        try (GLStateGuard matrixGuard = GLStateGuard.matrix()) {
-            GlStateManager.translate(actor.position.x, actor.position.y + renderData.bobOffset, actor.position.z);
-            GlStateManager.rotate(renderData.yaw, 0.0F, 1.0F, 0.0F);
-            GlStateManager.rotate((float) actor.rotation.x, 1.0F, 0.0F, 0.0F);
-            GlStateManager.rotate((float) actor.rotation.z, 0.0F, 0.0F, 1.0F);
-            ActorBodyDrawContext bodyDrawContext = new ActorBodyDrawContext(this, renderData);
-            ActorBodyRenderer.forKind(actor.kind).render(bodyDrawContext);
-        }
     }
 
     private static final class ActorPreviewRenderData {
