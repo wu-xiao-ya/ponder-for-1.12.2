@@ -29,7 +29,7 @@
 - `PonderTheme` / `PonderThemes` / `ThemeResolver` / `ponder_themes.json` 已完成
 - `ExternalRegistrationDiagnostic(s)` 已完成
 - `RenderContext` 2D bridge 已完成，Actor / Scene / Particle / POI / Controls overlay 已迁入 `RenderContext`，`OverlayDrawContextAdapter` 已抽出
-- `ScenePreviewRenderer.renderPreviewScenePass(...)`、`ScenePreviewStateScope`、`ScenePreviewShadowRenderer`、`ScenePreviewBlockRenderer`、`ScenePreviewTileEntityRenderer`、`TileEntityPreviewScope`、`ActorPreviewStateScope`、`ActorPreviewRenderPass`、`ActorPreviewAppearance`、`ActorPreviewBodyRenderer`、`ActorPreviewRenderData` 与 `BirbPoseKind` 已抽出，appearance 策略层与 body/primitive 渲染层已分离，preview 帧生命周期、主场景 pass、shadow 绘制、block renderer、tile entity renderer/scope、actor-pass scope、actor render dispatch、actor primitive drawing、actor body dispatch、actor render data 与 `poseName` 分类已分层，`renderActorPreviews()` 已收成 actor pass 入口
+- `ScenePreviewRenderer.renderPreviewScenePass(...)`、`ScenePreviewStateScope`、`ScenePreviewFrameScope`、`ScenePreviewShadowRenderer`、`ScenePreviewBlockRenderer`、`ScenePreviewTileEntityRenderer`、`TileEntityPreviewScope`、`ActorPreviewStateScope`、`ActorPreviewRenderPass`、`ActorPreviewAppearance`、`ActorPreviewBodyRenderer`、`ActorPreviewRenderData` 与 `BirbPoseKind` 已抽出，appearance 策略层与 body/primitive 渲染层已分离，preview 帧生命周期、主场景 pass、frame scope、shadow 绘制、block renderer、tile entity renderer/scope、actor-pass scope、actor render dispatch、actor primitive drawing、actor body dispatch、actor render data 与 `poseName` 分类已分层，`renderActorPreviews()` 已收成 actor pass 入口
 - `PonderDebugScreen` adapter 切片已完成，HUD host、renderer host、caption host 已收口，showcase HUD 文案提供器已内联
 - `ShowcaseHudHoverLabelHostAdapter` 已退场，`PonderDebugScreenHostSupport` 直接实现 `ShowcaseHudRenderer.HoverLabelHost`
 - tag 注册结果已统一到 `RegistrationOutcome`，`ExternalTagDefinitionRegistrar.Result` 已退场
@@ -102,7 +102,7 @@ Unimined
 - `PonderDebugScreen` 当前约 `1433` 行，主职责继续向页面协调器收口
 - `PonderSceneController`、`DebugMouseController`、`ShowcaseMouseController` 已承担输入和编排的一部分
 - `LayoutCache`、`InteractionState`、`Snapshot.RenderCapability`、`PonderSceneRuntimeTypes.TransformStep` 已开始吃到 `record` 与 `sealed interface`
-- `ScenePreviewRenderer`、`ShowcaseRenderer`、`ShowcaseHudRenderer`、`DebugPanelRenderer`、`SceneOverlayRenderer`、`GuiOverlayRenderer` 已形成 renderer 分层，`ScenePreviewBlockRenderer`、`ScenePreviewTileEntityRenderer`、`TileEntityPreviewScope`、`ActorPreviewStateScope`、`ActorPreviewRenderPass`、`ActorPreviewAppearance`、`ActorPreviewBodyRenderer`、`ActorPreviewRenderData` 与 `BirbPoseKind` 已落位，appearance 策略层与 body/primitive 渲染层已抽出
+- `ScenePreviewRenderer`、`ShowcaseRenderer`、`ShowcaseHudRenderer`、`DebugPanelRenderer`、`SceneOverlayRenderer`、`GuiOverlayRenderer` 已形成 renderer 分层，`ScenePreviewBlockRenderer`、`ScenePreviewTileEntityRenderer`、`TileEntityPreviewScope`、`ActorPreviewStateScope`、`ActorPreviewRenderPass`、`ActorPreviewAppearance`、`ActorPreviewBodyRenderer`、`ActorPreviewRenderData`、`ScenePreviewFrameScope` 与 `BirbPoseKind` 已落位，appearance 策略层与 body/primitive 渲染层已抽出
 - `componentScroll` 与 `operationScroll` 已由 `DebugPanelRenderer` 持有，`DebugPanelViewState` 已退场
 - speech box、connector、line segment 绘制已集中到 `SpeechRenderer`
 - section fade、camera rotate、actor progress 已接入 `AnimationSpec`
@@ -117,7 +117,7 @@ Unimined
 - external validate 阶段已通过 `ValidationReport` 汇总 filesScanned / filesLoaded / filesFailed / warnings / errors
 - external parse 阶段已通过 `ExternalParseResult` 汇总 definitions / scanResult / validationReport
 - `RenderContext` 2D bridge 已完成，Actor / Scene / Particle / POI / Controls overlay 已迁入 `RenderContext`
-- `ScenePreviewRenderer` 已把 preview frame lifecycle、scene pass、block renderer、tile entity preview renderer/scope、actor-pass scope、actor render dispatch、actor primitive drawing、actor appearance strategy、body/primitive 渲染层与 actor render data 分开，`ScenePreviewBlockRenderer` 已把 block model preview 状态收进局部 renderer，`ScenePreviewTileEntityRenderer` 已把 TileEntity 渲染状态收进局部 renderer/scope，`ActorPreviewStateScope` 已把 actor blend 状态恢复收进局部 scope，`BirbPoseKind` 已收口 `poseName` 判定
+- `ScenePreviewRenderer` 已把 preview frame lifecycle、scene pass、frame scope、block renderer、tile entity preview renderer/scope、actor-pass scope、actor render dispatch、actor primitive drawing、actor appearance strategy、body/primitive 渲染层与 actor render data 分开，`ScenePreviewBlockRenderer` 已把 block model preview 状态收进局部 renderer，`ScenePreviewTileEntityRenderer` 已把 TileEntity 渲染状态收进局部 renderer/scope，`ActorPreviewStateScope` 已把 actor blend 状态恢复收进局部 scope，`BirbPoseKind` 已收口 `poseName` 判定
 - `PonderReloadOrchestrator` 已落地，reload report 已携带 external validation、compile summary、registration diagnostics 与 registration 明细
 
 对应参考：
@@ -134,12 +134,12 @@ Unimined
 
 当前残留热点：
 
-- `ScenePreviewRenderer` 的 preview scene pass、preview state scope、`ScenePreviewShadowRenderer`、`ScenePreviewBlockRenderer`、`ScenePreviewTileEntityRenderer`、`TileEntityPreviewScope`、actor-pass scope、`ActorPreviewRenderPass`、`ActorPreviewAppearance`、`ActorPreviewBodyRenderer`、`ActorPreviewRenderData`、`BirbPoseKind`、`ActorPrimitiveDrawer`、`ActorBodyRenderer`、`ActorBodyDrawContext` 已收束，`renderActorPreviews()` 已收成 actor pass 入口，下一步指向剩余 render state 收尾
+- `ScenePreviewRenderer` 的 preview scene pass、preview state scope、`ScenePreviewFrameScope`、`ScenePreviewShadowRenderer`、`ScenePreviewBlockRenderer`、`ScenePreviewTileEntityRenderer`、`TileEntityPreviewScope`、actor-pass scope、`ActorPreviewRenderPass`、`ActorPreviewAppearance`、`ActorPreviewBodyRenderer`、`ActorPreviewRenderData`、`BirbPoseKind`、`ActorPrimitiveDrawer`、`ActorBodyRenderer`、`ActorBodyDrawContext` 已收束，`renderActorPreviews()` 已收成 actor pass 入口，下一步聚焦 actor pass 顶层化
 - 匿名 Host 接线占据较多 screen 篇幅
 - `isMouseOver*` 仍服务 hover / click / drag，showcase hover-label 已由 `ShowcaseHudRenderer.computeHoverLabel(...)` 统一承接
 - `PonderDebugScreen` 继续向页面协调器和 host adapter 收口
 - reload 结果结构化继续推进，validation、compile summary、registration diagnostics 与 register 结果已进入 reload report
-- line count 当前反映 adapter 与 renderer 过渡期成本，actor 绘制原语与 tile entity renderer 下沉已完成，后续自然切片转向剩余 render state 收尾
+- line count 当前反映 adapter 与 renderer 过渡期成本，actor 绘制原语、tile entity renderer 与 frame scope 下沉已完成，后续自然切片转向 actor pass 顶层化
 
 #### B. Snapshot 体系已完成首轮收口
 
@@ -390,7 +390,7 @@ interface RenderContext {
 2. `DebugPanelRenderer`、`ActorOverlayRenderer` 迁入纯 2D context
 3. `OverlayRenderer`、`SpeechRenderer`、`GuiOverlayRenderer` 迁入 line / gradient / triangle 能力
 4. `PonderUI` 与 showcase renderer 迁入 theme-aware context
-5. `ScenePreviewRenderer` 和 snapshot renderer 接入 scoped scissor / matrix / depth guard，appearance 策略层已抽出，后续继续推进 `TileEntityPreviewScope` 与更细 render state 收尾
+5. `ScenePreviewRenderer` 和 snapshot renderer 接入 scoped scissor / matrix / depth guard，frame scope、appearance 策略层与 tile entity renderer 已抽出，后续继续推进 actor pass 顶层化
 
 这条顺序先稳住 2D 绘制和状态恢复，再处理 3D preview 与外部 GUI 嵌入。
 
@@ -796,7 +796,7 @@ CI 整改候选：
 
 - speech box、connector、line segment 已由 `SpeechRenderer` 承担
 - `PonderDebugScreen` 当前仍保留少量 preview 桥接
-- `ScenePreviewRenderer` 已抽出 `renderPreviewScenePass(...)`、`ScenePreviewStateScope`、`ScenePreviewShadowRenderer`、`ScenePreviewBlockRenderer`、`ScenePreviewTileEntityRenderer`、`TileEntityPreviewScope`、`ActorPreviewStateScope`、`ActorPreviewRenderPass`、`ActorPreviewAppearance`、`ActorPreviewBodyRenderer`、`ActorPreviewRenderData`、`BirbPoseKind` 与 `ActorPrimitiveDrawer`、`ActorBodyRenderer`、`ActorBodyDrawContext`，appearance 策略层、body/primitive 渲染层、shadow renderer 与 tile entity renderer 已收口，`renderActorPreviews()` 已收成 actor pass 入口，后续指向剩余 render state 收尾
+- `ScenePreviewRenderer` 已抽出 `renderPreviewScenePass(...)`、`ScenePreviewStateScope`、`ScenePreviewFrameScope`、`ScenePreviewShadowRenderer`、`ScenePreviewBlockRenderer`、`ScenePreviewTileEntityRenderer`、`TileEntityPreviewScope`、`ActorPreviewStateScope`、`ActorPreviewRenderPass`、`ActorPreviewAppearance`、`ActorPreviewBodyRenderer`、`ActorPreviewRenderData`、`BirbPoseKind` 与 `ActorPrimitiveDrawer`、`ActorBodyRenderer`、`ActorBodyDrawContext`，appearance 策略层、body/primitive 渲染层、shadow renderer、tile entity renderer 与 frame scope 已收口，`renderActorPreviews()` 已收成 actor pass 入口，后续指向 actor pass 顶层化
 
 ### P1：建立稳定渲染骨架
 
@@ -1022,7 +1022,7 @@ CI 在上传前执行 beta 产物内容门，并上传两个 beta 验证产物�
 - 旧 helper / 旧桥接字段已删除
 - 重复入口已收口
 - `GLStateGuard` 覆盖范围与 live render 结构一致
-- 文档与 live 结构同步，包含 `ScenePreviewShadowRenderer` shadow 绘制层、`ScenePreviewTileEntityRenderer` tile entity 渲染层、`ActorPreviewAppearance` 策略层、`ActorPreviewBodyRenderer` body/primitive 渲染层、`ActorPreviewRenderPass`、`ActorPrimitiveDrawer` 绘制原语、`BirbPoseKind` / `poseName` 分类、`ActorBodyDrawContext` 绘制上下文、`ActorBodyRenderer` 分派、`drawBirbBody`、`drawItemBody`、`drawCartWheels`、`ActorPreviewRenderData` 的归位；后续指向剩余 render state 收尾
+- 文档与 live 结构同步，包含 `ScenePreviewFrameScope` frame lifecycle 层、`ScenePreviewShadowRenderer` shadow 绘制层、`ScenePreviewTileEntityRenderer` tile entity 渲染层、`ActorPreviewAppearance` 策略层、`ActorPreviewBodyRenderer` body/primitive 渲染层、`ActorPreviewRenderPass`、`ActorPrimitiveDrawer` 绘制原语、`BirbPoseKind` / `poseName` 分类、`ActorBodyDrawContext` 绘制上下文、`ActorBodyRenderer` 分派、`drawBirbBody`、`drawItemBody`、`drawCartWheels`、`ActorPreviewRenderData` 的归位；后续指向 actor pass 顶层化
 
 ## 11. 当前建议的开工顺序
 
@@ -1032,7 +1032,7 @@ CI 在上传前执行 beta 产物内容门，并上传两个 beta 验证产物�
 2. 收口 CraftTweaker / shim 边界
 3. 视需要补齐 `PonderDebugScreen` 残余 host adapter
 4. 继续把 tag / shared text 的逐条失败明细扩展成可截断输出
-5. 完成 `ScenePreviewRenderer` 的 actor render dispatch 汇总层，shadow 绘制、tile entity renderer、appearance 策略层与 body/primitive 渲染层已抽出，后续推进剩余 render state 收尾
+5. 完成 `ScenePreviewRenderer` 的 actor render dispatch 汇总层，shadow 绘制、tile entity renderer、frame scope、appearance 策略层与 body/primitive 渲染层已抽出，后续推进 actor pass 顶层化
 
 这条顺序能先消灭当前最高频的耦合点，再推进更深层的现代化改造。
 
@@ -1046,7 +1046,7 @@ CI 在上传前执行 beta 产物内容门，并上传两个 beta 验证产物�
 2. Showcase hover-label：维持 `ShowcaseHudRenderer.computeHoverLabel(...)` 单入口，继续压缩 screen 侧接线
 3. CI / artifact verifier 门：围绕当前 `build.gradle + gradle/scripts/*` 验证路径继续补远程门禁
 4. CraftTweaker / shim：收口边界和发布语义
-5. ScenePreviewRenderer：继续收口剩余 render state 与 preview frame 边界，保持 `ScenePreviewShadowRenderer`、`ScenePreviewBlockRenderer`、`ScenePreviewTileEntityRenderer`、`ActorPreviewAppearance`、`ActorPreviewBodyRenderer`、`ActorPreviewRenderData` 与 `BirbPoseKind` 的归属边界清晰
+5. ScenePreviewRenderer：preview frame 边界已收口，继续推进 actor pass 顶层化，保持 `ScenePreviewFrameScope`、`ScenePreviewShadowRenderer`、`ScenePreviewBlockRenderer`、`ScenePreviewTileEntityRenderer`、`ActorPreviewAppearance`、`ActorPreviewBodyRenderer`、`ActorPreviewRenderData` 与 `BirbPoseKind` 的归属边界清晰
 
 主代理负责范围控制、冲突处理、文档同步、远程 CI 验证。
 
