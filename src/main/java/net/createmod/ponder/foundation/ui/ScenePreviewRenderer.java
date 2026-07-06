@@ -184,13 +184,7 @@ final class ScenePreviewRenderer {
             renderState = state;
         }
 
-        try (GLStateGuard matrixGuard = GLStateGuard.matrix()) {
-            PonderSceneRuntime.applyRenderTransforms(block);
-            float brightness = Math.min(1.0F, PonderPreviewRenderHelper.computeBlockBrightness(showcaseMode, block));
-            float alpha = MathHelper.clamp(0.28F + block.fade * 0.72F, 0.0F, 1.0F);
-            GlStateManager.color(brightness, brightness, brightness, alpha);
-            setPreviewLightmap();
-
+        try (BlockPreviewScope previewScope = BlockPreviewScope.open(this, block)) {
             BufferBuilder buffer = Tessellator.getInstance().getBuffer();
             buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.BLOCK);
             try {
@@ -198,8 +192,6 @@ final class ScenePreviewRenderer {
             } catch (RuntimeException ignored) {
             }
             Tessellator.getInstance().draw();
-
-            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         }
     }
 
@@ -295,6 +287,47 @@ final class ScenePreviewRenderer {
                 }
                 renderActorPreview(actor, currentTick);
             }
+        }
+    }
+
+    private static final class BlockPreviewScope implements AutoCloseable {
+
+        private final GLStateGuard matrixGuard;
+        private boolean closed;
+
+        private BlockPreviewScope(GLStateGuard matrixGuard) {
+            this.matrixGuard = matrixGuard;
+        }
+
+        static BlockPreviewScope open(ScenePreviewRenderer renderer, RuntimeBlockState block) {
+            GLStateGuard matrixGuard = null;
+            try {
+                matrixGuard = GLStateGuard.matrix();
+                PonderSceneRuntime.applyRenderTransforms(block);
+
+                float brightness = Math.min(1.0F, PonderPreviewRenderHelper.computeBlockBrightness(renderer.showcaseMode,
+                    block));
+                float alpha = MathHelper.clamp(0.28F + block.fade * 0.72F, 0.0F, 1.0F);
+                GlStateManager.color(brightness, brightness, brightness, alpha);
+                renderer.setPreviewLightmap();
+                return new BlockPreviewScope(matrixGuard);
+            } catch (RuntimeException | Error exception) {
+                closeScope(exception, matrixGuard);
+                throw exception;
+            }
+        }
+
+        @Override
+        public void close() {
+            if (closed) {
+                return;
+            }
+            closed = true;
+
+            Throwable failure = null;
+            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+            failure = closeScope(failure, matrixGuard);
+            rethrowScopeFailure(failure);
         }
     }
 
