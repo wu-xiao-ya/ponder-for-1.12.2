@@ -18,16 +18,11 @@ import net.createmod.ponder.foundation.ui.render.GLStateGuard;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BlockRendererDispatcher;
-import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
 import net.minecraft.client.renderer.texture.TextureMap;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.MathHelper;
-import org.lwjgl.opengl.GL11;
 
 final class ScenePreviewRenderer {
 
@@ -163,36 +158,12 @@ final class ScenePreviewRenderer {
                 continue;
             }
 
-            renderBlockModelPreview(dispatcher, previewWorld, block, state);
+            ScenePreviewBlockRenderer.render(dispatcher, previewWorld, blockStateActualState, showcaseMode,
+                previewFullBright, block, state);
             renderTileEntityPreview(block, state);
         }
 
         renderActorPreviews(scene, renderTick);
-    }
-
-    void renderBlockModelPreview(BlockRendererDispatcher dispatcher, PreviewBlockAccess previewWorld,
-        RuntimeBlockState block, IBlockState state) {
-        if (state == null) {
-            return;
-        }
-
-        IBlockState renderState = state;
-        try {
-            renderState = PonderPreviewRenderHelper.getActualStateCompat(blockStateActualState, state, previewWorld,
-                block.pos);
-        } catch (RuntimeException ignored) {
-            renderState = state;
-        }
-
-        try (BlockPreviewScope previewScope = BlockPreviewScope.open(this, block)) {
-            BufferBuilder buffer = Tessellator.getInstance().getBuffer();
-            buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.BLOCK);
-            try {
-                dispatcher.renderBlock(renderState, block.pos, previewWorld, buffer);
-            } catch (RuntimeException ignored) {
-            }
-            Tessellator.getInstance().draw();
-        }
     }
 
     @SuppressWarnings("unchecked")
@@ -310,47 +281,6 @@ final class ScenePreviewRenderer {
 
     private void renderActorPreviews(PonderScene scene, float currentTick) {
         ActorPreviewRenderPass.render(this, scene, currentTick);
-    }
-
-    private static final class BlockPreviewScope implements AutoCloseable {
-
-        private final GLStateGuard matrixGuard;
-        private boolean closed;
-
-        private BlockPreviewScope(GLStateGuard matrixGuard) {
-            this.matrixGuard = matrixGuard;
-        }
-
-        static BlockPreviewScope open(ScenePreviewRenderer renderer, RuntimeBlockState block) {
-            GLStateGuard matrixGuard = null;
-            try {
-                matrixGuard = GLStateGuard.matrix();
-                PonderSceneRuntime.applyRenderTransforms(block);
-
-                float brightness = Math.min(1.0F, PonderPreviewRenderHelper.computeBlockBrightness(renderer.showcaseMode,
-                    block));
-                float alpha = MathHelper.clamp(0.28F + block.fade * 0.72F, 0.0F, 1.0F);
-                GlStateManager.color(brightness, brightness, brightness, alpha);
-                renderer.setPreviewLightmap();
-                return new BlockPreviewScope(matrixGuard);
-            } catch (RuntimeException | Error exception) {
-                closeScope(exception, matrixGuard);
-                throw exception;
-            }
-        }
-
-        @Override
-        public void close() {
-            if (closed) {
-                return;
-            }
-            closed = true;
-
-            Throwable failure = null;
-            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-            failure = closeScope(failure, matrixGuard);
-            rethrowScopeFailure(failure);
-        }
     }
 
     private static final class ActorPreviewStateScope implements AutoCloseable {
