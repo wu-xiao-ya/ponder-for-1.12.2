@@ -272,7 +272,6 @@ final class ScenePreviewRenderer {
             return;
         }
 
-        boolean blendInitiallyEnabled = GL11.glIsEnabled(GL11.GL_BLEND);
         try (GLStateGuard textureGuard = GLStateGuard.textureDisabled();
             GLStateGuard cullGuard = GLStateGuard.cullDisabled();
             GLStateGuard colorGuard = GLStateGuard.color(1.0F, 1.0F, 1.0F, 1.0F);
@@ -282,12 +281,6 @@ final class ScenePreviewRenderer {
                     continue;
                 }
                 renderActorPreview(actor, currentTick);
-            }
-        } finally {
-            if (blendInitiallyEnabled) {
-                GlStateManager.enableBlend();
-            } else {
-                GlStateManager.disableBlend();
             }
         }
     }
