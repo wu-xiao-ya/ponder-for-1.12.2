@@ -487,62 +487,12 @@ final class ScenePreviewRenderer {
             GlStateManager.rotate(renderData.yaw, 0.0F, 1.0F, 0.0F);
             GlStateManager.rotate((float) actor.rotation.x, 1.0F, 0.0F, 0.0F);
             GlStateManager.rotate((float) actor.rotation.z, 0.0F, 0.0F, 1.0F);
-            ActorBodyRenderer.forKind(actor.kind).render(this, renderData);
+            ActorBodyDrawContext bodyDrawContext = new ActorBodyDrawContext(this, renderData);
+            ActorBodyRenderer.forKind(actor.kind).render(bodyDrawContext);
         }
-    }
-
-    private void drawActorHeading(float alpha) {
-        int lineColor = withAlpha(0xF2F5F8, alpha * 235.0F);
-        float red = ((lineColor >> 16) & 0xFF) / 255.0F;
-        float green = ((lineColor >> 8) & 0xFF) / 255.0F;
-        float blue = (lineColor & 0xFF) / 255.0F;
-        float lineAlpha = ((lineColor >>> 24) & 0xFF) / 255.0F;
-
-        try (GLStateGuard colorGuard = GLStateGuard.color(red, green, blue, lineAlpha);
-            GLStateGuard lineWidthGuard = GLStateGuard.lineWidth(2.0F)) {
-            GL11.glBegin(GL11.GL_LINES);
-            GL11.glVertex3f(0.0F, 0.05F, 0.0F);
-            GL11.glVertex3f(0.0F, 0.05F, -0.38F);
-            GL11.glEnd();
-        }
-    }
-
-    private void drawBirbBody(ActorPreviewRenderData renderData) {
-        float red = renderData.red;
-        float green = renderData.green;
-        float blue = renderData.blue;
-        float alpha = renderData.alpha;
-        float currentTick = renderData.currentTick;
-
-        switch (renderData.birbPoseKind) {
-            case DANCE: {
-                drawActorPrism(red, green, blue, alpha, 0.16F, 0.28F, 0.16F);
-                float wing = 0.04F + Math.abs(MathHelper.sin(currentTick * 0.35F)) * 0.05F;
-                drawActorPrism(red * 0.92F, green * 0.92F, blue, alpha * 0.92F, wing, 0.12F, 0.04F, -0.18F, 0.08F,
-                    0.0F);
-                drawActorPrism(red * 0.92F, green * 0.92F, blue, alpha * 0.92F, wing, 0.12F, 0.04F, 0.18F, 0.08F,
-                    0.0F);
-                return;
-            }
-            case FACE_CURSOR: {
-                drawActorPrism(red, green, blue, alpha, 0.13F, 0.34F, 0.13F);
-                drawActorPrism(red * 0.85F, green * 0.95F, blue, alpha * 0.9F, 0.04F, 0.10F, 0.10F, 0.0F, 0.26F,
-                    -0.14F);
-                return;
-            }
-            default:
-                drawActorPrism(red, green, blue, alpha, 0.14F, 0.34F, 0.14F);
-                return;
-        }
-    }
-
-    private void drawItemBody(float red, float green, float blue, float alpha, float currentTick) {
-        float sway = Math.abs(MathHelper.sin(currentTick * 0.25F)) * 0.02F;
-        drawActorPrism(red, green, blue, alpha, 0.12F + sway, 0.06F, 0.12F + sway);
     }
 
     private static final class ActorPreviewRenderData {
-        private final PonderSceneRuntime.ActorRuntimeState actor;
         private final float alpha;
         private final float red;
         private final float green;
@@ -552,9 +502,8 @@ final class ScenePreviewRenderer {
         private final float currentTick;
         private final BirbPoseKind birbPoseKind;
 
-        private ActorPreviewRenderData(PonderSceneRuntime.ActorRuntimeState actor, float alpha, float red, float green,
-            float blue, float bobOffset, float yaw, float currentTick, BirbPoseKind birbPoseKind) {
-            this.actor = actor;
+        private ActorPreviewRenderData(float alpha, float red, float green, float blue, float bobOffset, float yaw,
+            float currentTick, BirbPoseKind birbPoseKind) {
             this.alpha = alpha;
             this.red = red;
             this.green = green;
@@ -575,38 +524,131 @@ final class ScenePreviewRenderer {
             float bobOffset = getActorBobOffset(actor, currentTick, birbPoseKind);
             float yaw = actor.kind == PonderScene.ActorKind.CART ? actor.cartYaw : (float) actor.rotation.y;
             yaw += getActorYawOffset(actor, currentTick, birbPoseKind);
-            return new ActorPreviewRenderData(actor, alpha, red, green, blue, bobOffset, yaw, currentTick,
+            return new ActorPreviewRenderData(alpha, red, green, blue, bobOffset, yaw, currentTick,
                 birbPoseKind);
+        }
+    }
+
+    private static final class ActorBodyDrawContext {
+
+        private final ScenePreviewRenderer renderer;
+        private final float alpha;
+        private final float red;
+        private final float green;
+        private final float blue;
+        private final float currentTick;
+        private final BirbPoseKind birbPoseKind;
+
+        private ActorBodyDrawContext(ScenePreviewRenderer renderer, ActorPreviewRenderData renderData) {
+            this.renderer = renderer;
+            this.alpha = renderData.alpha;
+            this.red = renderData.red;
+            this.green = renderData.green;
+            this.blue = renderData.blue;
+            this.currentTick = renderData.currentTick;
+            this.birbPoseKind = renderData.birbPoseKind;
+        }
+
+        void renderBirb() {
+            drawBirbBody();
+            drawActorHeading(alpha);
+        }
+
+        void renderItem() {
+            drawItemBody();
+            drawActorHeading(alpha * 0.7F);
+        }
+
+        void renderCart() {
+            renderer.drawActorPrism(red, green, blue, alpha, 0.30F, 0.16F, 0.18F);
+            drawCartWheels();
+            drawActorHeading(alpha);
+        }
+
+        private void drawActorHeading(float alpha) {
+            int lineColor = withAlpha(0xF2F5F8, alpha * 235.0F);
+            float red = ((lineColor >> 16) & 0xFF) / 255.0F;
+            float green = ((lineColor >> 8) & 0xFF) / 255.0F;
+            float blue = (lineColor & 0xFF) / 255.0F;
+            float lineAlpha = ((lineColor >>> 24) & 0xFF) / 255.0F;
+
+            try (GLStateGuard colorGuard = GLStateGuard.color(red, green, blue, lineAlpha);
+                GLStateGuard lineWidthGuard = GLStateGuard.lineWidth(2.0F)) {
+                GL11.glBegin(GL11.GL_LINES);
+                GL11.glVertex3f(0.0F, 0.05F, 0.0F);
+                GL11.glVertex3f(0.0F, 0.05F, -0.38F);
+                GL11.glEnd();
+            }
+        }
+
+        private void drawBirbBody() {
+            switch (birbPoseKind) {
+                case DANCE: {
+                    renderer.drawActorPrism(red, green, blue, alpha, 0.16F, 0.28F, 0.16F);
+                    float wing = 0.04F + Math.abs(MathHelper.sin(currentTick * 0.35F)) * 0.05F;
+                    renderer.drawActorPrism(red * 0.92F, green * 0.92F, blue, alpha * 0.92F, wing, 0.12F, 0.04F,
+                        -0.18F, 0.08F, 0.0F);
+                    renderer.drawActorPrism(red * 0.92F, green * 0.92F, blue, alpha * 0.92F, wing, 0.12F, 0.04F,
+                        0.18F, 0.08F, 0.0F);
+                    return;
+                }
+                case FACE_CURSOR: {
+                    renderer.drawActorPrism(red, green, blue, alpha, 0.13F, 0.34F, 0.13F);
+                    renderer.drawActorPrism(red * 0.85F, green * 0.95F, blue, alpha * 0.9F, 0.04F, 0.10F, 0.10F,
+                        0.0F, 0.26F, -0.14F);
+                    return;
+                }
+                default:
+                    renderer.drawActorPrism(red, green, blue, alpha, 0.14F, 0.34F, 0.14F);
+                    return;
+            }
+        }
+
+        private void drawItemBody() {
+            float sway = Math.abs(MathHelper.sin(currentTick * 0.25F)) * 0.02F;
+            renderer.drawActorPrism(red, green, blue, alpha, 0.12F + sway, 0.06F, 0.12F + sway);
+        }
+
+        private void drawCartWheels() {
+            int wheelColor = withAlpha(0x2B2B2B, alpha * 255.0F);
+            float red = ((wheelColor >> 16) & 0xFF) / 255.0F;
+            float green = ((wheelColor >> 8) & 0xFF) / 255.0F;
+            float blue = (wheelColor & 0xFF) / 255.0F;
+            float wheelAlpha = ((wheelColor >>> 24) & 0xFF) / 255.0F;
+            float[][] wheels = new float[][] {
+                {-0.22F, -0.12F},
+                {0.22F, -0.12F},
+                {-0.22F, 0.12F},
+                {0.22F, 0.12F}
+            };
+            for (float[] wheel : wheels) {
+                renderer.drawActorPrism(red, green, blue, wheelAlpha, 0.05F, 0.05F, 0.05F, wheel[0], -0.12F,
+                    wheel[1]);
+            }
         }
     }
 
     private enum ActorBodyRenderer {
         BIRB {
             @Override
-            void render(ScenePreviewRenderer renderer, ActorPreviewRenderData renderData) {
-                renderer.drawBirbBody(renderData);
-                renderer.drawActorHeading(renderData.alpha);
+            void render(ActorBodyDrawContext bodyDrawContext) {
+                bodyDrawContext.renderBirb();
             }
         },
         ITEM {
             @Override
-            void render(ScenePreviewRenderer renderer, ActorPreviewRenderData renderData) {
-                renderer.drawItemBody(renderData.red, renderData.green, renderData.blue, renderData.alpha,
-                    renderData.currentTick);
-                renderer.drawActorHeading(renderData.alpha * 0.7F);
+            void render(ActorBodyDrawContext bodyDrawContext) {
+                bodyDrawContext.renderItem();
             }
         },
         CART {
             @Override
-            void render(ScenePreviewRenderer renderer, ActorPreviewRenderData renderData) {
-                renderer.drawActorPrism(renderData.red, renderData.green, renderData.blue, renderData.alpha, 0.30F,
-                    0.16F, 0.18F);
-                renderer.drawCartWheels(renderData.alpha);
-                renderer.drawActorHeading(renderData.alpha);
+            void render(ActorBodyDrawContext bodyDrawContext) {
+                bodyDrawContext.renderCart();
             }
         };
 
-        abstract void render(ScenePreviewRenderer renderer, ActorPreviewRenderData renderData);
+        abstract void render(ActorBodyDrawContext bodyDrawContext);
 
         static ActorBodyRenderer forKind(PonderScene.ActorKind kind) {
             if (kind == PonderScene.ActorKind.BIRB) {
@@ -616,23 +658,6 @@ final class ScenePreviewRenderer {
                 return ITEM;
             }
             return CART;
-        }
-    }
-
-    private void drawCartWheels(float alpha) {
-        int wheelColor = withAlpha(0x2B2B2B, alpha * 255.0F);
-        float red = ((wheelColor >> 16) & 0xFF) / 255.0F;
-        float green = ((wheelColor >> 8) & 0xFF) / 255.0F;
-        float blue = (wheelColor & 0xFF) / 255.0F;
-        float wheelAlpha = ((wheelColor >>> 24) & 0xFF) / 255.0F;
-        float[][] wheels = new float[][] {
-            {-0.22F, -0.12F},
-            {0.22F, -0.12F},
-            {-0.22F, 0.12F},
-            {0.22F, 0.12F}
-        };
-        for (float[] wheel : wheels) {
-            drawActorPrism(red, green, blue, wheelAlpha, 0.05F, 0.05F, 0.05F, wheel[0], -0.12F, wheel[1]);
         }
     }
 
