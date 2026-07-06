@@ -23,6 +23,7 @@
 - `937a362 Refactor ponder foundation architecture` 已推送
 - `d661bbc Retry remote CI Gradle build` 已推送
 - `e69229e146ba862e537070091aae25a1fd945176` 是当前记录的远端可编译基线，ScenePreviewTileEntityRenderer 已通过 CI Build `28805658651`
+- `75c8c94bcb937d1e9db33f3e6695f9cd54e4c7c6` 是当前远端记录的最新相关提交，ScenePreviewFrameScope 已通过 CI Build `28806551914`
 - `patch1.patch` 是未跟踪文件，暂存前需要确认用途
 - `OverlayPlacementEngine` / `PonderOverlayHelper` placement 收口已完成
 - `SnapshotSource` / `ConstantSnapshotSource` / `ProviderSnapshotSource` / `SnapshotRegistryStore` 已完成
@@ -118,6 +119,7 @@ Unimined
 - external parse 阶段已通过 `ExternalParseResult` 汇总 definitions / scanResult / validationReport
 - `RenderContext` 2D bridge 已完成，Actor / Scene / Particle / POI / Controls overlay 已迁入 `RenderContext`
 - `ScenePreviewRenderer` 已把 preview frame lifecycle、scene pass、frame scope、block renderer、tile entity preview renderer/scope、actor-pass scope、actor render dispatch、actor primitive drawing、actor appearance strategy、body/primitive 渲染层与 actor render data 分开，`ScenePreviewBlockRenderer` 已把 block model preview 状态收进局部 renderer，`ScenePreviewTileEntityRenderer` 已把 TileEntity 渲染状态收进局部 renderer/scope，`ActorPreviewStateScope` 已把 actor blend 状态恢复收进局部 scope，`BirbPoseKind` 已收口 `poseName` 判定
+- `ScenePreviewFrameScope` 已通过 CI Build `28806551914`，`ActorPreviewStateScope` 已进入顶层化切片，下一步聚焦 `ActorPreviewRenderPass` 顶层化
 - `PonderReloadOrchestrator` 已落地，reload report 已携带 external validation、compile summary、registration diagnostics 与 registration 明细
 
 对应参考：
