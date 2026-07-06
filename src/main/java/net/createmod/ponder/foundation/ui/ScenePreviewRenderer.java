@@ -494,18 +494,7 @@ final class ScenePreviewRenderer {
             GlStateManager.rotate(yaw, 0.0F, 1.0F, 0.0F);
             GlStateManager.rotate((float) actor.rotation.x, 1.0F, 0.0F, 0.0F);
             GlStateManager.rotate((float) actor.rotation.z, 0.0F, 0.0F, 1.0F);
-
-            if (actor.kind == PonderScene.ActorKind.BIRB) {
-                drawBirbBody(actor, red, green, blue, alpha, currentTick);
-                drawActorHeading(alpha);
-            } else if (actor.kind == PonderScene.ActorKind.ITEM) {
-                drawItemBody(red, green, blue, alpha, currentTick);
-                drawActorHeading(alpha * 0.7F);
-            } else {
-                drawActorPrism(red, green, blue, alpha, 0.30F, 0.16F, 0.18F);
-                drawCartWheels(alpha);
-                drawActorHeading(alpha);
-            }
+            ActorBodyRenderer.forKind(actor.kind).render(this, actor, red, green, blue, alpha, currentTick);
         }
     }
 
@@ -545,6 +534,47 @@ final class ScenePreviewRenderer {
     private void drawItemBody(float red, float green, float blue, float alpha, float currentTick) {
         float sway = Math.abs(MathHelper.sin(currentTick * 0.25F)) * 0.02F;
         drawActorPrism(red, green, blue, alpha, 0.12F + sway, 0.06F, 0.12F + sway);
+    }
+
+    private enum ActorBodyRenderer {
+        BIRB {
+            @Override
+            void render(ScenePreviewRenderer renderer, PonderSceneRuntime.ActorRuntimeState actor, float red,
+                float green, float blue, float alpha, float currentTick) {
+                renderer.drawBirbBody(actor, red, green, blue, alpha, currentTick);
+                renderer.drawActorHeading(alpha);
+            }
+        },
+        ITEM {
+            @Override
+            void render(ScenePreviewRenderer renderer, PonderSceneRuntime.ActorRuntimeState actor, float red,
+                float green, float blue, float alpha, float currentTick) {
+                renderer.drawItemBody(red, green, blue, alpha, currentTick);
+                renderer.drawActorHeading(alpha * 0.7F);
+            }
+        },
+        CART {
+            @Override
+            void render(ScenePreviewRenderer renderer, PonderSceneRuntime.ActorRuntimeState actor, float red,
+                float green, float blue, float alpha, float currentTick) {
+                renderer.drawActorPrism(red, green, blue, alpha, 0.30F, 0.16F, 0.18F);
+                renderer.drawCartWheels(alpha);
+                renderer.drawActorHeading(alpha);
+            }
+        };
+
+        abstract void render(ScenePreviewRenderer renderer, PonderSceneRuntime.ActorRuntimeState actor, float red,
+            float green, float blue, float alpha, float currentTick);
+
+        static ActorBodyRenderer forKind(PonderScene.ActorKind kind) {
+            if (kind == PonderScene.ActorKind.BIRB) {
+                return BIRB;
+            }
+            if (kind == PonderScene.ActorKind.ITEM) {
+                return ITEM;
+            }
+            return CART;
+        }
     }
 
     private void drawCartWheels(float alpha) {
