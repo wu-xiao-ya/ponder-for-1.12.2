@@ -24,6 +24,7 @@
 - `d661bbc Retry remote CI Gradle build` 已推送
 - `e69229e146ba862e537070091aae25a1fd945176` 是当前记录的远端可编译基线，ScenePreviewTileEntityRenderer 已通过 CI Build `28805658651`
 - `75c8c94bcb937d1e9db33f3e6695f9cd54e4c7c6` 是当前远端记录的最新相关提交，ScenePreviewFrameScope 已通过 CI Build `28806551914`
+- `b86ceeec792797dab313ebd10611c2fb84f5f73a` 是当前远端记录的最新可编译基线，ActorPreviewStateScope 已通过 CI Build `28807260745`
 - `patch1.patch` 是未跟踪文件，暂存前需要确认用途
 - `OverlayPlacementEngine` / `PonderOverlayHelper` placement 收口已完成
 - `SnapshotSource` / `ConstantSnapshotSource` / `ProviderSnapshotSource` / `SnapshotRegistryStore` 已完成
@@ -119,7 +120,7 @@ Unimined
 - external parse 阶段已通过 `ExternalParseResult` 汇总 definitions / scanResult / validationReport
 - `RenderContext` 2D bridge 已完成，Actor / Scene / Particle / POI / Controls overlay 已迁入 `RenderContext`
 - `ScenePreviewRenderer` 已把 preview frame lifecycle、scene pass、frame scope、block renderer、tile entity preview renderer/scope、actor-pass scope、actor render dispatch、actor primitive drawing、actor appearance strategy、body/primitive 渲染层与 actor render data 分开，`ScenePreviewBlockRenderer` 已把 block model preview 状态收进局部 renderer，`ScenePreviewTileEntityRenderer` 已把 TileEntity 渲染状态收进局部 renderer/scope，`ActorPreviewStateScope` 已把 actor blend 状态恢复收进局部 scope，`BirbPoseKind` 已收口 `poseName` 判定
-- `ScenePreviewFrameScope` 已通过 CI Build `28806551914`，`ActorPreviewStateScope` 已进入顶层化切片，下一步聚焦 `ActorPreviewRenderPass` 顶层化
+- `ScenePreviewFrameScope` 已通过 CI Build `28806551914`，`ActorPreviewStateScope` 已通过 CI Build `28807260745`，`ActorPreviewRenderPass` 已进入顶层化切片
 - `PonderReloadOrchestrator` 已落地，reload report 已携带 external validation、compile summary、registration diagnostics 与 registration 明细
 
 对应参考：
@@ -136,12 +137,12 @@ Unimined
 
 当前残留热点：
 
-- `ScenePreviewRenderer` 的 preview scene pass、preview state scope、`ScenePreviewFrameScope`、`ScenePreviewShadowRenderer`、`ScenePreviewBlockRenderer`、`ScenePreviewTileEntityRenderer`、`TileEntityPreviewScope`、actor-pass scope、`ActorPreviewRenderPass`、`ActorPreviewAppearance`、`ActorPreviewBodyRenderer`、`ActorPreviewRenderData`、`BirbPoseKind`、`ActorPrimitiveDrawer`、`ActorBodyRenderer`、`ActorBodyDrawContext` 已收束，`renderActorPreviews()` 已收成 actor pass 入口，下一步聚焦 actor pass 顶层化
+- `ScenePreviewRenderer` 的 preview scene pass、preview state scope、`ScenePreviewFrameScope`、`ScenePreviewShadowRenderer`、`ScenePreviewBlockRenderer`、`ScenePreviewTileEntityRenderer`、`TileEntityPreviewScope`、`ActorPreviewStateScope`、actor-pass scope、`ActorPreviewRenderPass`、`ActorPreviewAppearance`、`ActorPreviewBodyRenderer`、`ActorPreviewRenderData`、`BirbPoseKind`、`ActorPrimitiveDrawer`、`ActorBodyRenderer`、`ActorBodyDrawContext` 已收束，`renderActorPreviews()` 已收成 actor pass 入口，当前切片聚焦 actor pass 顶层化收尾
 - 匿名 Host 接线占据较多 screen 篇幅
 - `isMouseOver*` 仍服务 hover / click / drag，showcase hover-label 已由 `ShowcaseHudRenderer.computeHoverLabel(...)` 统一承接
 - `PonderDebugScreen` 继续向页面协调器和 host adapter 收口
 - reload 结果结构化继续推进，validation、compile summary、registration diagnostics 与 register 结果已进入 reload report
-- line count 当前反映 adapter 与 renderer 过渡期成本，actor 绘制原语、tile entity renderer 与 frame scope 下沉已完成，后续自然切片转向 actor pass 顶层化
+- line count 当前反映 adapter 与 renderer 过渡期成本，actor 绘制原语、actor state scope、tile entity renderer 与 frame scope 下沉已完成，当前自然切片转向 actor pass 顶层化
 
 #### B. Snapshot 体系已完成首轮收口
 
