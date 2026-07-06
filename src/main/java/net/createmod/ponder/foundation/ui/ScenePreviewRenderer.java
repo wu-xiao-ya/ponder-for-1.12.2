@@ -130,7 +130,7 @@ final class ScenePreviewRenderer {
 
     private void renderPreviewScenePass(PonderScene scene, PreviewBounds bounds,
         PonderSceneRuntimeTypes.RuntimeState runtimeState, float renderTick) {
-        drawSceneShadow(bounds);
+        ScenePreviewShadowRenderer.draw(bounds, showcaseMode);
 
         BlockRendererDispatcher dispatcher = minecraft.getBlockRendererDispatcher();
         PreviewBlockAccess previewWorld = createPreviewWorld(runtimeState);
@@ -305,24 +305,6 @@ final class ScenePreviewRenderer {
             return created;
         } catch (RuntimeException ignored) {
             return null;
-        }
-    }
-
-    private void drawSceneShadow(PreviewBounds bounds) {
-        float minX = bounds.minX - 0.35F;
-        float maxX = bounds.maxX + 1.35F;
-        float minZ = bounds.minZ - 0.35F;
-        float maxZ = bounds.maxZ + 1.35F;
-        float y = bounds.minY + 0.01F;
-
-        try (GLStateGuard textureGuard = GLStateGuard.textureDisabled();
-            GLStateGuard colorGuard = GLStateGuard.color(0.0F, 0.0F, 0.0F, showcaseMode ? 0.12F : 0.06F)) {
-            GL11.glBegin(GL11.GL_QUADS);
-            GL11.glVertex3f(minX, y, minZ);
-            GL11.glVertex3f(maxX, y, minZ);
-            GL11.glVertex3f(maxX, y, maxZ);
-            GL11.glVertex3f(minX, y, maxZ);
-            GL11.glEnd();
         }
     }
 
