@@ -507,21 +507,33 @@ final class ScenePreviewRenderer {
         }
     }
 
-    private void drawBirbBody(PonderSceneRuntime.ActorRuntimeState actor, float red, float green, float blue, float alpha,
-        float currentTick) {
-        if (isBirbDancePose(actor)) {
-            drawActorPrism(red, green, blue, alpha, 0.16F, 0.28F, 0.16F);
-            float wing = 0.04F + Math.abs(MathHelper.sin(currentTick * 0.35F)) * 0.05F;
-            drawActorPrism(red * 0.92F, green * 0.92F, blue, alpha * 0.92F, wing, 0.12F, 0.04F, -0.18F, 0.08F, 0.0F);
-            drawActorPrism(red * 0.92F, green * 0.92F, blue, alpha * 0.92F, wing, 0.12F, 0.04F, 0.18F, 0.08F, 0.0F);
-            return;
+    private void drawBirbBody(ActorPreviewRenderData renderData) {
+        float red = renderData.red;
+        float green = renderData.green;
+        float blue = renderData.blue;
+        float alpha = renderData.alpha;
+        float currentTick = renderData.currentTick;
+
+        switch (renderData.birbPoseKind) {
+            case DANCE: {
+                drawActorPrism(red, green, blue, alpha, 0.16F, 0.28F, 0.16F);
+                float wing = 0.04F + Math.abs(MathHelper.sin(currentTick * 0.35F)) * 0.05F;
+                drawActorPrism(red * 0.92F, green * 0.92F, blue, alpha * 0.92F, wing, 0.12F, 0.04F, -0.18F, 0.08F,
+                    0.0F);
+                drawActorPrism(red * 0.92F, green * 0.92F, blue, alpha * 0.92F, wing, 0.12F, 0.04F, 0.18F, 0.08F,
+                    0.0F);
+                return;
+            }
+            case FACE_CURSOR: {
+                drawActorPrism(red, green, blue, alpha, 0.13F, 0.34F, 0.13F);
+                drawActorPrism(red * 0.85F, green * 0.95F, blue, alpha * 0.9F, 0.04F, 0.10F, 0.10F, 0.0F, 0.26F,
+                    -0.14F);
+                return;
+            }
+            default:
+                drawActorPrism(red, green, blue, alpha, 0.14F, 0.34F, 0.14F);
+                return;
         }
-        if (isBirbCursorPose(actor)) {
-            drawActorPrism(red, green, blue, alpha, 0.13F, 0.34F, 0.13F);
-            drawActorPrism(red * 0.85F, green * 0.95F, blue, alpha * 0.9F, 0.04F, 0.10F, 0.10F, 0.0F, 0.26F, -0.14F);
-            return;
-        }
-        drawActorPrism(red, green, blue, alpha, 0.14F, 0.34F, 0.14F);
     }
 
     private void drawItemBody(float red, float green, float blue, float alpha, float currentTick) {
@@ -538,9 +550,10 @@ final class ScenePreviewRenderer {
         private final float bobOffset;
         private final float yaw;
         private final float currentTick;
+        private final BirbPoseKind birbPoseKind;
 
         private ActorPreviewRenderData(PonderSceneRuntime.ActorRuntimeState actor, float alpha, float red, float green,
-            float blue, float bobOffset, float yaw, float currentTick) {
+            float blue, float bobOffset, float yaw, float currentTick, BirbPoseKind birbPoseKind) {
             this.actor = actor;
             this.alpha = alpha;
             this.red = red;
@@ -549,18 +562,21 @@ final class ScenePreviewRenderer {
             this.bobOffset = bobOffset;
             this.yaw = yaw;
             this.currentTick = currentTick;
+            this.birbPoseKind = birbPoseKind;
         }
 
         private static ActorPreviewRenderData of(PonderSceneRuntime.ActorRuntimeState actor, float currentTick) {
             float alpha = MathHelper.clamp(actor.fade, 0.0F, 1.0F);
-            int color = getActorBaseColor(actor);
+            BirbPoseKind birbPoseKind = BirbPoseKind.fromActor(actor);
+            int color = getActorBaseColor(actor, birbPoseKind);
             float red = ((color >> 16) & 0xFF) / 255.0F;
             float green = ((color >> 8) & 0xFF) / 255.0F;
             float blue = (color & 0xFF) / 255.0F;
-            float bobOffset = getActorBobOffset(actor, currentTick);
+            float bobOffset = getActorBobOffset(actor, currentTick, birbPoseKind);
             float yaw = actor.kind == PonderScene.ActorKind.CART ? actor.cartYaw : (float) actor.rotation.y;
-            yaw += getActorYawOffset(actor, currentTick);
-            return new ActorPreviewRenderData(actor, alpha, red, green, blue, bobOffset, yaw, currentTick);
+            yaw += getActorYawOffset(actor, currentTick, birbPoseKind);
+            return new ActorPreviewRenderData(actor, alpha, red, green, blue, bobOffset, yaw, currentTick,
+                birbPoseKind);
         }
     }
 
@@ -568,8 +584,7 @@ final class ScenePreviewRenderer {
         BIRB {
             @Override
             void render(ScenePreviewRenderer renderer, ActorPreviewRenderData renderData) {
-                renderer.drawBirbBody(renderData.actor, renderData.red, renderData.green, renderData.blue,
-                    renderData.alpha, renderData.currentTick);
+                renderer.drawBirbBody(renderData);
                 renderer.drawActorHeading(renderData.alpha);
             }
         },
@@ -670,61 +685,78 @@ final class ScenePreviewRenderer {
         }
     }
 
-    private static int getActorBaseColor(PonderSceneRuntime.ActorRuntimeState actor) {
+    private static int getActorBaseColor(PonderSceneRuntime.ActorRuntimeState actor, BirbPoseKind birbPoseKind) {
         if (actor.kind == PonderScene.ActorKind.CART) {
             return 0xD9C27A;
         }
         if (actor.kind == PonderScene.ActorKind.ITEM) {
             return 0xE0D6A8;
         }
-        if (isBirbDancePose(actor)) {
-            return 0xE58ACF;
+        switch (birbPoseKind) {
+            case DANCE:
+                return 0xE58ACF;
+            case FACE_CURSOR:
+                return 0x7FCDE0;
+            case FACE_POINT_OF_INTEREST:
+                return 0x82D173;
+            default:
+                return 0xA8D89A;
         }
-        if (isBirbCursorPose(actor)) {
-            return 0x7FCDE0;
-        }
-        if (isBirbPoiPose(actor)) {
-            return 0x82D173;
-        }
-        return 0xA8D89A;
     }
 
-    private static float getActorBobOffset(PonderSceneRuntime.ActorRuntimeState actor, float currentTick) {
+    private static float getActorBobOffset(PonderSceneRuntime.ActorRuntimeState actor, float currentTick,
+        BirbPoseKind birbPoseKind) {
         if (actor.kind == PonderScene.ActorKind.CART) {
             return MathHelper.sin(currentTick * 0.15F + actor.actorId) * 0.01F;
         }
         if (actor.kind == PonderScene.ActorKind.ITEM) {
             return Math.abs(MathHelper.sin(currentTick * 0.22F + actor.actorId * 0.4F)) * 0.05F;
         }
-        if (isBirbDancePose(actor)) {
+        if (birbPoseKind == BirbPoseKind.DANCE) {
             return Math.abs(MathHelper.sin(currentTick * 0.35F + actor.actorId * 0.5F)) * 0.10F;
         }
         return Math.abs(MathHelper.sin(currentTick * 0.18F + actor.actorId * 0.35F)) * 0.04F;
     }
 
-    private static float getActorYawOffset(PonderSceneRuntime.ActorRuntimeState actor, float currentTick) {
+    private static float getActorYawOffset(PonderSceneRuntime.ActorRuntimeState actor, float currentTick,
+        BirbPoseKind birbPoseKind) {
         if (actor.kind != PonderScene.ActorKind.BIRB) {
             return 0.0F;
         }
-        if (isBirbCursorPose(actor)) {
+        if (birbPoseKind == BirbPoseKind.FACE_CURSOR) {
             return MathHelper.sin(currentTick * 0.30F + actor.actorId) * 18.0F;
         }
-        if (isBirbDancePose(actor)) {
+        if (birbPoseKind == BirbPoseKind.DANCE) {
             return MathHelper.sin(currentTick * 0.45F + actor.actorId) * 10.0F;
         }
         return 0.0F;
     }
 
-    private static boolean isBirbDancePose(PonderSceneRuntime.ActorRuntimeState actor) {
-        return actor.poseName != null && actor.poseName.contains("DancePose");
-    }
+    private enum BirbPoseKind {
+        DANCE,
+        FACE_CURSOR,
+        FACE_POINT_OF_INTEREST,
+        DEFAULT;
 
-    private static boolean isBirbCursorPose(PonderSceneRuntime.ActorRuntimeState actor) {
-        return actor.poseName != null && actor.poseName.contains("FaceCursorPose");
-    }
-
-    private static boolean isBirbPoiPose(PonderSceneRuntime.ActorRuntimeState actor) {
-        return actor.poseName != null && actor.poseName.contains("FacePointOfInterestPose");
+        private static BirbPoseKind fromActor(PonderSceneRuntime.ActorRuntimeState actor) {
+            if (actor.kind != PonderScene.ActorKind.BIRB) {
+                return DEFAULT;
+            }
+            String poseName = actor.poseName;
+            if (poseName == null || poseName.isEmpty()) {
+                return DEFAULT;
+            }
+            if (poseName.contains("DancePose")) {
+                return DANCE;
+            }
+            if (poseName.contains("FaceCursorPose")) {
+                return FACE_CURSOR;
+            }
+            if (poseName.contains("FacePointOfInterestPose")) {
+                return FACE_POINT_OF_INTEREST;
+            }
+            return DEFAULT;
+        }
     }
 
     private static int withAlpha(int color, float alpha) {
