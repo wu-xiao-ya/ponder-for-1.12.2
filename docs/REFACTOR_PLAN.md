@@ -22,7 +22,7 @@
 
 - `937a362 Refactor ponder foundation architecture` 已推送
 - `d661bbc Retry remote CI Gradle build` 已推送
-- `72aca521001429140a7dee88c2dfa534426cdb63` 是当前记录的远端可编译基线，ScenePreviewBlockRenderer 已通过 CI Build `28804497886`
+- `e69229e146ba862e537070091aae25a1fd945176` 是当前记录的远端可编译基线，ScenePreviewTileEntityRenderer 已通过 CI Build `28805658651`
 - `patch1.patch` 是未跟踪文件，暂存前需要确认用途
 - `OverlayPlacementEngine` / `PonderOverlayHelper` placement 收口已完成
 - `SnapshotSource` / `ConstantSnapshotSource` / `ProviderSnapshotSource` / `SnapshotRegistryStore` 已完成
@@ -653,8 +653,8 @@ CI 整改候选：
 - 保留 JDK 25、Gradle cache、三次 Gradle retry
 - `gradle/scripts/dependencies.gradle` 在 CI 中优先使用 `mavenLocal()`
 - 远程 Gradle 首轮失败后会尝试从 Unimined cache 的 Cleanroom MCP jar 生成 `net.minecraft:minecraft:1.12.2` 的本地 Maven 条目，再进入下一轮 retry
-- 远程验证：`Build 28804497886 success`，对应当前记录的远端可编译基线 `72aca521001429140a7dee88c2dfa534426cdb63`
-- 通过提交：`72aca521001429140a7dee88c2dfa534426cdb63`
+- 远程验证：`Build 28805658651 success`，对应当前记录的远端可编译基线 `e69229e146ba862e537070091aae25a1fd945176`
+- 通过提交：`e69229e146ba862e537070091aae25a1fd945176`
 
 优先整改：
 
