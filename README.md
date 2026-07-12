@@ -1,3 +1,9 @@
+# new ponder
+因为当前版本较差，对模组进行了重做，新的仓库为https://github.com/SemenPiP/ponder-for-1.12.2，
+相较于当前版本，新的版本有了较大的进步，视觉，可操作性，动画等大幅进步
+我们更加建议你移步新版本，他更加的现代。
+
+Because the current version was outdated, the module has been completely reworked. The new repository is https://github.com/SemenPiP/ponder-for-1.12.2. Compared to the current version, the new version has made significant improvements, with substantial advancements in visuals, operability, and animations. We highly recommend you switch to the new version, as it is more modern. 
 # Ponder for 1.12.2
 
 Minecraft `1.12.2` backport of
